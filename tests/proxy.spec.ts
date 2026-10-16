@@ -31,7 +31,9 @@ test('real HTTPS browser works behind localhost Origin rewrite while a cross-sit
  try{
   await page.goto(origin);await page.getByLabel(/correo/i).fill(credentials.email);await page.getByLabel(/contraseña/i).fill(credentials.password);
   const loggedIn=page.waitForResponse(r=>r.url()===origin+'/api/session'&&r.request().method()==='POST');await page.getByRole('button',{name:/entrar en mi espacio/i}).click();expect((await loggedIn).status()).toBe(200);
+  await expect(page.getByRole('heading',{name:'Tus tareas',exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'Tabla',exact:true})).toHaveClass(/selected/);
   const capture=page.getByRole('textbox',{name:/captura rápida/i});await capture.fill('Captura browser proxy segura');await capture.press('Enter');await expect(capture).toHaveValue('');
+  await page.goto(origin);await expect(page.getByRole('table')).toBeVisible();
   await page.goto(origin+'/tasks');await expect(page.getByRole('button',{name:'Captura browser proxy segura',exact:true})).toBeVisible();await page.reload();await expect(page.getByRole('button',{name:'Captura browser proxy segura',exact:true})).toBeVisible();
   const cookie=(await page.context().cookies(origin)).find(c=>c.name==='focus_session'||c.name==='__Host-focus_session');expect(cookie?.secure).toBeTruthy();expect(cookie?.httpOnly).toBeTruthy();expect(cookie?.sameSite).toBe('Strict');
   await page.goto(`http://127.0.0.1:${attackerAddress.port}`);const attacked=page.waitForResponse(r=>r.url()===origin+'/api/session'&&r.request().method()==='POST');await page.locator('form').evaluate((form:HTMLFormElement)=>form.submit());expect((await attacked).status()).toBe(403);

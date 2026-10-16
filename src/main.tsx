@@ -53,11 +53,11 @@ type Page =
   | "archive"
   | "settings";
 const nav: { key: Page; path: string; label: string; icon: typeof Home }[] = [
-  { key: "home", path: "/", label: "Inicio", icon: Home },
   { key: "tasks", path: "/tasks", label: "Tareas", icon: LayoutGrid },
-  { key: "projects", path: "/projects", label: "Proyectos", icon: FolderOpen },
+  { key: "home", path: "/dashboard", label: "Dashboard", icon: Home },
   { key: "journal", path: "/journal", label: "Diario", icon: BookOpen },
   { key: "progress", path: "/progress", label: "Mis avances", icon: BarChart3 },
+  { key: "projects", path: "/projects", label: "Proyectos", icon: FolderOpen },
   { key: "archive", path: "/archive", label: "Archivo", icon: Inbox },
   { key: "settings", path: "/settings", label: "Ajustes", icon: Settings },
 ];
@@ -98,9 +98,9 @@ function validDate(date: string) {
 }
 function pathState() {
   const path = location.pathname;
-  const section = nav.find((n) => n.path !== "/" && path.startsWith(n.path));
+  const section = nav.find((n) => path === n.path || path.startsWith(n.path + "/"));
   return {
-    page: section?.key ?? "home",
+    page: section?.key ?? "tasks",
     projectId: path.startsWith("/projects/") ? path.split("/")[2] : null,
     journalDate:
       /^\/journal\/\d{4}-\d{2}-\d{2}$/.test(path) &&
@@ -125,7 +125,7 @@ function App() {
     [projectFilter, setProjectFilter] = useState(""),
     [statusFilter, setStatusFilter] = useState(""),
     [priorityFilter, setPriorityFilter] = useState(""),
-    [taskView, setTaskView] = useState<"board" | "table">("board");
+    [taskView, setTaskView] = useState<"board" | "table">("table");
   const read = useCallback(async (path: string, init?: RequestInit) => {
     const r = await fetch(path, { credentials: "same-origin", ...init });
     if (!r.ok) {
@@ -151,7 +151,6 @@ function App() {
         setSession(s);
         const data = await read("/api/state");
         setSnapshot(data);
-        setTaskView(data.user.preferred_task_view);
       } catch (e) {
         if ((e as Error).message !== "No autenticado") setError("");
       } finally {
@@ -241,7 +240,10 @@ function App() {
     }
   };
   useEffect(() => {
-    if (snapshot) setTaskView(snapshot.user.preferred_task_view);
+    // The app's entry URL always starts in the table. Explicit /tasks links
+    // still honor the saved view; switching views during a visit remains available.
+    if (snapshot && location.pathname !== "/")
+      setTaskView(snapshot.user.preferred_task_view);
   }, [snapshot?.user.preferred_task_view]);
   const currentTask =
     (editor && snapshot?.tasks.find((t) => t.id === editor.id)) || null;
@@ -298,7 +300,8 @@ function App() {
           href="/"
           onClick={(e) => {
             e.preventDefault();
-            go("home");
+            setTaskView("table");
+            go("tasks", "/");
           }}
         >
           <span className="brand-icon">

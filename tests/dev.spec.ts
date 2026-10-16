@@ -32,8 +32,13 @@ async function exercise(page:Page,origin:string,cssURL:string,cssFile:string){
  await page.getByLabel(/correo/i).fill('dev-browser@example.test');
  await page.getByLabel(/contraseña/i).fill('Fictional-Dev-Browser-2026!');
  await page.getByRole('button',{name:/entrar en mi espacio/i}).click();
+ await expect(page.getByRole('heading',{name:'Tus tareas',exact:true})).toBeVisible();
+ await expect(page.getByRole('button',{name:'Tabla',exact:true})).toHaveClass(/selected/);
+ await page.goto(origin+'/dashboard');await expect(page.getByRole('heading',{name:/hola,/i})).toBeVisible();
+ await page.reload();await expect(page.locator('.weekly-panel')).toBeVisible();
  const capture=page.getByRole('textbox',{name:/captura rápida/i});
  await capture.fill('Captura persistente desarrollo QA');await capture.press('Enter');await expect(capture).toHaveValue('');
+ await page.goto(origin);await expect(page.getByRole('table')).toBeVisible();
  await page.goto(origin+'/tasks');await expect(page.getByRole('button',{name:'Captura persistente desarrollo QA',exact:true})).toBeVisible();
  await page.reload();await expect(page.getByRole('button',{name:'Captura persistente desarrollo QA',exact:true})).toBeVisible();
  let navigations=0;page.on('framenavigated',frame=>{if(frame===page.mainFrame())navigations++;});

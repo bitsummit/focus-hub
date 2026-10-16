@@ -68,3 +68,12 @@ Una migración futura debe aportar un adaptador D1 con operaciones atómicas/bat
 ## Seguridad y piloto privado
 
 La primera auditoría interna y sus correcciones están en [docs/SECURITY_AUDIT.md](docs/SECURITY_AUDIT.md). Incluye actualización del Codespace, rotación de contraseña y riesgos pendientes. Antes de incorporar datos reales: contraseña fuerte, base personal separada y copia/restauración comprobada. El servidor Vite se mantiene para desarrollo con datos ficticios.
+
+## Navegación
+
+Al abrir la URL principal, Focus Hub muestra **Tareas en vista Tabla**. El orden es
+**Tareas → Dashboard → Diario → Mis avances → Proyectos → Archivo → Ajustes**.
+El anterior Inicio está en `/dashboard`; el enlace directo `/tasks` se conserva
+con la preferencia de vista guardada. En móvil aparecen las cuatro primeras
+secciones y **Más**, que contiene Proyectos, Archivo y Ajustes. El logo vuelve a
+la tabla inicial. Kanban y el contenido del Dashboard siguen disponibles.

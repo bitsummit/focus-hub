@@ -24,7 +24,7 @@ export async function developmentFrontend(server:Server) {
   },
   appType:'custom',
  });
- const appRoute=/^\/(?:tasks|projects(?:\/[^/]+)?|journal(?:\/\d{4}-\d{2}-\d{2})?|progress|archive|settings)?\/?$/;
+ const appRoute=/^\/(?:dashboard|tasks|projects(?:\/[^/]+)?|journal(?:\/\d{4}-\d{2}-\d{2})?|progress|archive|settings)?\/?$/;
  const boundary:RequestHandler=(req,res,next)=>{
   let path:string;
   try{path=decodeURIComponent(new URL(req.originalUrl,'http://localhost').pathname);}catch{res.status(400).end();return;}
