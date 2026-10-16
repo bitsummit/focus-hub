@@ -1114,8 +1114,8 @@ function FocusPanel({
             </span>
             <p>
               {type === "weekly"
-                ? "¿Qué merece tu atención esta semana?"
-                : "Elige lo esencial para hoy."}
+                ? "No hay tareas en el foco semanal."
+                : "No hay tareas en el foco de hoy."}
             </p>
             <small>Selecciona tareas que ya tienes, sin duplicarlas.</small>
           </div>
@@ -1747,7 +1747,7 @@ function JournalPage({
             </h2>
             <span>
               {blocks.length} bloques ·{" "}
-              {entry ? "Guardado en tu espacio" : "Un día por escribir"}
+              {entry ? "Guardado en tu espacio" : "Sin entrada guardada"}
             </span>
           </div>
           <div className="journal-blocks">
@@ -1761,9 +1761,9 @@ function JournalPage({
             ))}
             {!blocks.length && (
               <div className="journal-prompt">
-                <p>¿Qué tienes en mente hoy?</p>
+                <p>Sin bloques en esta fecha.</p>
                 <span>
-                  Una idea, una nota o ese primer paso que quieres dar.
+                  Escribe una nota o una tarea en el campo inferior.
                 </span>
               </div>
             )}
@@ -2323,7 +2323,6 @@ function GoalsManager(props: Shared) {
     <>
       <div className="section-heading">
         <div>
-          <span className="eyebrow">EL PORQUÉ DETRÁS DEL QUÉ</span>
           <h2>Objetivos estratégicos</h2>
         </div>
         <div className="button-row">
@@ -2522,7 +2521,7 @@ function ProjectDetail({
         }
         title={project.name}
         subtitle={
-          project.description || "Cada proyecto empieza con un primer paso."
+          project.description || "Sin descripción"
         }
         action={
           <button className="button" onClick={() => setEditing(!editing)}>

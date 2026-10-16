@@ -471,3 +471,12 @@
 html:root .app-shell .task-inline-status[class*="status-"] {
   color: var(--status-fg, var(--ux-muted));
 }
+
+/* Supporting copy and actions must not retain the legacy pale sage foreground. */
+:root .app-shell :is(.analytics-notes, .analytics-notes strong, .analytics-period,
+  .goal-bottom, .goal-bottom strong, .main-footer, .private-badge,
+  .focus-empty p, .focus-empty small, .completion-note) { color: var(--ux-muted); }
+:root .app-shell :is(.text-button, .add-subtle, .goal-label, .eyebrow) {
+  color: var(--ux-accent);
+}
+:root .app-shell .goal-label { text-transform: none; letter-spacing: .025em; }
