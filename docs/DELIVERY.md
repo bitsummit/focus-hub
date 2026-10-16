@@ -5,12 +5,12 @@
 - Repositorio: https://github.com/bitsummit/focus-hub
 - Rama: `dev/focus-hub-v1-codespaces`.
 - La implementación original `ed9f9ab` se conserva como antecesora de todos los cambios de entrega.
-- `main` no se modifica, no hay reset ni force push. Los envíos a la rama de desarrollo son avances normales.
-- `AGENTS.md`, `CODEX_START_HERE.md`, `FOCUS_HUB_CODEX_MASTER_PROMPT.md` y `README_INICIO.md` se conservan sin cambios respecto de main.
+- No se envía a `main`, no hay reset ni force push. Durante la entrega se detectó que el remoto ya había integrado la v1 mediante el PR #1 (merge `d4af79f`) y eliminado README_INICIO.md (`a310ec1`). Se incorporaron ambos cambios mediante un merge normal a la rama de desarrollo; se respeta esa eliminación.
+- `AGENTS.md`, `CODEX_START_HERE.md` y `FOCUS_HUB_CODEX_MASTER_PROMPT.md` se conservan sin cambios respecto de main. `.codex/agents/` sigue sin estar disponible.
 - `.codex/agents/` no existe en este checkout. No se han sustituido configuraciones de agentes ni inventado perfiles. Para esta entrega se usaron agentes nativos reales para revisión de seguridad y QA de Codespaces; el coordinador integró scripts/configuración, pruebas limpias y Git.
 - Se excluyen `.data/`, `.env`, `.env.*` salvo `.env.example`, SQLite, claves, dependencias, compilación y resultados de pruebas. La contraseña de la demo se genera por Codespace y se guarda localmente con permisos 0600; no se envía a GitHub.
 
-El cuerpo del PR está preparado en [PULL_REQUEST.md](PULL_REQUEST.md). La API `api.github.com` está bloqueada en esta instancia por el proxy de salida (CONNECT 403), mientras que Git HTTPS sí permite fetch/push. Por ello la creación automática del PR puede necesitar que se aplique la ampliación de red guardada en el borrador del entorno. No es un error de contraseña ni evidencia de falta de permisos del repositorio.
+El [PR inicial #1](https://github.com/bitsummit/focus-hub/pull/1) figura integrado en el historial de main. El nuevo PR de Codespaces es independiente y su cuerpo está preparado en [PULL_REQUEST.md](PULL_REQUEST.md). La API `api.github.com` está bloqueada en esta instancia por el proxy de salida (CONNECT 403), mientras que Git HTTPS sí permite fetch/push. Por ello la creación automática del PR puede necesitar que se aplique la ampliación de red guardada en el borrador del entorno. No es un error de contraseña ni evidencia de falta de permisos del repositorio.
 
 Si el bloqueo persiste, el enlace devuelto por GitHub al subir la rama permite abrir el formulario del PR:
 

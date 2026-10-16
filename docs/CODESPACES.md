@@ -5,7 +5,7 @@ Esta entrega conserva la v1: React/TypeScript, servidor Node, SQLite persistente
 ## 1. Abrir el entorno desde el navegador
 
 1. Inicia sesión en GitHub con la cuenta que tiene acceso al [repositorio privado](https://github.com/bitsummit/focus-hub).
-2. Abre la [rama de entrega](https://github.com/bitsummit/focus-hub/tree/dev/focus-hub-v1-codespaces). Confirma que el selector de rama muestra **dev/focus-hub-v1-codespaces**; `main` conserva la versión anterior hasta revisar e integrar el PR.
+2. Abre la [rama de entrega](https://github.com/bitsummit/focus-hub/tree/dev/focus-hub-v1-codespaces). Confirma que el selector de rama muestra **dev/focus-hub-v1-codespaces**; `main` ya contiene la v1 inicial, pero esta rama incorpora su configuración de Codespaces hasta revisar e integrar el nuevo PR.
 3. Pulsa **Code → Codespaces → Create codespace on dev/focus-hub-v1-codespaces**. Si GitHub muestra **New with options**, selecciona esa rama y `.devcontainer/devcontainer.json`. Bastan 2 CPU y 4 GB de RAM.
 4. Espera a que termine la creación. Automáticamente se ejecutan `npm ci`, la compilación, la creación inicial de la demo y el arranque. El proceso termina comprobando login, datos persistentes y referencias del diario. No se imprimen contraseñas.
 5. Abre la pestaña **Ports / Puertos** del panel inferior. Debe aparecer **3000 · Focus Hub · privado**. Comprueba que **Port Visibility / Visibilidad del puerto** es **Private**. Es el valor predeterminado de GitHub para un puerto nuevo. No elijas `Public` ni `Private to Organization`.
