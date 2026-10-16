@@ -2,7 +2,7 @@
 
 ## Source of truth
 - Read `FOCUS_HUB_CODEX_MASTER_PROMPT.md` completely before proposing architecture or implementation. It defines product scope, UX, security, data model, phases and 15 acceptance tests. It wins over a convenience plan if they conflict.
-- Read `CODEX_START_HERE.md` for the initial brief. Keep all user-facing UI in Spanish and code identifiers in English/TypeScript.
+- Read `CODEX_START_HERE.md` for the initial brief. Keep Spanish as the default UI language and support the user-selected Spanish/English interface through src/i18n.ts and src/locales/en.json. Never translate user content or persisted identifiers; keep code identifiers in English/TypeScript.
 - Build a full-stack working personal productivity app with a single canonical task record across journal, board, table, focus, archive and analytics. This must be a functional v1, not a static mockup or a cut-down checklist app.
 
 ## Multi-agent orchestration

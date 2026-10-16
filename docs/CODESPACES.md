@@ -147,3 +147,12 @@ Se permite únicamente ese endpoint interno exacto para el puerto configurado, c
 ## Auditoría y actualización de seguridad
 
 Consulta [SECURITY_AUDIT.md](SECURITY_AUDIT.md) antes de usar datos reales. La actualización de Vite y backend requiere `git pull --ff-only`, detener el servicio, `npm ci` y arrancar de nuevo. La cookie HTTPS usa ahora `__Host-focus_session`: vuelve a iniciar sesión. Para cambiar la contraseña de demo sin perder tareas ejecuta `FOCUS_DB=.data/demo.sqlite npm run password`; pide entrada oculta y revoca sus sesiones. No se sustituye la contraseña automáticamente.
+
+
+## Idioma de la interfaz
+
+Español es el predeterminado. En **Ajustes → Idioma** selecciona **Español** o
+**English** y pulsa **Guardar preferencias**. La elección se conserva por cuenta
+y se recupera al acceder desde otro navegador. Los textos de tus tareas, proyectos
+y diario no se traducen ni modifican. Esta actualización requiere reiniciar el
+servidor una vez para aplicar la migración aditiva; ver [I18N.md](I18N.md).

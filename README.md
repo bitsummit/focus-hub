@@ -10,6 +10,9 @@ La entrega incorpora lista móvil editable, filtros rápidos, captura inferior,
 Kanban adaptable y copias SQLite verificables. Consulta la guía de Codespaces
 para actualizar tu entorno existente conservando datos y credenciales.
 
+La interfaz permite elegir **Español / English** en **Ajustes → Idioma** y guardar
+la preferencia por usuario. [Detalles y actualización](docs/I18N.md).
+
 ## Probar en el navegador con Codespaces
 
 Abre la [rama de entrega](https://github.com/bitsummit/focus-hub/tree/dev/focus-hub-v1.1-ux-readiness) y elige **Code → Codespaces → Create codespace**. La configuración instala, compila, crea una demo SQLite aislada y arranca automáticamente. Confirma **Private** en el puerto **3000** y pulsa **Open in Browser**.

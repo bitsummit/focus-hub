@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { PRIORITIES, priorityLabels, type CaptureInput, type Priority, type Project } from "../../shared/contracts";
+import { t } from "../i18n";
 import "./quick-capture.css";
 
 export interface MobileQuickCaptureProps {
@@ -23,7 +24,7 @@ export function MobileQuickCapture({ open, onClose, projects, onCapture }: Mobil
   const [priority, setPriority] = useState<Priority | "">("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
-  const [feedback, setFeedback] = useState("");
+  const [feedback, setFeedback] = useState<{ projectName: string | null } | null>(null);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -56,7 +57,7 @@ export function MobileQuickCapture({ open, onClose, projects, onCapture }: Mobil
   function changed() {
     requestRef.current = null;
     setError("");
-    setFeedback("");
+    setFeedback(null);
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -71,7 +72,7 @@ export function MobileQuickCapture({ open, onClose, projects, onCapture }: Mobil
     pendingRef.current = true;
     setPending(true);
     setError("");
-    setFeedback("");
+    setFeedback(null);
     try {
       const saved = await onCapture(requestRef.current.input);
       if (!saved) {
@@ -80,7 +81,7 @@ export function MobileQuickCapture({ open, onClose, projects, onCapture }: Mobil
       }
       requestRef.current = null;
       setTitle("");
-      setFeedback("Tarea guardada en " + (projects.find((project) => project.id === projectId)?.name || "Bandeja de entrada") + ".");
+      setFeedback({ projectName: projects.find((project) => project.id === projectId)?.name ?? null });
       if (closeAfterSave) closeRef.current();
     } catch {
       setError("No se pudo guardar. Comprueba la conexión y vuelve a intentarlo.");
@@ -108,15 +109,15 @@ export function MobileQuickCapture({ open, onClose, projects, onCapture }: Mobil
       }}
     >
       <header className="v11-capture-heading">
-        <h2 id="v11-capture-heading">Captura rápida</h2>
-        <button type="button" aria-label="Cerrar captura rápida" disabled={pending} onClick={close}>×</button>
+        <h2 id="v11-capture-heading">{t("Captura rápida")}</h2>
+        <button type="button" aria-label={t("Cerrar captura rápida")} disabled={pending} onClick={close}>×</button>
       </header>
       <form onSubmit={submit} aria-busy={pending}>
-        <label className="v11-capture-title-label" htmlFor="v11-capture-title">Título de la tarea</label>
+        <label className="v11-capture-title-label" htmlFor="v11-capture-title">{t("Título de la tarea")}</label>
         <input
           ref={titleRef}
           id="v11-capture-title"
-          placeholder="¿Qué necesitas hacer?"
+          placeholder={t("¿Qué necesitas hacer?")}
           value={title}
           required
           maxLength={500}
@@ -126,26 +127,26 @@ export function MobileQuickCapture({ open, onClose, projects, onCapture }: Mobil
           onChange={(event) => { changed(); setTitle(event.target.value); }}
         />
         <div className="v11-capture-options">
-          <label htmlFor="v11-capture-project">Proyecto
+          <label htmlFor="v11-capture-project">{t("Proyecto")}
             <select id="v11-capture-project" value={projectId} disabled={pending} onChange={(event) => { changed(); setProjectId(event.target.value); }}>
-              <option value="">Bandeja de entrada</option>
+              <option value="">{t("Bandeja de entrada")}</option>
               {projects.filter((project) => project.status !== "archived").map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
             </select>
           </label>
-          <label htmlFor="v11-capture-priority">Prioridad
+          <label htmlFor="v11-capture-priority">{t("Prioridad")}
             <select id="v11-capture-priority" value={priority} disabled={pending} onChange={(event) => { changed(); setPriority(event.target.value as Priority | ""); }}>
-              <option value="">Normal · ! / !!</option>
-              {PRIORITIES.map((value) => <option key={value} value={value}>{priorityLabels[value]}</option>)}
+              <option value="">{t("Normal · ! / !!")}</option>
+              {PRIORITIES.map((value) => <option key={value} value={value}>{t(priorityLabels[value])}</option>)}
             </select>
           </label>
         </div>
         <div className="v11-capture-message">
-          {error && <p role="alert">{error}</p>}
-          <p className="capture-feedback" role="status" aria-live="polite">{feedback}</p>
+          {error && <p role="alert">{t(error)}</p>}
+          <p className="capture-feedback" role="status" aria-live="polite">{feedback && <>{t("Tarea guardada en ")}{feedback.projectName ?? t("Bandeja de entrada")}{"."}</>}</p>
         </div>
         <footer className="v11-capture-actions">
-          <button type="submit" className="v11-capture-primary" disabled={pending || !title.trim()}>{pending ? "Guardando…" : "Guardar y seguir"}</button>
-          <button type="submit" data-close="true" disabled={pending || !title.trim()}>Guardar y cerrar</button>
+          <button type="submit" className="v11-capture-primary" disabled={pending || !title.trim()}>{t(pending ? "Guardando…" : "Guardar y seguir")}</button>
+          <button type="submit" data-close="true" disabled={pending || !title.trim()}>{t("Guardar y cerrar")}</button>
         </footer>
       </form>
     </dialog>

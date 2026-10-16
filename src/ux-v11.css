@@ -480,3 +480,6 @@ html:root .app-shell .task-inline-status[class*="status-"] {
   color: var(--ux-accent);
 }
 :root .app-shell .goal-label { text-transform: none; letter-spacing: .025em; }
+/* Keep translated settings help readable in both themes. */
+:root .app-shell :is(.settings-copy, .settings-grid label small, .import-preview p,
+  .file-button) { color: var(--ux-muted); }

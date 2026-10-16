@@ -49,8 +49,7 @@ concurrente, la imagen representa un punto confirmado durante la copia, no todos
 los cambios que sucedan posteriormente.
 
 La herramienta abre la fuente de solo lectura y no aplica migraciones. Comprueba
-`integrity_check`, `foreign_key_check`, el esquema completo compatible con esta
-versión y el número de filas de sus trece tablas. Crea un archivo provisional
+`integrity_check`, `foreign_key_check`, el esquema completo compatible (001 original o 002 con idioma de usuario) y el número de filas de sus trece tablas. Crea un archivo provisional
 privado y publica mediante enlace duro atómico sin reemplazo: falla si el destino,
 un symlink o sus archivos auxiliares ya existen. El sistema de archivos debe
 permitir enlaces duros en ese directorio; no se intenta una alternativa insegura.
@@ -59,7 +58,7 @@ El resultado muestra rutas, comprobaciones, cuentas de filas y `mainFileSha256`;
 nunca títulos, correos, contraseñas ni hashes de contraseña. Ese checksum describe
 el archivo principal: en una base activa **no incluye WAL** ni debe usarse para
 compararla con la copia. Para una copia cerrada y sin WAL sí permite comprobar
-que el archivo descargado es idéntico. La validación estricta del esquema puede
+que el archivo descargado es idéntico. La validación estricta del esquema admite 001 y 002 y puede
 rechazar versiones futuras: conservar código/commit compatible con cada copia.
 
 **Descargar la copia fuera del Codespace** desde el explorador de archivos de
@@ -187,3 +186,15 @@ auditoría externa ni garantiza disponibilidad del proveedor.
 Sigue pendiente la comprobación con el Codespace y dispositivos reales del
 propietario, el almacenamiento externo de una copia y su recuperación ensayada.
 No se debe pasar de datos ficticios a reales solo por estos resultados locales.
+
+
+### Preferencia de idioma y copias existentes
+
+La migración aditiva `002_language.sql` añade `users.language` (`es`/`en`,
+predeterminado `es`) sin reescribir tareas, diario, relaciones ni histórico.
+El arranque normal la aplica de forma transaccional una sola vez. Las copias
+anteriores con esquema 001 siguen pudiendo verificarse y restaurarse: verificar,
+respaldar y restaurar no migran su fuente. El archivo restaurado se actualiza
+únicamente al abrirlo con el servidor de esta versión. Una copia con esquema 002
+conserva también el idioma de cada usuario. No ejecutar una versión anterior del
+código sobre una base ya migrada; conservar código compatible con la copia.

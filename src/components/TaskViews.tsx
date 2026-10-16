@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { CalendarDays, CheckCircle2, ChevronDown, Circle, Flag, Inbox } from "lucide-react";
 import { PRIORITIES, STATUSES, priorityLabels, statusLabels, type Project, type Snapshot, type Status, type Task } from "../../shared/contracts";
+import { locale, t } from "../i18n";
 import "./task-views.css";
 
 type UpdateTask = (id: string, fields: Partial<Task>) => Promise<boolean>;
@@ -43,7 +44,7 @@ function useTaskMutations(updateTask: UpdateTask) {
 
 function formatDate(value: string, timezone?: string) {
   const calendarDate = value.length === 10;
-  return new Intl.DateTimeFormat("es", {
+  return new Intl.DateTimeFormat(locale(), {
     day: "numeric", month: "short", year: "numeric",
     ...(calendarDate ? { timeZone: "UTC" } : { hour: "2-digit", minute: "2-digit", timeZone: timezone }),
   }).format(new Date(calendarDate ? value + "T12:00:00Z" : value));
@@ -55,9 +56,9 @@ export function StatusControl({ task, updateTask, disabled = false }: {
   const saving = useRef(false);
   const [pending, setPending] = useState(false);
   return <select
-    aria-label={"Estado de " + task.title}
+    aria-label={t("Estado de ") + task.title}
     className={"status-select status-" + task.status}
-    title={statusLabels[task.status]}
+    title={t(statusLabels[task.status])}
     value={task.status}
     disabled={disabled || pending}
     onClick={(event) => event.stopPropagation()}
@@ -69,23 +70,23 @@ export function StatusControl({ task, updateTask, disabled = false }: {
       try { await updateTask(task.id, { status }); }
       finally { saving.current = false; setPending(false); }
     }}
-  >{STATUSES.map((status) => <option key={status} value={status}>{statusLabels[status]}</option>)}</select>;
+  >{STATUSES.map((status) => <option key={status} value={status}>{t(statusLabels[status])}</option>)}</select>;
 }
 
 export function Priority({ value, compact = false }: { value: Task["priority"]; compact?: boolean }) {
   return <span className={"priority priority-" + value + (compact ? " v11-priority-compact" : "")}
-    title={"Prioridad " + priorityLabels[value]}>
+    title={t("Prioridad ") + t(priorityLabels[value])}>
     <Flag size={compact ? 16 : 13} aria-hidden="true" />
-    <span className={compact ? "v11-visually-hidden" : undefined}>{priorityLabels[value]}</span>
+    <span className={compact ? "v11-visually-hidden" : undefined}>{t(priorityLabels[value])}</span>
   </span>;
 }
 
 function PriorityControl({ task, updateTask, disabled }: { task: Task; updateTask: UpdateTask; disabled: boolean }) {
-  return <span className={"v11-priority-control priority-" + task.priority} title={"Prioridad: " + priorityLabels[task.priority]}>
+  return <span className={"v11-priority-control priority-" + task.priority} title={t("Prioridad: ") + t(priorityLabels[task.priority])}>
     <Flag size={17} aria-hidden="true" />
-    <select aria-label={"Prioridad de " + task.title} value={task.priority} disabled={disabled}
+    <select aria-label={t("Prioridad de ") + task.title} value={task.priority} disabled={disabled}
       onChange={(event) => updateTask(task.id, { priority: event.target.value as Task["priority"] })}>
-      {PRIORITIES.map((priority) => <option key={priority} value={priority}>{priorityLabels[priority]}</option>)}
+      {PRIORITIES.map((priority) => <option key={priority} value={priority}>{t(priorityLabels[priority])}</option>)}
     </select>
   </span>;
 }
@@ -93,7 +94,7 @@ function PriorityControl({ task, updateTask, disabled }: { task: Task; updateTas
 function CompleteControl({ task, updateTask, disabled }: { task: Task; updateTask: UpdateTask; disabled: boolean }) {
   const completed = task.status === "completed";
   return <button type="button" className="check-task v11-check-task" role="checkbox" aria-checked={completed}
-    aria-label={(completed ? "Reabrir " : "Completar ") + task.title} disabled={disabled}
+    aria-label={t(completed ? "Reabrir " : "Completar ") + task.title} disabled={disabled}
     onClick={() => updateTask(task.id, { status: completed ? "pending" : "completed" })}>
     {completed ? <CheckCircle2 size={21} aria-hidden="true" /> : <Circle size={21} aria-hidden="true" />}
   </button>;
@@ -102,11 +103,11 @@ function CompleteControl({ task, updateTask, disabled }: { task: Task; updateTas
 function ProjectControl({ task, projects, updateTask, disabled }: {
   task: Task; projects: Project[]; updateTask: UpdateTask; disabled: boolean;
 }) {
-  return <select className="v11-project-control" aria-label={"Proyecto de " + task.title}
-    title={projects.find((project) => project.id === task.project_id)?.name ?? "Bandeja de entrada"}
+  return <select className="v11-project-control" aria-label={t("Proyecto de ") + task.title}
+    title={projects.find((project) => project.id === task.project_id)?.name ?? t("Bandeja de entrada")}
     value={task.project_id ?? ""} disabled={disabled}
     onChange={(event) => updateTask(task.id, { project_id: event.target.value || null })}>
-    <option value="">Bandeja de entrada</option>
+    <option value="">{t("Bandeja de entrada")}</option>
     {projects.map((project) => <option value={project.id} key={project.id}>{project.name}</option>)}
   </select>;
 }
@@ -118,14 +119,14 @@ function CompactRow({ task, projects, updateTask, openTask, disabled }: {
     <CompleteControl task={task} updateTask={updateTask} disabled={disabled} />
     <div className="v11-task-row-content">
       <button type="button" className="v11-task-title" onClick={() => openTask(task)}>
-        {task.parent_task_id && <span aria-label="Subtarea">↳ </span>}{task.title}
+        {task.parent_task_id && <span aria-label={t("Subtarea")}>↳ </span>}{task.title}
       </button>
       <PriorityControl task={task} updateTask={updateTask} disabled={disabled} />
       <div className="v11-task-row-meta">
         <div className="v11-task-row-project"><ProjectControl task={task} projects={projects} updateTask={updateTask} disabled={disabled} /></div>
         <StatusControl task={task} updateTask={updateTask} disabled={disabled} />
       </div>
-      {task.due_at && <span className="v11-task-date" title="Vencimiento"><CalendarDays size={13} aria-hidden="true" />{formatDate(task.due_at.slice(0, 10))}</span>}
+      {task.due_at && <span className="v11-task-date" title={t("Vencimiento")}><CalendarDays size={13} aria-hidden="true" />{formatDate(task.due_at.slice(0, 10))}</span>}
     </div>
   </article>;
 }
@@ -133,9 +134,9 @@ function CompactRow({ task, projects, updateTask, openTask, disabled }: {
 function EmptyTasks({ emptyFiltered, onClearFilters }: Pick<SharedProps, "emptyFiltered" | "onClearFilters">) {
   return <div className="v11-task-empty" role="status">
     <Inbox size={23} aria-hidden="true" />
-    <h3>{emptyFiltered ? "Ninguna tarea coincide con los filtros" : "No hay tareas abiertas"}</h3>
-    <p>{emptyFiltered ? "Prueba otra búsqueda o limpia los filtros." : "Añade una tarea desde la captura rápida. Las completadas están en Archivo."}</p>
-    {emptyFiltered && onClearFilters && <button type="button" className="text-button" onClick={onClearFilters}>Limpiar filtros</button>}
+    <h3>{t(emptyFiltered ? "Ninguna tarea coincide con los filtros" : "No hay tareas abiertas")}</h3>
+    <p>{t(emptyFiltered ? "Prueba otra búsqueda o limpia los filtros." : "Añade una tarea desde la captura rápida. Las completadas están en Archivo.")}</p>
+    {emptyFiltered && onClearFilters && <button type="button" className="text-button" onClick={onClearFilters}>{t("Limpiar filtros")}</button>}
   </div>;
 }
 
@@ -151,15 +152,15 @@ export function TaskTable({ tasks, defaultSort = "updated_at", ...props }: Share
   });
   const head = (key: string, label: string) => <button type="button" onClick={() => {
     if (sort === key) setAsc(!asc); else { setSort(key); setAsc(true); }
-  }}>{label}{sort === key && (asc ? " ↑" : " ↓")}</button>;
+  }}>{t(label)}{sort === key && (asc ? " ↑" : " ↓")}</button>;
   if (!tasks.length) return <EmptyTasks emptyFiltered={props.emptyFiltered} onClearFilters={props.onClearFilters} />;
-  if (compact) return <div className="v11-task-list" role="region" aria-label="Lista de tareas">
+  if (compact) return <div className="v11-task-list" role="region" aria-label={t("Lista de tareas")}>
     {sorted.map((task) => <CompactRow key={task.id} task={task} projects={props.data.projects} updateTask={update}
       openTask={props.openTask} disabled={pending.has(task.id)} />)}
   </div>;
-  return <div className="table-wrap v11-task-table"><table aria-label="Tabla de tareas">
+  return <div className="table-wrap v11-task-table"><table aria-label={t("Tabla de tareas")}>
     <thead><tr>{[["title", "Tarea"], ["priority", "Prioridad"], ["project_id", "Proyecto"], ["status", "Estado"], ["updated_at", "Actualizada"], ["due_at", "Vencimiento"]].map(([key, label]) =>
-      <th key={key} scope="col" aria-sort={sort === key ? asc ? "ascending" : "descending" : undefined}>{head(key, label)}</th>)}<th scope="col">En espera de</th></tr></thead>
+      <th key={key} scope="col" aria-sort={sort === key ? asc ? "ascending" : "descending" : undefined}>{head(key, label)}</th>)}<th scope="col">{t("En espera de")}</th></tr></thead>
     <tbody>{sorted.map((task) => <tr key={task.id}>
       <td><div className="table-task"><CompleteControl task={task} updateTask={update} disabled={pending.has(task.id)} />
         <button type="button" className="table-title" onClick={() => props.openTask(task)}>{task.parent_task_id && "↳ "}{task.title}</button></div></td>
@@ -167,7 +168,7 @@ export function TaskTable({ tasks, defaultSort = "updated_at", ...props }: Share
       <td><ProjectControl task={task} projects={props.data.projects} updateTask={update} disabled={pending.has(task.id)} /></td>
       <td><StatusControl task={task} updateTask={update} disabled={pending.has(task.id)} /></td>
       <td className="muted">{formatDate(task.updated_at, props.data.user.timezone)}</td>
-      <td><input type="date" aria-label={"Vencimiento de " + task.title} value={task.due_at?.slice(0, 10) ?? ""} disabled={pending.has(task.id)}
+      <td><input type="date" aria-label={t("Vencimiento de ") + task.title} value={task.due_at?.slice(0, 10) ?? ""} disabled={pending.has(task.id)}
         onChange={(event) => update(task.id, { due_at: event.target.value || null })} /></td>
       <td className="muted v11-waiting-cell">{task.waiting_on || "—"}</td>
     </tr>)}</tbody>
@@ -181,16 +182,16 @@ export function Board({ tasks, showAll, ...props }: SharedProps & { tasks: Task[
   const groups = new Map<Status, Task[]>(columns.map((status) => [status, []]));
   tasks.forEach((task) => groups.get(task.status)?.push(task));
   if (!tasks.length && props.emptyFiltered) return <EmptyTasks emptyFiltered onClearFilters={props.onClearFilters} />;
-  return <div className={compact ? "v11-mobile-board" : "board v11-desktop-board"} aria-label="Tablero Kanban" role="region">
+  return <div className={compact ? "v11-mobile-board" : "board v11-desktop-board"} aria-label={t("Tablero Kanban")} role="region">
     {columns.map((status) => {
       const group = groups.get(status)!;
-      const heading = <><span className={"dot state-dot " + status} aria-hidden="true" /><span className="v11-column-title">{statusLabels[status]}</span><span className="v11-column-count">{group.length}</span></>;
+      const heading = <><span className={"dot state-dot " + status} aria-hidden="true" /><span className="v11-column-title">{t(statusLabels[status])}</span><span className="v11-column-count">{group.length}</span></>;
       if (compact) return <details className={"v11-status-group status-" + status} key={status} open>
         <summary>{heading}<ChevronDown size={17} aria-hidden="true" /></summary>
         <div className="v11-status-group-tasks">{group.length ? group.map((task) => <CompactRow key={task.id} task={task} projects={props.data.projects}
-          updateTask={update} openTask={props.openTask} disabled={pending.has(task.id)} />) : <p className="v11-group-empty">Sin tareas</p>}</div>
+          updateTask={update} openTask={props.openTask} disabled={pending.has(task.id)} />) : <p className="v11-group-empty">{t("Sin tareas")}</p>}</div>
       </details>;
-      return <section className={"board-column status-" + status} key={status} aria-label={statusLabels[status]}
+      return <section className={"board-column status-" + status} key={status} aria-label={t(statusLabels[status])}
         onDragOver={(event) => event.preventDefault()} onDrop={(event) => {
           event.preventDefault();
           const id = event.dataTransfer.getData("text/plain");
@@ -202,15 +203,15 @@ export function Board({ tasks, showAll, ...props }: SharedProps & { tasks: Task[
           onDragStart={(event) => { event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("text/plain", task.id); }}>
           <div className="v11-board-card-title"><CompleteControl task={task} updateTask={update} disabled={pending.has(task.id)} />
             <button type="button" className="task-card-title" onClick={() => props.openTask(task)}>{task.parent_task_id && "↳ "}{task.title}</button></div>
-          <span className="project-dot v11-board-project" title={props.data.projects.find((project) => project.id === task.project_id)?.name ?? "Bandeja de entrada"}>
-            {props.data.projects.find((project) => project.id === task.project_id)?.name ?? "Bandeja de entrada"}</span>
+          <span className="project-dot v11-board-project" title={props.data.projects.find((project) => project.id === task.project_id)?.name ?? t("Bandeja de entrada")}>
+            {props.data.projects.find((project) => project.id === task.project_id)?.name ?? t("Bandeja de entrada")}</span>
           <div className="card-meta"><PriorityControl task={task} updateTask={update} disabled={pending.has(task.id)} />
             {task.due_at && <small>{formatDate(task.due_at.slice(0, 10))}</small>}</div>
-          {task.waiting_on && <div className="waiting-note">En espera de {task.waiting_on}</div>}
-          {task.follow_up_at && <small>Seguimiento: {formatDate(task.follow_up_at.slice(0, 10))}</small>}
+          {task.waiting_on && <div className="waiting-note">{t("En espera de ")}{task.waiting_on}</div>}
+          {task.follow_up_at && <small>{t("Seguimiento: ")}{formatDate(task.follow_up_at.slice(0, 10))}</small>}
           <StatusControl task={task} updateTask={update} disabled={pending.has(task.id)} />
         </article>)}</div>
-        {!group.length && <p className="column-empty">Sin tareas</p>}
+        {!group.length && <p className="column-empty">{t("Sin tareas")}</p>}
       </section>;
     })}
   </div>;

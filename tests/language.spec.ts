@@ -1,0 +1,40 @@
+import {test,expect,type Page,type APIRequestContext} from '@playwright/test';
+import {randomUUID} from 'node:crypto';
+import {mkdirSync} from 'node:fs';
+const screenshots='/tmp/focus-i18n-review';
+import type {Snapshot} from '../shared/contracts.ts';
+const root='http://127.0.0.1:4173';
+const account={email:'language-browser@example.test',password:'Language-QA-fictional-2026!'};
+async function login(page:Page){await page.goto('/');await page.getByRole('textbox',{name:/correo|email/i}).fill(account.email);await page.getByLabel(/contraseña|password/i).fill(account.password);await page.getByRole('button',{name:/entrar|iniciar sesión|sign in|log in/i}).click();await expect(page.getByRole('heading',{name:/^Tus tareas$|^Your tasks$/})).toBeVisible();}
+async function mutate(request:APIRequestContext,path:string,data:unknown,method='POST'):Promise<Snapshot>{const session=await(await request.get('/api/session')).json();const response=await request.fetch(path,{method,data,headers:{Origin:root,'X-CSRF-Token':session.csrfToken}});expect(response.ok(),await response.text()).toBeTruthy();return response.json();}
+
+test('language preference translates every section, persists across login and devices, preserves fictional content and supports mobile controls',async({page,browser})=>{
+ test.setTimeout(90000);await login(page);
+ // Always restore Spanish, even on assertion failure, so legacy Spanish workflows remain independent.
+ try{
+  const suffix=randomUUID().slice(0,8),title=`Revisión ficticia sin traducir ${suffix}`,projectName=`Proyecto en español ${suffix}`;
+  const projectState=await mutate(page.request,'/api/projects',{name:projectName}),project=projectState.projects.find(p=>p.name===projectName)!;
+  const snapshot=await mutate(page.request,'/api/tasks',{text:title,request_id:randomUUID(),project_id:project.id,priority:'critical'}),task=snapshot.tasks.find(t=>t.title===title)!;
+  await mutate(page.request,`/api/tasks/${task.id}`,{status:'pending_review',description:'Contenido personal ficticio: mañana, reunión y diseño.'},'PATCH');
+  await mutate(page.request,'/api/tasks',{text:'Pendiente',request_id:randomUUID()}); // Exact catalog key used as user content must remain Spanish.
+  await page.goto('/settings');await page.getByRole('combobox',{name:'Idioma',exact:true}).selectOption('en');
+  const preferences=page.waitForResponse(r=>r.url().endsWith('/api/preferences')&&r.request().method()==='PATCH');await page.getByRole('button',{name:'Guardar preferencias',exact:true}).click();expect((await preferences).ok()).toBeTruthy();
+  await expect(page.locator('html')).toHaveAttribute('lang','en');await expect(page.getByRole('heading',{name:'Settings',exact:true})).toBeVisible();await expect(page.getByRole('combobox',{name:'Language',exact:true})).toHaveValue('en');
+  await expect(page.locator('.sidebar nav').getByRole('button')).toHaveText([/^Tasks\s*\d*$/,'Your workspace','Journal','My progress','Projects','Archive','Settings']);
+  for(const [path,heading]of [['/','Your tasks'],['/dashboard','Your workspace'],['/journal','My journal'],['/progress','My progress'],['/projects','Projects and goals'],['/archive','Your archive'],['/settings','Settings']]){await page.goto(path);await expect(page.locator('html')).toHaveAttribute('lang','en');await expect(page.getByRole('heading',{name:heading,exact:true})).toBeVisible();}
+  for(const theme of ['light','dark']){await mutate(page.request,'/api/preferences',{theme},'PATCH');for(const width of [390,768,1440]){await page.setViewportSize({width,height:width===390?844:1000});for(const path of ['/','/dashboard','/journal','/progress','/projects','/archive','/settings']){await page.goto(path);await expect(page.locator('h1')).toBeVisible();await expect(page.locator('html')).toHaveAttribute('lang','en');expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),`${theme} ${width}px ${path}`).toBeTruthy();}}}
+  await mutate(page.request,'/api/preferences',{theme:'system'},'PATCH');await page.setViewportSize({width:1440,height:1000});await page.goto('/settings');mkdirSync(screenshots,{recursive:true});await page.screenshot({path:screenshots+'/settings-en-desktop.png',fullPage:true});
+  await page.goto('/');await expect(page.locator('main').getByRole('button',{name:'Pendiente',exact:true})).toBeVisible();await expect(page.getByRole('button',{name:title,exact:true})).toBeVisible();await expect(page.getByLabel(`Status of ${title}`,{exact:true})).toHaveValue('pending_review');await expect(page.getByLabel(`Priority of ${title}`,{exact:true})).toHaveValue('critical');
+  const status=page.getByLabel(`Status of ${title}`,{exact:true});await expect(status.locator('option:checked')).toHaveText('Awaiting review');await expect(page.getByLabel(`Priority of ${title}`,{exact:true}).locator('option:checked')).toHaveText('Critical');await expect(page.getByLabel(`Project for ${title}`,{exact:true}).locator('option:checked')).toHaveText(projectName);
+  await page.getByRole('button',{name:title,exact:true}).click();const editor=page.getByRole('dialog');await expect(editor.getByRole('textbox',{name:'Description',exact:true})).toHaveValue('Contenido personal ficticio: mañana, reunión y diseño.');await page.keyboard.press('Escape');
+  await page.goto('/dashboard');await expect(page.locator('.weekly-panel')).toContainText('UP TO 5');await page.goto('/journal');await expect(page.locator('.journal-paper-header .eyebrow')).toHaveText('TODAY');await page.goto('/dashboard');const expectedMonth=new Intl.DateTimeFormat('en-GB',{month:'long',timeZone:snapshot.user.timezone}).format(new Date());await expect(page.locator('main')).toContainText(new RegExp(expectedMonth,'i'));
+  await page.reload();await expect(page.locator('html')).toHaveAttribute('lang','en');
+  // A fresh browser context logs in independently; the server preference is authoritative.
+  const other=await browser.newContext({baseURL:root});try{const second=await other.newPage();await login(second);await expect(second.locator('html')).toHaveAttribute('lang','en');await expect(second.getByRole('heading',{name:'Your tasks',exact:true})).toBeVisible();}finally{await other.close();}
+  await page.locator('.sidebar').getByRole('button',{name:/sign out|log out/i}).click();await expect(page.getByRole('textbox',{name:/email|correo/i})).toBeVisible();await login(page);await expect(page.locator('html')).toHaveAttribute('lang','en');
+  await page.setViewportSize({width:390,height:844});await page.goto('/');await expect(page.getByRole('table')).toHaveCount(0);await expect(page.getByLabel(`Status of ${title}`,{exact:true})).toHaveValue('pending_review');await page.screenshot({path:screenshots+'/tasks-en-mobile.png',fullPage:true});await page.getByRole('button',{name:/capture a task|add a task/i}).click();
+  const capture=page.getByRole('dialog',{name:'Quick capture',exact:true}),mobileTitle=`Nota móvil sin traducir ${suffix}`;await capture.getByRole('textbox',{name:'Task title',exact:true}).fill(mobileTitle);await page.screenshot({path:screenshots+'/capture-en-mobile.png'});await capture.getByRole('button',{name:/save and close/i}).click();await expect(capture).toHaveCount(0);await expect(page.getByRole('button',{name:mobileTitle,exact:true})).toBeVisible();
+  const saved:Snapshot=await(await page.request.get('/api/state')).json();expect(saved.user.language).toBe('en');expect(saved.tasks.filter(t=>t.title===mobileTitle)).toHaveLength(1);expect(saved.tasks.find(t=>t.title===mobileTitle)?.project_id).toBeNull();expect(saved.tasks.find(t=>t.id===task.id)?.description).toBe('Contenido personal ficticio: mañana, reunión y diseño.');
+  await page.goto('/settings');await page.getByRole('combobox',{name:'Language',exact:true}).selectOption('es');await page.getByRole('button',{name:'Save preferences',exact:true}).click();await expect(page.locator('html')).toHaveAttribute('lang','es');await expect(page.getByRole('heading',{name:'Configuración',exact:true})).toBeVisible();
+ }finally{await mutate(page.request,'/api/preferences',{language:'es',theme:'system'},'PATCH');}
+});

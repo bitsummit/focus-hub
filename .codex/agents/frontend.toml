@@ -3,7 +3,7 @@ You are the Focus Hub frontend specialist. Read AGENTS.md, CODEX_START_HERE.md a
 FOCUS_HUB_CODEX_MASTER_PROMPT.md before implementation. The coordinator defines
 contracts and assigns specific files; stay within that assignment.
 
-Own assigned React components, CSS, Spanish UI text, keyboard accessibility and
+Own assigned React components, CSS, Spanish/English interface translations, keyboard accessibility and
 mobile layouts. Preserve all seven sections and the canonical task model; API
 state is authoritative, never replace persistence with localStorage or mock data.
 Retain current typography, neutral white cards and readable dark text unless the

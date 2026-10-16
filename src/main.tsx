@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createRoot } from "react-dom/client";
 import { Temporal } from "@js-temporal/polyfill";
 import {
@@ -49,6 +49,7 @@ import { Board, TaskTable, StatusControl, Priority } from "./components/TaskView
 import { MobileQuickCapture } from "./components/QuickCapture";
 import { filterTask, matchesQuickFilter, type QuickFilter } from "./task-filters";
 import "./ux-v11.css";
+import {t as tr, locale, getLanguage, setLanguage, subscribeLanguage, translateError} from "./i18n";
 
 type Page =
   | "home"
@@ -80,13 +81,13 @@ const weekOf = (date: string, start = 1) => {
 };
 const niceDate = (value: string, tz?: string) =>
   value.length === 10
-    ? new Intl.DateTimeFormat("es", {
+    ? new Intl.DateTimeFormat(locale(), {
         day: "numeric",
         month: "long",
         year: "numeric",
         timeZone: "UTC",
       }).format(new Date(value + "T12:00:00Z"))
-    : new Intl.DateTimeFormat("es", {
+    : new Intl.DateTimeFormat(locale(), {
         day: "numeric",
         month: "short",
         year: "numeric",
@@ -117,6 +118,7 @@ function pathState() {
 }
 
 function App() {
+  useSyncExternalStore(subscribeLanguage, getLanguage, getLanguage);
   const [session, setSession] = useState<Session | null>(null),
     [snapshot, setSnapshot] = useState<Snapshot | null>(null),
     [ready, setReady] = useState(false),
@@ -156,7 +158,7 @@ function App() {
     const r = await fetch(path, { credentials: "same-origin", ...init });
     if (!r.ok) {
       const data = await r.json().catch(() => ({
-        message: "No se ha podido conectar con el servidor.",
+        message: tr("No se ha podido conectar con el servidor."),
       }));
       if (r.status === 401) {
         setSession(null);
@@ -164,7 +166,9 @@ function App() {
       }
       throw new Error(data.message || `Error ${r.status}`);
     }
-    return r.status === 204 ? null : r.json();
+    const data = r.status === 204 ? null : await r.json();
+    if (data?.user?.language) setLanguage(data.user.language);
+    return data;
   }, []);
   const refresh = useCallback(async () => {
     const data = await read("/api/state");
@@ -178,7 +182,7 @@ function App() {
         const data = await read("/api/state");
         setSnapshot(data);
       } catch (e) {
-        if ((e as Error).message !== "No autenticado") setError("");
+        if ((e as Error).message !== tr("No autenticado")) setError("");
       } finally {
         setReady(true);
       }
@@ -299,7 +303,7 @@ function App() {
     return (
       <div className="full-loading">
         <Leaf size={34} />
-        <p>Preparando tu espacio…</p>
+        <p>{tr("Preparando tu espacio…")}</p>
         <LoaderCircle className="spin" />
       </div>
     );
@@ -350,18 +354,18 @@ function App() {
           </span>
           Focus Hub<span className="brand-dot">.</span>
         </a>
-        <div className="workspace-label">TU ESPACIO PERSONAL</div>
+        <div className="workspace-label">{tr("TU ESPACIO PERSONAL")}</div>
         <nav>
           {nav.map((n) => (
             <button
               key={n.key}
               className={"nav-link " + (route.page === n.key ? "active" : "")}
               onClick={() => go(n.key)}
-              aria-label={n.label}
-              title={n.label}
+              aria-label={tr(n.label)}
+              title={tr(n.label)}
             >
               <n.icon size={19} />
-              {n.label}
+              {tr(n.label)}
               {n.key === "tasks" && (
                 <span className="nav-count">{open.length}</span>
               )}
@@ -374,11 +378,11 @@ function App() {
           </div>
           <div>
             <strong>{data.user.display_name}</strong>
-            <span>Espacio privado</span>
+            <span>{tr("Espacio privado")}</span>
           </div>
           <button
             className="icon-button"
-            aria-label="Cerrar sesión"
+            aria-label={tr("Cerrar sesión")}
             onClick={async () => {
               try {
                 await read("/api/session", {
@@ -398,16 +402,15 @@ function App() {
       </aside>
       <div className="main-shell">
         <header className="topbar">
-          <span className="breadcrumb">
-            Mi espacio <ChevronRight size={13} />{" "}
-            <strong>{nav.find((n) => n.key === route.page)?.label}</strong>
+          <span className="breadcrumb">{tr("Mi espacio ")}<ChevronRight size={13} />{" "}
+            <strong>{tr(nav.find((n) => n.key === route.page)?.label ?? "")}</strong>
           </span>
           <form className="quick-capture" onSubmit={quickCapture}>
             <Plus size={17} />
             <input
               id="quick-capture"
-              aria-label="Captura rápida de tarea"
-              placeholder="Añade una tarea y pulsa Enter"
+              aria-label={tr("Captura rápida de tarea")}
+              placeholder={tr("Añade una tarea y pulsa Enter")}
               readOnly={captureBusy}
               value={capture}
               onChange={(e) => {
@@ -419,59 +422,52 @@ function App() {
             <button
               type="submit"
               className="icon-button"
-              aria-label="Crear tarea"
+              aria-label={tr("Crear tarea")}
               disabled={!capture.trim() || captureBusy}
             >
               <ArrowUpRight size={17} />
             </button>
           </form>
           <span className="private-badge">
-            <span />
-            Privado
-          </span>
+            <span />{tr("Privado")}</span>
         </header>
         {error && (
           <div role="alert" className="error-banner">
-            {error}
-            <button onClick={() => setError("")} aria-label="Cerrar error">
+            {translateError(error)}
+            <button onClick={() => setError("")} aria-label={tr("Cerrar error")}>
               <X size={16} />
             </button>
           </div>
         )}
         {showSaving && busy > 0 && (
           <div className="saving" role="status">
-            <LoaderCircle size={13} className="spin" /> Guardando…
-          </div>
+            <LoaderCircle size={13} className="spin" />{tr(" Guardando…")}</div>
         )}
         <main>
           {route.page === "home" && <HomePage {...shared} go={go} />}
           {route.page === "tasks" && (
             <>
               <PageHeading
-                title="Tus tareas"
+                title={tr("Tus tareas")}
                 action={
                   <div className="segmented">
                     <button
                       className={taskView === "board" ? "selected" : ""}
                       onClick={() => setTaskView("board")}
                     >
-                      <LayoutGrid size={16} />
-                      Kanban
-                    </button>
+                      <LayoutGrid size={16} />{tr("Kanban")}</button>
                     <button
                       className={taskView === "table" ? "selected" : ""}
                       onClick={() => setTaskView("table")}
                     >
-                      <List size={16} />
-                      Tabla
-                    </button>
+                      <List size={16} />{tr("Tabla")}</button>
                   </div>
                 }
               />
-              <div className="quick-filters" role="group" aria-label="Filtros rápidos">
+              <div className="quick-filters" role="group" aria-label={tr("Filtros rápidos")}>
                 {([
-                  ["all","Todas"],["inbox","Bandeja"],["today","Hoy"],
-                  ["priority","Prioritarias"],["waiting","En espera"],["blocked","Bloqueadas"],
+                  ["all",tr("Todas")],["inbox",tr("Bandeja")],["today",tr("Hoy")],
+                  ["priority",tr("Prioritarias")],["waiting",tr("En espera")],["blocked",tr("Bloqueadas")],
                 ] as const).map(([key,label])=><button type="button" key={key} className="filter-chip" aria-pressed={quickFilter===key} onClick={()=>setQuickFilter(key)}>{label}</button>)}
               </div>
               <Filters
@@ -560,12 +556,12 @@ function App() {
             onClick={() => go(n.key)}
           >
             <n.icon size={20} />
-            <span>{n.label}</span>
+            <span>{tr(n.label)}</span>
           </button>
         ))}
         <button onClick={() => setMore(!more)} className={more ? "active" : ""}>
           <Settings size={20} />
-          <span>Más</span>
+          <span>{tr("Más")}</span>
         </button>
       </nav>
       {more && (
@@ -573,14 +569,14 @@ function App() {
           {nav.slice(4).map((n) => (
             <button key={n.key} onClick={() => go(n.key)}>
               <n.icon size={18} />
-              {n.label}
+              {tr(n.label)}
             </button>
           ))}
         </div>
       )}
       <button
         className="mobile-add"
-        aria-label="Capturar una tarea"
+        aria-label={tr("Capturar una tarea")}
         onClick={() => {
           setCaptureSheet(true);
         }}
@@ -589,9 +585,9 @@ function App() {
       </button>
       <MobileQuickCapture open={captureSheet} onClose={()=>setCaptureSheet(false)} projects={data.projects} onCapture={input=>mutate("/api/tasks","POST",input,true)}/>
       {feedback && <div className="action-feedback" role="status" aria-live="polite">
-        <span>{feedback.message}</span>
-        {feedback.undo && <button type="button" onClick={undoStatus}>Deshacer</button>}
-        <button type="button" aria-label="Cerrar confirmación" onClick={()=>setFeedback(null)}>×</button>
+        <span>{tr(feedback.message)}</span>
+        {feedback.undo && <button type="button" onClick={undoStatus}>{tr("Deshacer")}</button>}
+        <button type="button" aria-label={tr("Cerrar confirmación")} onClick={()=>setFeedback(null)}>×</button>
       </div>}
       {currentTask && (
         <TaskDialog
@@ -635,26 +631,18 @@ function Login({
         </div>
         <div>
           <span className="eyebrow">FOCUS HUB</span>
-          <h1>
-            Tareas,
-            <br />
-            proyectos y
-            <br />
-            <em>diario.</em>
+          <h1>{tr("Tareas,")}<br />{tr("proyectos y")}<br />
+            <em>{tr("diario.")}</em>
           </h1>
-          <p>
-            Captura, organiza y consulta tu trabajo.
-            <br />
-            Tus tareas y su historial, en un solo lugar.
-          </p>
+          <p>{tr("Captura, organiza y consulta tu trabajo.")}<br />{tr("Tus tareas y su historial, en un solo lugar.")}</p>
         </div>
-        <span className="story-footer">Acceso privado</span>
+        <span className="story-footer">{tr("Acceso privado")}</span>
       </section>
       <section className="login-form">
         <div>
-          <span className="eyebrow">TU ESPACIO PERSONAL</span>
-          <h2>Acceder a Focus Hub</h2>
-          <p>Introduce tus credenciales.</p>
+          <span className="eyebrow">{tr("TU ESPACIO PERSONAL")}</span>
+          <h2>{tr("Acceder a Focus Hub")}</h2>
+          <p>{tr("Introduce tus credenciales.")}</p>
           <form
             onSubmit={async (e) => {
               e.preventDefault();
@@ -675,9 +663,7 @@ function Login({
               }
             }}
           >
-            <label>
-              Correo electrónico
-              <input
+            <label>{tr("Correo electrónico")}<input
                 type="email"
                 autoComplete="username"
                 required
@@ -685,9 +671,7 @@ function Login({
                 onChange={(e) => setEmail(e.target.value)}
               />
             </label>
-            <label>
-              Contraseña
-              <input
+            <label>{tr("Contraseña")}<input
                 type="password"
                 autoComplete="current-password"
                 required
@@ -697,18 +681,15 @@ function Login({
             </label>
             {error && (
               <p role="alert" className="error-text">
-                {error}
+                {translateError(error)}
               </p>
             )}
             <button className="button primary" disabled={busy}>
-              {busy ? "Entrando…" : "Entrar en mi espacio"}
+              {busy ? tr("Entrando…") : tr("Entrar en mi espacio")}
               <ArrowUpRight size={17} />
             </button>
           </form>
-          <p className="login-help">
-            Acceso privado. La cuenta se configura con el comando de
-            administración del entorno.
-          </p>
+          <p className="login-help">{tr("Acceso privado. La cuenta se configura con el comando de administración del entorno.")}</p>
         </div>
       </section>
     </div>
@@ -737,8 +718,8 @@ function PageHeading({
   );
 }
 function Empty({
-  title = "No hay elementos",
-  text = "Captura tu primera tarea en la barra superior.",
+  title = tr("No hay elementos"),
+  text = tr("Captura tu primera tarea en la barra superior."),
   icon: Icon = Leaf,
 }: {
   title?: string;
@@ -776,7 +757,7 @@ function TaskLine({
       <button
         className="check-task"
         aria-label={
-          (task.status === "completed" ? "Reabrir " : "Completar ") + task.title
+          (task.status === "completed" ? tr("Reabrir ") : tr("Completar ")) + task.title
         }
         onClick={() =>
           updateTask(task.id, {
@@ -795,10 +776,10 @@ function TaskLine({
         <span>
           <span className={"task-inline-status status-" + task.status}>
             <i className={"dot state-dot " + task.status} />
-            {statusLabels[task.status]}
+            {tr(statusLabels[task.status])}
           </span>
           <span className="project-dot" style={{"--project-color":p?.color??"#757e88"} as React.CSSProperties}>
-            {p?.name??"Bandeja de entrada"}
+            {p?.name??tr("Bandeja de entrada")}
           </span>
           {task.waiting_on && ` · ${task.waiting_on}`}
           <span className="inline-mobile-priority">
@@ -836,7 +817,7 @@ function HomePage(props: Shared & { go: (p: Page, path?: string) => void }) {
   return (
     <>
       <PageHeading
-        eyebrow={new Intl.DateTimeFormat("es", {
+        eyebrow={new Intl.DateTimeFormat(locale(), {
           weekday: "long",
           day: "numeric",
           month: "long",
@@ -844,26 +825,26 @@ function HomePage(props: Shared & { go: (p: Page, path?: string) => void }) {
         })
           .format(new Date(today + "T12:00:00Z"))
           .toUpperCase()}
-        title="Tu espacio"
+        title={tr("Tu espacio")}
         action={
-          <PeriodNav date={week} onChange={setWeek} step={7} label="Semana" />
+          <PeriodNav date={week} onChange={setWeek} step={7} label={tr("Semana")} />
         }
       />
       <div className="dashboard-grid">
         <section className="panel weekly-panel">
           <PanelTitle
             icon={Target}
-            title="Mi foco de la semana"
-            subtitle="Selecciona hasta 5 tareas para esta semana."
-            tag="HASTA 5"
+            title={tr("Mi foco de la semana")}
+            subtitle={tr("Selecciona hasta 5 tareas para esta semana.")}
+            tag={tr("HASTA 5")}
           />
           <FocusPanel {...props} type="weekly" date={week} />
         </section>
         <section className="panel today-panel">
           <PanelTitle
             icon={CheckCircle2}
-            title="Hoy"
-            subtitle="Selecciona hasta 3 tareas para hoy."
+            title={tr("Hoy")}
+            subtitle={tr("Selecciona hasta 3 tareas para hoy.")}
             tag={Temporal.PlainDate.from(today).day.toString()}
           />
           <FocusPanel {...props} type="daily" date={today} />
@@ -871,11 +852,9 @@ function HomePage(props: Shared & { go: (p: Page, path?: string) => void }) {
       </div>
       <div className="section-heading">
         <div>
-          <h2>Objetivos estratégicos</h2>
+          <h2>{tr("Objetivos estratégicos")}</h2>
         </div>
-        <button className="text-button" onClick={() => go("projects")}>
-          Gestionar objetivos
-          <ArrowUpRight size={15} />
+        <button className="text-button" onClick={() => go("projects")}>{tr("Gestionar objetivos")}<ArrowUpRight size={15} />
         </button>
       </div>
       <div className="goal-grid">
@@ -885,8 +864,8 @@ function HomePage(props: Shared & { go: (p: Page, path?: string) => void }) {
         {!goals.length && (
           <div className="panel full">
             <Empty
-              title="Sin objetivos activos"
-              text="Define un objetivo y sus hitos en Proyectos."
+              title={tr("Sin objetivos activos")}
+              text={tr("Define un objetivo y sus hitos en Proyectos.")}
               icon={Target}
             />
           </div>
@@ -894,13 +873,10 @@ function HomePage(props: Shared & { go: (p: Page, path?: string) => void }) {
       </div>
       <div className="section-heading">
         <div>
-          <h2>
-            Proyectos activos <span className="count">{active.length}</span>
+          <h2>{tr("Proyectos activos ")}<span className="count">{active.length}</span>
           </h2>
         </div>
-        <button className="text-button" onClick={() => go("projects")}>
-          Ver proyectos
-          <ArrowUpRight size={15} />
+        <button className="text-button" onClick={() => go("projects")}>{tr("Ver proyectos")}<ArrowUpRight size={15} />
         </button>
       </div>
       <div className="project-grid">
@@ -915,8 +891,8 @@ function HomePage(props: Shared & { go: (p: Page, path?: string) => void }) {
         {!active.length && (
           <div className="panel full">
             <Empty
-              title="Sin proyectos activos"
-              text="Crea un proyecto para organizar tus tareas."
+              title={tr("Sin proyectos activos")}
+              text={tr("Crea un proyecto para organizar tus tareas.")}
               icon={FolderOpen}
             />
           </div>
@@ -924,31 +900,29 @@ function HomePage(props: Shared & { go: (p: Page, path?: string) => void }) {
       </div>
       <div className="section-heading">
         <div>
-          <h2>Mis avances</h2>
+          <h2>{tr("Mis avances")}</h2>
         </div>
-        <button className="text-button" onClick={() => go("progress")}>
-          Ver mis avances
-          <ArrowUpRight size={15} />
+        <button className="text-button" onClick={() => go("progress")}>{tr("Ver mis avances")}<ArrowUpRight size={15} />
         </button>
       </div>
       <div className="metrics-grid">
         <Metric
-          label="Tareas completadas"
+          label={tr("Tareas completadas")}
           value={completedIds.size}
-          caption="Esta semana"
+          caption={tr("Esta semana")}
         />
         <Metric
-          label="Nuevas tareas"
+          label={tr("Nuevas tareas")}
           value={created}
-          caption="Capturadas esta semana"
+          caption={tr("Capturadas esta semana")}
         />
         <Metric
-          label="Reducción neta"
+          label={tr("Reducción neta")}
           value={completedIds.size - created}
-          caption="Completadas − creadas"
+          caption={tr("Completadas − creadas")}
         />
         <Metric
-          label="Por seguir"
+          label={tr("Por seguir")}
           value={
             data.tasks.filter(
               (t) =>
@@ -956,7 +930,7 @@ function HomePage(props: Shared & { go: (p: Page, path?: string) => void }) {
                 ["pending_review", "waiting_external"].includes(t.status),
             ).length
           }
-          caption="En espera o revisión"
+          caption={tr("En espera o revisión")}
         />
       </div>
 
@@ -979,10 +953,10 @@ function Metric({
   caption: string;
 }) {
   return (
-    <div className="metric" data-tone={label==="Tareas completadas"?"completed":label==="Nuevas tareas"?"created":label==="Reducción neta"?(value>0?"positive":value<0?"negative":"neutral"):"neutral"}>
+    <div className="metric" data-tone={label===tr("Tareas completadas")?"completed":label===tr("Nuevas tareas")?"created":label===tr("Reducción neta")?(value>0?"positive":value<0?"negative":"neutral"):"neutral"}>
       <span>{label}</span>
       <strong>
-        {value > 0 && label === "Reducción neta" ? "+" : ""}
+        {value > 0 && label === tr("Reducción neta") ? "+" : ""}
         {value}
       </strong>
       <small>{caption}</small>
@@ -1028,7 +1002,7 @@ function PeriodNav({
     <div className="period-nav">
       <button
         className="icon-button"
-        aria-label="Periodo anterior"
+        aria-label={tr("Periodo anterior")}
         onClick={() => onChange(dateAdd(date, -step))}
       >
         <ChevronLeft size={17} />
@@ -1039,7 +1013,7 @@ function PeriodNav({
       </span>
       <button
         className="icon-button"
-        aria-label="Periodo siguiente"
+        aria-label={tr("Periodo siguiente")}
         onClick={() => onChange(dateAdd(date, step))}
       >
         <ChevronRight size={17} />
@@ -1084,21 +1058,21 @@ function FocusPanel({
               <TaskLine task={task} {...props} />
               <div className="reorder">
                 <button
-                  aria-label={"Subir " + task.title}
+                  aria-label={tr("Subir ") + task.title}
                   disabled={!i}
                   onClick={() => move(i, -1)}
                 >
                   <ArrowUp size={13} />
                 </button>
                 <button
-                  aria-label={"Bajar " + task.title}
+                  aria-label={tr("Bajar ") + task.title}
                   disabled={i === ids.length - 1}
                   onClick={() => move(i, 1)}
                 >
                   <ArrowDown size={13} />
                 </button>
                 <button
-                  aria-label={"Quitar del foco " + task.title}
+                  aria-label={tr("Quitar del foco ") + task.title}
                   onClick={() => save(ids.filter((id) => id !== task.id))}
                 >
                   <X size={13} />
@@ -1114,24 +1088,21 @@ function FocusPanel({
             </span>
             <p>
               {type === "weekly"
-                ? "No hay tareas en el foco semanal."
-                : "No hay tareas en el foco de hoy."}
+                ? tr("No hay tareas en el foco semanal.")
+                : tr("No hay tareas en el foco de hoy.")}
             </p>
-            <small>Selecciona tareas que ya tienes, sin duplicarlas.</small>
+            <small>{tr("Selecciona tareas que ya tienes, sin duplicarlas.")}</small>
           </div>
         )}
       </div>
       {ids.length < limit && (
         <button className="add-subtle" onClick={() => setAdding(!adding)}>
-          <Plus size={16} />
-          Elegir tarea {ids.length > 0 && `(${ids.length}/${limit})`}
+          <Plus size={16} />{tr("Elegir tarea ")}{ids.length > 0 && `(${ids.length}/${limit})`}
         </button>
       )}
       {adding && (
         <div className="focus-picker">
-          <label className="sr-only" htmlFor={"focus-" + type}>
-            Elegir tarea para el foco
-          </label>
+          <label className="sr-only" htmlFor={"focus-" + type}>{tr("Elegir tarea para el foco")}</label>
           <select
             id={"focus-" + type}
             defaultValue=""
@@ -1140,7 +1111,7 @@ function FocusPanel({
                 setAdding(false);
             }}
           >
-            <option value="">Selecciona una tarea abierta…</option>
+            <option value="">{tr("Selecciona una tarea abierta…")}</option>
             {data.tasks
               .filter(
                 (t) =>
@@ -1167,8 +1138,8 @@ function GoalCard({ goal, data }: { goal: Goal; data: Snapshot }) {
       <span className="goal-label">
         <Target size={14} />
         {goal.period_end
-          ? `Hasta ${niceDate(goal.period_end)}`
-          : "Objetivo activo"}
+          ? tr("Hasta {0}", niceDate(goal.period_end))
+          : tr("Objetivo activo")}
       </span>
       <h3>{goal.title}</h3>
       {goal.description && <p>{goal.description}</p>}
@@ -1183,7 +1154,7 @@ function GoalCard({ goal, data }: { goal: Goal; data: Snapshot }) {
         <span>
           {milestones.length
             ? `${achieved} de ${milestones.length} hitos`
-            : "Sin hitos definidos"}
+            : tr("Sin hitos definidos")}
         </span>
         {milestones.length > 0 && (
           <strong>{Math.round((achieved / milestones.length) * 100)}%</strong>
@@ -1232,23 +1203,19 @@ function ProjectCard({
           {data.goals.find((g) => g.id === p.goal_id)?.title}
         </div>
       )}
-      <p>{p.description || "Sin descripción"}</p>
+      <p>{p.description || tr("Sin descripción")}</p>
       <div className="project-card-counts">
         <span>
-          <strong>{tasks.length}</strong> abiertas
-        </span>
+          <strong>{tasks.length}</strong>{tr(" abiertas")}</span>
         <span>
           <i className="dot state-dot in_progress" aria-hidden="true" />
-          {tasks.filter((t) => t.status === "in_progress").length} en curso
-        </span>
+          {tasks.filter((t) => t.status === "in_progress").length}{tr(" en curso")}</span>
         <span>
           <i className="dot state-dot pending_review" aria-hidden="true" />
-          {tasks.filter((t) => t.status === "pending_review").length} en revisión
-        </span>
+          {tasks.filter((t) => t.status === "pending_review").length}{tr(" en revisión")}</span>
         <span>
           <i className="dot state-dot waiting_external" aria-hidden="true" />
-          {tasks.filter((t) => t.status === "waiting_external").length} en espera
-        </span>
+          {tasks.filter((t) => t.status === "waiting_external").length}{tr(" en espera")}</span>
       </div>
       {next && (
         <div className="next-milestone">
@@ -1278,22 +1245,22 @@ function Filters(p: FilterProps) {
   const clear=()=>{p.setSearch("");p.setProjectFilter("");p.setStatusFilter("");p.setPriorityFilter("");p.onClear?.();};
   return <div className="task-filter-tools">
     <div className="filters filter-search-row">
-      <div className="search-field"><Search size={16}/><input aria-label="Buscar tareas" placeholder="Buscar tareas…" value={p.search} onChange={event=>p.setSearch(event.target.value)}/></div>
-      {active&&<button type="button" className="text-button" onClick={clear}>Limpiar filtros</button>}
+      <div className="search-field"><Search size={16}/><input aria-label={tr("Buscar tareas")} placeholder={tr("Buscar tareas…")} value={p.search} onChange={event=>p.setSearch(event.target.value)}/></div>
+      {active&&<button type="button" className="text-button" onClick={clear}>{tr("Limpiar filtros")}</button>}
     </div>
     <details className="advanced-filters" open={advanced||undefined}>
-      <summary>Filtros avanzados{advanced?" · activos":""}</summary>
+      <summary>{tr("Filtros avanzados")}{advanced?" · activos":""}</summary>
       <div className="filters">
-        <select aria-label="Filtrar por proyecto" value={p.projectFilter} onChange={event=>p.setProjectFilter(event.target.value)}>
-          <option value="">Todos los proyectos</option><option value="inbox">Bandeja de entrada</option>
+        <select aria-label={tr("Filtrar por proyecto")} value={p.projectFilter} onChange={event=>p.setProjectFilter(event.target.value)}>
+          <option value="">{tr("Todos los proyectos")}</option><option value="inbox">{tr("Bandeja de entrada")}</option>
           {p.data.projects.map(project=><option key={project.id} value={project.id}>{project.name}</option>)}
         </select>
-        <select aria-label="Filtrar por estado" value={p.statusFilter} onChange={event=>p.setStatusFilter(event.target.value)}>
-          <option value="">{p.activeOnly?"Estados activos":"Todos los estados"}</option>
-          {STATUSES.filter(status=>!p.activeOnly||!["completed","cancelled"].includes(status)).map(status=><option key={status} value={status}>{statusLabels[status]}</option>)}
+        <select aria-label={tr("Filtrar por estado")} value={p.statusFilter} onChange={event=>p.setStatusFilter(event.target.value)}>
+          <option value="">{p.activeOnly?tr("Estados activos"):tr("Todos los estados")}</option>
+          {STATUSES.filter(status=>!p.activeOnly||!["completed","cancelled"].includes(status)).map(status=><option key={status} value={status}>{tr(statusLabels[status])}</option>)}
         </select>
-        <select aria-label="Filtrar por prioridad" value={p.priorityFilter} onChange={event=>p.setPriorityFilter(event.target.value)}>
-          <option value="">Toda prioridad</option>{PRIORITIES.map(priority=><option key={priority} value={priority}>{priorityLabels[priority]}</option>)}
+        <select aria-label={tr("Filtrar por prioridad")} value={p.priorityFilter} onChange={event=>p.setPriorityFilter(event.target.value)}>
+          <option value="">{tr("Toda prioridad")}</option>{PRIORITIES.map(priority=><option key={priority} value={priority}>{tr(priorityLabels[priority])}</option>)}
         </select>
       </div>
     </details>
@@ -1357,10 +1324,10 @@ function TaskDialog({
         aria-labelledby="task-title"
       >
         <div className="dialog-top">
-          <span className="eyebrow">DETALLE DE LA TAREA</span>
+          <span className="eyebrow">{tr("DETALLE DE LA TAREA")}</span>
           <button
             className="icon-button"
-            aria-label="Cerrar detalle"
+            aria-label={tr("Cerrar detalle")}
             onClick={onClose}
           >
             <X size={20} />
@@ -1398,9 +1365,7 @@ function TaskDialog({
               onClose();
           }}
         >
-          <label>
-            Título
-            <input
+          <label>{tr("Título")}<input
               id="task-title"
               required
               maxLength={500}
@@ -1408,50 +1373,42 @@ function TaskDialog({
               onChange={(e) => set("title", e.target.value)}
             />
           </label>
-          <label>
-            Descripción
-            <textarea
+          <label>{tr("Descripción")}<textarea
               rows={3}
               value={draft.description}
               onChange={(e) => set("description", e.target.value)}
-              placeholder="Añade contexto, si lo necesitas…"
+              placeholder={tr("Añade contexto, si lo necesitas…")}
             />
           </label>
           <div className="form-grid">
-            <label>
-              Estado
-              <select
+            <label>{tr("Estado")}<select
                 className={"status-select status-" + draft.status}
                 value={draft.status}
                 onChange={(e) => set("status", e.target.value)}
               >
                 {STATUSES.map((s) => (
                   <option key={s} value={s}>
-                    {statusLabels[s]}
+                    {tr(statusLabels[s])}
                   </option>
                 ))}
               </select>
             </label>
-            <label>
-              Prioridad
-              <select
+            <label>{tr("Prioridad")}<select
                 value={draft.priority}
                 onChange={(e) => set("priority", e.target.value)}
               >
                 {PRIORITIES.map((p) => (
                   <option key={p} value={p}>
-                    {priorityLabels[p]}
+                    {tr(priorityLabels[p])}
                   </option>
                 ))}
               </select>
             </label>
-            <label>
-              Proyecto
-              <select
+            <label>{tr("Proyecto")}<select
                 value={draft.project_id ?? ""}
                 onChange={(e) => set("project_id", e.target.value || null)}
               >
-                <option value="">Bandeja de entrada</option>
+                <option value="">{tr("Bandeja de entrada")}</option>
                 {data.projects.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name}
@@ -1459,13 +1416,11 @@ function TaskDialog({
                 ))}
               </select>
             </label>
-            <label>
-              Tarea principal
-              <select
+            <label>{tr("Tarea principal")}<select
                 value={draft.parent_task_id ?? ""}
                 onChange={(e) => set("parent_task_id", e.target.value || null)}
               >
-                <option value="">Sin tarea principal</option>
+                <option value="">{tr("Sin tarea principal")}</option>
                 {data.tasks
                   .filter(
                     (t) =>
@@ -1478,34 +1433,26 @@ function TaskDialog({
                   ))}
               </select>
             </label>
-            <label>
-              Vencimiento
-              <input
+            <label>{tr("Vencimiento")}<input
                 type="date"
                 value={draft.due_at?.slice(0, 10) ?? ""}
                 onChange={(e) => set("due_at", e.target.value || null)}
               />
             </label>
-            <label>
-              Seguimiento
-              <input
+            <label>{tr("Seguimiento")}<input
                 type="date"
                 value={draft.follow_up_at?.slice(0, 10) ?? ""}
                 onChange={(e) => set("follow_up_at", e.target.value || null)}
               />
             </label>
           </div>
-          <label>
-            En espera de
-            <input
+          <label>{tr("En espera de")}<input
               value={draft.waiting_on}
               onChange={(e) => set("waiting_on", e.target.value)}
-              placeholder="Persona, respuesta o entrega (opcional)"
+              placeholder={tr("Persona, respuesta o entrega (opcional)")}
             />
           </label>
-          <label>
-            Etiquetas, separadas por comas
-            <input
+          <label>{tr("Etiquetas, separadas por comas")}<input
               value={tagsText}
               onChange={(e) => setTagsText(e.target.value)}
             />
@@ -1517,7 +1464,7 @@ function TaskDialog({
               onClick={async () => {
                 if (
                   confirm(
-                    "¿Eliminar esta tarea? Se ocultará de las vistas, conservando su registro histórico.",
+                    tr("¿Eliminar esta tarea? Se ocultará de las vistas, conservando su registro histórico."),
                   )
                 ) {
                   if (await mutate("/api/tasks/" + task.id, "DELETE"))
@@ -1525,17 +1472,13 @@ function TaskDialog({
                 }
               }}
             >
-              <Trash2 size={15} />
-              Eliminar
-            </button>
-            <button className="button primary" disabled={props.busy}>
-              Guardar cambios
-              <Check size={16} />
+              <Trash2 size={15} />{tr("Eliminar")}</button>
+            <button className="button primary" disabled={props.busy}>{tr("Guardar cambios")}<Check size={16} />
             </button>
           </div>
         </form>
         <section className="dialog-section">
-          <h3>Subtareas</h3>
+          <h3>{tr("Subtareas")}</h3>
           {data.tasks
             .filter((t) => !t.deleted_at && t.parent_task_id === task.id)
             .map((t) => (
@@ -1558,8 +1501,8 @@ function TaskDialog({
             }}
           >
             <input
-              aria-label="Nueva subtarea"
-              placeholder="Añadir subtarea…"
+              aria-label={tr("Nueva subtarea")}
+              placeholder={tr("Añadir subtarea…")}
               value={subtask}
               onChange={(e) => setSubtask(e.target.value)}
             />
@@ -1569,10 +1512,10 @@ function TaskDialog({
           </form>
         </section>
         <section className="dialog-section">
-          <h3>Vincular al diario</h3>
+          <h3>{tr("Vincular al diario")}</h3>
           <div className="inline-form">
             <input
-              aria-label="Día del diario para vincular"
+              aria-label={tr("Día del diario para vincular")}
               type="date"
               value={linkDate}
               onChange={(e) => setLinkDate(e.target.value)}
@@ -1590,16 +1533,13 @@ function TaskDialog({
                   revision: entry?.revision ?? 0,
                 });
               }}
-            >
-              Vincular
-            </button>
+            >{tr("Vincular")}</button>
           </div>
         </section>
         <section className="dialog-section">
-          <h3>Historial verificado</h3>
+          <h3>{tr("Historial verificado")}</h3>
           {task.completed_at && (
-            <p className="completion-note">
-              Completada el {niceDate(task.completed_at, data.user.timezone)}
+            <p className="completion-note">{tr("Completada el ")}{niceDate(task.completed_at, data.user.timezone)}
             </p>
           )}
           <ol className="event-history">
@@ -1625,36 +1565,34 @@ function eventLabel(type: string) {
   return (
     (
       {
-        created: "Tarea creada",
-        completed: "Tarea completada",
-        reopened: "Tarea reabierta",
-        cancelled: "Tarea cancelada",
-        status_changed: "Estado actualizado",
-        priority_changed: "Prioridad actualizada",
-        project_changed: "Proyecto actualizado",
-        title_changed: "Título actualizado",
-        deleted: "Tarea eliminada",
-        restored: "Tarea restaurada",
+        created: tr("Tarea creada"),
+        completed: tr("Tarea completada"),
+        reopened: tr("Tarea reabierta"),
+        cancelled: tr("Tarea cancelada"),
+        status_changed: tr("Estado actualizado"),
+        priority_changed: tr("Prioridad actualizada"),
+        project_changed: tr("Proyecto actualizado"),
+        title_changed: tr("Título actualizado"),
+        deleted: tr("Tarea eliminada"),
+        restored: tr("Tarea restaurada"),
       } as Record<string, string>
-    )[type] ?? "Tarea actualizada"
+    )[type] ?? tr("Tarea actualizada")
   );
 }
 function eventValue(json: string, data: Snapshot) {
   try {
     const v = JSON.parse(json);
     if (typeof v === "string")
-      return (
-        statusLabels[v as Status] ?? priorityLabels[v as Task["priority"]] ?? v
-      );
+      { const label=statusLabels[v as Status] ?? priorityLabels[v as Task["priority"]]; return label ? tr(label) : v; }
     if (v && typeof v === "object") {
       return [
-        v.status && statusLabels[v.status as Status],
+        v.status && tr(statusLabels[v.status as Status]),
         v.priority &&
-          "Prioridad: " + priorityLabels[v.priority as Task["priority"]],
+          tr("Prioridad: ") + tr(priorityLabels[v.priority as Task["priority"]]),
         "project_id" in v &&
-          "Proyecto: " +
+          tr("Proyecto: ") +
             (data.projects.find((p) => p.id === v.project_id)?.name ??
-              "Bandeja de entrada"),
+              tr("Bandeja de entrada")),
       ]
         .filter(Boolean)
         .join(" · ");
@@ -1717,14 +1655,14 @@ function JournalPage({
   return (
     <>
       <PageHeading
-        title="Mi diario"
-        subtitle="Notas y tareas vinculadas por día."
+        title={tr("Mi diario")}
+        subtitle={tr("Notas y tareas vinculadas por día.")}
         action={
           <div className="journal-date">
             <PeriodNav date={date} onChange={onDate} />
             <input
               type="date"
-              aria-label="Fecha del diario"
+              aria-label={tr("Fecha del diario")}
               value={date}
               onChange={(e) => e.target.value && onDate(e.target.value)}
             />
@@ -1735,10 +1673,10 @@ function JournalPage({
         <section className="journal-paper">
           <div className="journal-paper-header">
             <span className="eyebrow">
-              {date === props.today ? "HOY" : "TU DIARIO"}
+              {date === props.today ? tr("HOY") : tr("TU DIARIO")}
             </span>
             <h2>
-              {new Intl.DateTimeFormat("es", {
+              {new Intl.DateTimeFormat(locale(), {
                 weekday: "long",
                 day: "numeric",
                 month: "long",
@@ -1746,8 +1684,8 @@ function JournalPage({
               }).format(new Date(date + "T12:00:00Z"))}
             </h2>
             <span>
-              {blocks.length} bloques ·{" "}
-              {entry ? "Guardado en tu espacio" : "Sin entrada guardada"}
+              {blocks.length}{tr(" bloques ·")}{" "}
+              {entry ? tr("Guardado en tu espacio") : tr("Sin entrada guardada")}
             </span>
           </div>
           <div className="journal-blocks">
@@ -1761,19 +1699,17 @@ function JournalPage({
             ))}
             {!blocks.length && (
               <div className="journal-prompt">
-                <p>Sin bloques en esta fecha.</p>
-                <span>
-                  Escribe una nota o una tarea en el campo inferior.
-                </span>
+                <p>{tr("Sin bloques en esta fecha.")}</p>
+                <span>{tr("Escribe una nota o una tarea en el campo inferior.")}</span>
               </div>
             )}
           </div>
           <form className="journal-compose" onSubmit={append}>
             <textarea
-              aria-label="Escribir en el diario"
+              aria-label={tr("Escribir en el diario")}
               rows={3}
               placeholder={
-                "Escribe una nota…\n- [ ] Una tarea · # Un encabezado"
+                tr("Escribe una nota…\n- [ ] Una tarea · # Un encabezado")
               }
               value={text}
               onChange={(e) => {
@@ -1789,20 +1725,18 @@ function JournalPage({
             />
             <div className="journal-compose-tools">
               <select
-                aria-label="Indentación del bloque"
+                aria-label={tr("Indentación del bloque")}
                 value={indent}
                 onChange={(e) => setIndent(Number(e.target.value))}
               >
-                <option value={0}>Nivel principal</option>
-                <option value={1}>↳ Subtarea / indentado</option>
+                <option value={0}>{tr("Nivel principal")}</option>
+                <option value={1}>{tr("↳ Subtarea / indentado")}</option>
               </select>
-              <span>Enter para guardar · Mayús+Enter para salto</span>
+              <span>{tr("Enter para guardar · Mayús+Enter para salto")}</span>
               <button
                 className="button primary"
                 disabled={!text.trim() || props.busy}
-              >
-                Añadir
-                <Plus size={16} />
+              >{tr("Añadir")}<Plus size={16} />
               </button>
             </div>
           </form>
@@ -1810,40 +1744,35 @@ function JournalPage({
         <aside className="journal-aside">
           <div className="panel journal-tips">
             <BookOpen size={22} />
-            <h3>Escribe a tu manera.</h3>
-            <p>
-              Las notas siguen siendo notas. Las tareas se conectan con todo tu
-              espacio.
-            </p>
+            <h3>{tr("Escribe a tu manera.")}</h3>
+            <p>{tr("Las notas siguen siendo notas. Las tareas se conectan con todo tu espacio.")}</p>
             <dl>
-              <dt>Una tarea</dt>
+              <dt>{tr("Una tarea")}</dt>
               <dd>
-                <code>- [ ] Preparar propuesta</code>
+                <code>{tr("- [ ] Preparar propuesta")}</code>
               </dd>
-              <dt>Prioridad rápida</dt>
+              <dt>{tr("Prioridad rápida")}</dt>
               <dd>
-                <code>! Alta · !! Crítica</code>
+                <code>{tr("! Alta · !! Crítica")}</code>
               </dd>
-              <dt>Contexto de proyecto</dt>
+              <dt>{tr("Contexto de proyecto")}</dt>
               <dd>
-                <code># Nombre del proyecto</code>
-                <span>
-                  Un encabezado existente da contexto a las siguientes tareas.
-                </span>
+                <code>{tr("# Nombre del proyecto")}</code>
+                <span>{tr("Un encabezado existente da contexto a las siguientes tareas.")}</span>
               </dd>
-              <dt>Proyecto en una línea</dt>
+              <dt>{tr("Proyecto en una línea")}</dt>
               <dd>
-                <code>- [ ] Revisar #proyecto</code>
+                <code>{tr("- [ ] Revisar #proyecto")}</code>
               </dd>
-              <dt>Subtarea</dt>
-              <dd>Selecciona el nivel indentado después de una tarea.</dd>
+              <dt>{tr("Subtarea")}</dt>
+              <dd>{tr("Selecciona el nivel indentado después de una tarea.")}</dd>
             </dl>
           </div>
           <div className="panel">
-            <h3>Otros días</h3>
+            <h3>{tr("Otros días")}</h3>
             <input
-              aria-label="Buscar días del diario"
-              placeholder="Buscar en el diario…"
+              aria-label={tr("Buscar días del diario")}
+              placeholder={tr("Buscar en el diario…")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -1899,7 +1828,7 @@ function JournalBlockView({
         task && !task.deleted_at ? (
           <TaskLine task={task} {...props} />
         ) : (
-          <span className="muted">Referencia a una tarea eliminada</span>
+          <span className="muted">{tr("Referencia a una tarea eliminada")}</span>
         )
       ) : editing ? (
         <form
@@ -1917,17 +1846,17 @@ function JournalBlockView({
         >
           <input
             autoFocus
-            aria-label="Editar bloque"
+            aria-label={tr("Editar bloque")}
             value={text}
             onChange={(e) => setText(e.target.value)}
           />
-          <button className="icon-button" aria-label="Guardar bloque">
+          <button className="icon-button" aria-label={tr("Guardar bloque")}>
             <Check size={16} />
           </button>
           <button
             type="button"
             className="icon-button"
-            aria-label="Cancelar edición"
+            aria-label={tr("Cancelar edición")}
             onClick={() => setEditing(false)}
           >
             <X size={16} />
@@ -1948,12 +1877,12 @@ function JournalBlockView({
       )}
       <button
         className="block-delete"
-        aria-label="Quitar bloque del diario"
-        title="Quitar mención (conserva la tarea)"
+        aria-label={tr("Quitar bloque del diario")}
+        title={tr("Quitar mención (conserva la tarea)")}
         onClick={() => {
           if (
             confirm(
-              "¿Quitar este bloque del diario? Las tareas vinculadas se conservan.",
+              tr("¿Quitar este bloque del diario? Las tareas vinculadas se conservan."),
             )
           )
             mutate("/api/blocks/" + block.id, "DELETE", { revision });
@@ -1985,13 +1914,11 @@ function ProjectsPage({
   return (
     <>
       <PageHeading
-        title="Proyectos y objetivos"
-        subtitle="Proyectos, objetivos e hitos."
+        title={tr("Proyectos y objetivos")}
+        subtitle={tr("Proyectos, objetivos e hitos.")}
         action={
           <button className="button primary" onClick={() => setCreate(!create)}>
-            <Plus size={16} />
-            Nuevo proyecto
-          </button>
+            <Plus size={16} />{tr("Nuevo proyecto")}</button>
         }
       />
       {create && (
@@ -2005,8 +1932,7 @@ function ProjectsPage({
         />
       )}
       <div className="section-heading">
-        <h2>
-          Proyectos{" "}
+        <h2>{tr("Proyectos")}{" "}
           <span className="count">
             {
               data.projects.filter(
@@ -2020,36 +1946,30 @@ function ProjectsPage({
             type="checkbox"
             checked={showArchived}
             onChange={(e) => setShowArchived(e.target.checked)}
-          />
-          Incluir archivados
-        </label>
+          />{tr("Incluir archivados")}</label>
       </div>
       <div className="segmented project-view-toggle">
         <button
           className={view === "cards" ? "selected" : ""}
           onClick={() => setView("cards")}
         >
-          <LayoutGrid size={15} />
-          Tarjetas
-        </button>
+          <LayoutGrid size={15} />{tr("Tarjetas")}</button>
         <button
           className={view === "table" ? "selected" : ""}
           onClick={() => setView("table")}
         >
-          <List size={15} />
-          Tabla de proyectos
-        </button>
+          <List size={15} />{tr("Tabla de proyectos")}</button>
       </div>
       {view === "table" ? (
         <div className="table-wrap">
           <table>
             <thead>
               <tr>
-                <th>Proyecto</th>
-                <th>Objetivo estratégico</th>
-                <th>Estado</th>
-                <th>Fecha objetivo</th>
-                <th>Tareas abiertas</th>
+                <th>{tr("Proyecto")}</th>
+                <th>{tr("Objetivo estratégico")}</th>
+                <th>{tr("Estado")}</th>
+                <th>{tr("Fecha objetivo")}</th>
+                <th>{tr("Tareas abiertas")}</th>
               </tr>
             </thead>
             <tbody>
@@ -2067,14 +1987,14 @@ function ProjectsPage({
                     </td>
                     <td>
                       {data.goals.find((g) => g.id === p.goal_id)?.title ??
-                        "Sin objetivo"}
+                        tr("Sin objetivo")}
                     </td>
                     <td>
                       {p.status === "active"
-                        ? "Activo"
+                        ? tr("Activo")
                         : p.status === "on_hold"
-                          ? "En pausa"
-                          : "Archivado"}
+                          ? tr("En pausa")
+                          : tr("Archivado")}
                     </td>
                     <td>{p.target_date ? niceDate(p.target_date) : "—"}</td>
                     <td>
@@ -2107,8 +2027,8 @@ function ProjectsPage({
           {!data.projects.length && (
             <div className="panel full">
               <Empty
-                title="No hay proyectos"
-                text="Crea un proyecto con su nombre."
+                title={tr("No hay proyectos")}
+                text={tr("Crea un proyecto con su nombre.")}
                 icon={FolderOpen}
               />
             </div>
@@ -2180,7 +2100,7 @@ function EntityForm({
       }}
     >
       <h3>
-        {initial ? "Editar" : "Nuevo"}{" "}
+        {initial ? tr("Editar") : tr("Nuevo")}{" "}
         {kind === "project"
           ? "proyecto"
           : kind === "goal"
@@ -2188,18 +2108,16 @@ function EntityForm({
             : "hito"}
       </h3>
       <label>
-        {kind === "project" ? "Nombre" : "Título"}
+        {kind === "project" ? tr("Nombre") : tr("Título")}
         <input
           autoFocus
           required
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="¿Qué quieres conseguir?"
+          placeholder={tr("¿Qué quieres conseguir?")}
         />
       </label>
-      <label>
-        Descripción
-        <textarea
+      <label>{tr("Descripción")}<textarea
           rows={2}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
@@ -2207,10 +2125,8 @@ function EntityForm({
       </label>
       <div className="form-grid">
         {kind !== "goal" && (
-          <label>
-            Objetivo estratégico
-            <select value={goalId} onChange={(e) => setGoalId(e.target.value)}>
-              <option value="">Sin objetivo asociado</option>
+          <label>{tr("Objetivo estratégico")}<select value={goalId} onChange={(e) => setGoalId(e.target.value)}>
+              <option value="">{tr("Sin objetivo asociado")}</option>
               {data.goals.map((g) => (
                 <option value={g.id} key={g.id}>
                   {g.title}
@@ -2220,13 +2136,11 @@ function EntityForm({
           </label>
         )}
         {kind === "milestone" && (
-          <label>
-            Proyecto
-            <select
+          <label>{tr("Proyecto")}<select
               value={projectId}
               onChange={(e) => setProjectId(e.target.value)}
             >
-              <option value="">Sin proyecto</option>
+              <option value="">{tr("Sin proyecto")}</option>
               {data.projects.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name}
@@ -2236,9 +2150,7 @@ function EntityForm({
           </label>
         )}
         {kind === "project" && (
-          <label>
-            Icono (texto o emoji)
-            <input
+          <label>{tr("Icono (texto o emoji)")}<input
               maxLength={24}
               value={icon}
               onChange={(e) => setIcon(e.target.value)}
@@ -2247,9 +2159,7 @@ function EntityForm({
           </label>
         )}
         {kind === "project" && (
-          <label>
-            Color
-            <input
+          <label>{tr("Color")}<input
               type="color"
               value={color}
               onChange={(e) => setColor(e.target.value)}
@@ -2257,9 +2167,7 @@ function EntityForm({
           </label>
         )}
         {kind === "goal" && (
-          <label>
-            Inicio
-            <input
+          <label>{tr("Inicio")}<input
               type="date"
               value={start}
               onChange={(e) => setStart(e.target.value)}
@@ -2267,18 +2175,14 @@ function EntityForm({
           </label>
         )}
         {kind !== "milestone" && (
-          <label>
-            Fecha objetivo
-            <input
+          <label>{tr("Fecha objetivo")}<input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
             />
           </label>
         )}
-        <label>
-          Estado
-          <select value={status} onChange={(e) => setStatus(e.target.value)}>
+        <label>{tr("Estado")}<select value={status} onChange={(e) => setStatus(e.target.value)}>
             {(kind === "project"
               ? ["active", "on_hold", "archived"]
               : kind === "goal"
@@ -2289,12 +2193,12 @@ function EntityForm({
                 {
                   (
                     {
-                      active: "Activo",
-                      on_hold: "En pausa",
-                      archived: "Archivado",
-                      achieved: "Conseguido",
-                      paused: "En pausa",
-                      pending: "Pendiente",
+                      active: tr("Activo"),
+                      on_hold: tr("En pausa"),
+                      archived: tr("Archivado"),
+                      achieved: tr("Conseguido"),
+                      paused: tr("En pausa"),
+                      pending: tr("Pendiente"),
                     } as Record<string, string>
                   )[s]
                 }
@@ -2304,12 +2208,8 @@ function EntityForm({
         </label>
       </div>
       <div className="dialog-actions">
-        <button type="button" className="button" onClick={onCancel}>
-          Cancelar
-        </button>
-        <button className="button primary">
-          Guardar
-          <Check size={16} />
+        <button type="button" className="button" onClick={onCancel}>{tr("Cancelar")}</button>
+        <button className="button primary">{tr("Guardar")}<Check size={16} />
         </button>
       </div>
     </form>
@@ -2323,7 +2223,7 @@ function GoalsManager(props: Shared) {
     <>
       <div className="section-heading">
         <div>
-          <h2>Objetivos estratégicos</h2>
+          <h2>{tr("Objetivos estratégicos")}</h2>
         </div>
         <div className="button-row">
           <button
@@ -2333,9 +2233,7 @@ function GoalsManager(props: Shared) {
               setEdit(null);
             }}
           >
-            <Flag size={15} />
-            Nuevo hito
-          </button>
+            <Flag size={15} />{tr("Nuevo hito")}</button>
           <button
             className="button primary"
             onClick={() => {
@@ -2343,9 +2241,7 @@ function GoalsManager(props: Shared) {
               setEdit(null);
             }}
           >
-            <Plus size={15} />
-            Nuevo objetivo
-          </button>
+            <Plus size={15} />{tr("Nuevo objetivo")}</button>
         </div>
       </div>
       {create && (
@@ -2386,12 +2282,12 @@ function GoalsManager(props: Shared) {
             <div className="goal-actions">
               <span className="muted">
                 {g.status === "active"
-                  ? "Activo"
+                  ? tr("Activo")
                   : g.status === "achieved"
-                    ? "Conseguido"
+                    ? tr("Conseguido")
                     : g.status === "paused"
-                      ? "En pausa"
-                      : "Archivado"}
+                      ? tr("En pausa")
+                      : tr("Archivado")}
               </span>
               <button
                 className="text-button"
@@ -2399,9 +2295,7 @@ function GoalsManager(props: Shared) {
                   setEdit(g);
                   setCreate(null);
                 }}
-              >
-                Editar
-              </button>
+              >{tr("Editar")}</button>
             </div>
             <MilestoneList
               milestones={data.milestones.filter((m) => m.goal_id === g.id)}
@@ -2413,15 +2307,15 @@ function GoalsManager(props: Shared) {
       {!data.goals.length && (
         <div className="panel">
           <Empty
-            title="Sin objetivos"
-            text="Define un objetivo y mide avances reales mediante hitos, no por cantidad de tareas."
+            title={tr("Sin objetivos")}
+            text={tr("Define un objetivo y mide avances reales mediante hitos, no por cantidad de tareas.")}
             icon={Target}
           />
         </div>
       )}
       {data.milestones.some((m) => !m.goal_id) && (
         <div className="panel standalone-milestones">
-          <h3>Hitos sin objetivo</h3>
+          <h3>{tr("Hitos sin objetivo")}</h3>
           <MilestoneList
             milestones={data.milestones.filter((m) => !m.goal_id)}
             {...props}
@@ -2443,7 +2337,7 @@ function MilestoneList({
           <button
             className="check-task"
             aria-label={
-              (m.status === "achieved" ? "Reabrir hito " : "Conseguir hito ") +
+              (m.status === "achieved" ? tr("Reabrir hito ") : tr("Conseguir hito ")) +
               m.title
             }
             onClick={() =>
@@ -2508,25 +2402,21 @@ function ProjectDetail({
   return (
     <>
       <button className="text-button back-link" onClick={() => go("projects")}>
-        <ChevronLeft size={16} />
-        Todos los proyectos
-      </button>
+        <ChevronLeft size={16} />{tr("Todos los proyectos")}</button>
       <PageHeading
         eyebrow={
           project.status === "archived"
-            ? "PROYECTO ARCHIVADO"
+            ? tr("PROYECTO ARCHIVADO")
             : project.status === "on_hold"
-              ? "PROYECTO EN PAUSA"
-              : "TU PRÓXIMO GRAN PASO"
+              ? tr("PROYECTO EN PAUSA")
+              : tr("TU PRÓXIMO GRAN PASO")
         }
         title={project.name}
         subtitle={
-          project.description || "Sin descripción"
+          project.description || tr("Sin descripción")
         }
         action={
-          <button className="button" onClick={() => setEditing(!editing)}>
-            Editar proyecto
-          </button>
+          <button className="button" onClick={() => setEditing(!editing)}>{tr("Editar proyecto")}</button>
         }
       />
       {editing && (
@@ -2549,23 +2439,21 @@ function ProjectDetail({
           </span>
         )}
         {project.target_date && (
-          <span>Fecha objetivo: {niceDate(project.target_date)}</span>
+          <span>{tr("Fecha objetivo: ")}{niceDate(project.target_date)}</span>
         )}
       </div>
       <div className="status-summary">
         {STATUSES.map((s) => (
           <div key={s}>
             <strong>{tasks.filter((t) => t.status === s).length}</strong>
-            <span className={"task-inline-status status-"+s}>{statusLabels[s]}</span>
+            <span className={"task-inline-status status-"+s}>{tr(statusLabels[s])}</span>
           </div>
         ))}
       </div>
       <div className="section-heading">
-        <h2>Hitos del proyecto</h2>
+        <h2>{tr("Hitos del proyecto")}</h2>
         <button className="text-button" onClick={() => setHito(!hito)}>
-          <Plus size={16} />
-          Nuevo hito
-        </button>
+          <Plus size={16} />{tr("Nuevo hito")}</button>
       </div>
       {hito && (
         <EntityForm
@@ -2590,13 +2478,11 @@ function ProjectDetail({
           {...props}
         />
         {!data.milestones.some((m) => m.project_id === project.id) && (
-          <p className="muted">
-            Sin hitos definidos. Añade un resultado que merezca celebrarse.
-          </p>
+          <p className="muted">{tr("Sin hitos definidos. Añade un resultado que merezca celebrarse.")}</p>
         )}
       </div>
       <div className="section-heading">
-        <h2>Próximos pasos</h2>
+        <h2>{tr("Próximos pasos")}</h2>
       </div>
       <form
         className="inline-form project-capture"
@@ -2614,15 +2500,13 @@ function ProjectDetail({
         }}
       >
         <input
-          placeholder="Añadir una tarea a este proyecto…"
-          aria-label="Nueva tarea del proyecto"
+          placeholder={tr("Añadir una tarea a este proyecto…")}
+          aria-label={tr("Nueva tarea del proyecto")}
           value={newTask}
           onChange={(e) => setNewTask(e.target.value)}
         />
         <button className="button primary" disabled={!newTask.trim()}>
-          <Plus size={16} />
-          Añadir
-        </button>
+          <Plus size={16} />{tr("Añadir")}</button>
       </form>
       <TaskTable
         defaultSort="priority"
@@ -2635,7 +2519,7 @@ function ProjectDetail({
         {...props}
       />
       <div className="section-heading">
-        <h2>Avances recientes</h2>
+        <h2>{tr("Avances recientes")}</h2>
       </div>
       <div className="panel">
         {tasks
@@ -2648,11 +2532,11 @@ function ProjectDetail({
             <TaskLine key={t.id} task={t} {...props} />
           ))}
         {!tasks.some((t) => t.status === "completed") && (
-          <p className="muted">Tus próximas finalizaciones aparecerán aquí.</p>
+          <p className="muted">{tr("Tus próximas finalizaciones aparecerán aquí.")}</p>
         )}
       </div>
       <div className="section-heading">
-        <h2>En tu diario</h2>
+        <h2>{tr("En tu diario")}</h2>
       </div>
       <div className="panel journal-days">
         {data.journals
@@ -2668,9 +2552,7 @@ function ProjectDetail({
             </button>
           ))}
         {!entryIds.size && (
-          <p className="muted">
-            Aún no hay tareas de este proyecto vinculadas al diario.
-          </p>
+          <p className="muted">{tr("Aún no hay tareas de este proyecto vinculadas al diario.")}</p>
         )}
       </div>
     </>
@@ -2714,29 +2596,25 @@ function ProgressPage({
   return (
     <>
       <PageHeading
-        title="Mis avances"
-        subtitle="Resultados verificados del periodo."
+        title={tr("Mis avances")}
+        subtitle={tr("Resultados verificados del periodo.")}
         action={
           <div className="segmented">
             <button
               className={mode === "weekly" ? "selected" : ""}
               onClick={() => changeMode("weekly")}
-            >
-              Semana
-            </button>
+            >{tr("Semana")}</button>
             <button
               className={mode === "monthly" ? "selected" : ""}
               onClick={() => changeMode("monthly")}
-            >
-              Mes
-            </button>
+            >{tr("Mes")}</button>
           </div>
         }
       />
       <div className="analytics-period">
         <button
           className="icon-button"
-          aria-label="Periodo anterior"
+          aria-label={tr("Periodo anterior")}
           onClick={() =>
             setStart(
               mode === "weekly"
@@ -2754,7 +2632,7 @@ function ProgressPage({
         </strong>
         <button
           className="icon-button"
-          aria-label="Periodo siguiente"
+          aria-label={tr("Periodo siguiente")}
           onClick={() => setStart(end)}
         >
           <ChevronRight />
@@ -2763,68 +2641,61 @@ function ProgressPage({
       </div>
       {error && (
         <p role="alert" className="error-text">
-          {error}
+          {translateError(error)}
         </p>
       )}
       {!analytics ? (
         <div className="panel">
-          <LoaderCircle className="spin" /> Calculando avances…
-        </div>
+          <LoaderCircle className="spin" />{tr(" Calculando avances…")}</div>
       ) : (
         <>
           <div className="metrics-grid">
             <Metric
-              label="Tareas completadas"
+              label={tr("Tareas completadas")}
               value={analytics.completed}
-              caption="Tareas distintas con finalización verificada"
+              caption={tr("Tareas distintas con finalización verificada")}
             />
             <Metric
-              label="Nuevas tareas"
+              label={tr("Nuevas tareas")}
               value={analytics.created}
-              caption="Creaciones reales en el periodo"
+              caption={tr("Creaciones reales en el periodo")}
             />
             <Metric
-              label="Reducción neta"
+              label={tr("Reducción neta")}
               value={analytics.net}
-              caption="Completadas − creadas"
+              caption={tr("Completadas − creadas")}
             />
             <Metric
-              label="Backlog al cierre"
+              label={tr("Backlog al cierre")}
               value={analytics.ending_backlog}
-              caption="Tareas abiertas al final del periodo"
+              caption={tr("Tareas abiertas al final del periodo")}
             />
           </div>
           <div className="analytics-notes">
-            <span>
-              Reaperturas: <strong>{analytics.reopened}</strong>
+            <span>{tr("Reaperturas: ")}<strong>{analytics.reopened}</strong>
             </span>
-            <span>
-              Cancelaciones: <strong>{analytics.cancelled}</strong>
+            <span>{tr("Cancelaciones: ")}<strong>{analytics.cancelled}</strong>
             </span>
-            <span>Una misma tarea cuenta una vez por periodo.</span>
-            <span>Capturar trabajo nuevo puede aumentar el backlog; no mide productividad.</span>
+            <span>{tr("Una misma tarea cuenta una vez por periodo.")}</span>
+            <span>{tr("Capturar trabajo nuevo puede aumentar el backlog; no mide productividad.")}</span>
           </div>
           <div className="dashboard-grid">
             <section className="panel chart-panel">
               <PanelTitle
                 icon={BarChart3}
-                title="Actividad diaria"
-                subtitle="Creaciones y finalizaciones verificadas por día."
+                title={tr("Actividad diaria")}
+                subtitle={tr("Creaciones y finalizaciones verificadas por día.")}
               />
               <div className="chart-legend">
                 <span>
-                  <i className="dot teal" />
-                  Completadas
-                </span>
+                  <i className="dot teal" />{tr("Completadas")}</span>
                 <span>
-                  <i className="dot slate" />
-                  Creadas
-                </span>
+                  <i className="dot slate" />{tr("Creadas")}</span>
               </div>
               <div
                 className="bar-chart"
                 role="img"
-                aria-label="Tareas completadas y creadas por día"
+                aria-label={tr("Tareas completadas y creadas por día")}
               >
                 {analytics.series.map((s) => {
                   const max = Math.max(
@@ -2868,13 +2739,13 @@ function ProgressPage({
                 })}
               </div>
               <details className="chart-data">
-                <summary>Ver datos del gráfico</summary>
+                <summary>{tr("Ver datos del gráfico")}</summary>
                 <table>
                   <thead>
                     <tr>
-                      <th>Día</th>
-                      <th>Completadas</th>
-                      <th>Creadas</th>
+                      <th>{tr("Día")}</th>
+                      <th>{tr("Completadas")}</th>
+                      <th>{tr("Creadas")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -2892,8 +2763,8 @@ function ProgressPage({
             <section className="panel">
               <PanelTitle
                 icon={LayoutGrid}
-                title="Cómo está tu espacio"
-                subtitle="Distribución de tareas al cierre del periodo."
+                title={tr("Cómo está tu espacio")}
+                subtitle={tr("Distribución de tareas al cierre del periodo.")}
               />
               {STATUSES.filter(
                 (s) => !["completed", "cancelled"].includes(s),
@@ -2901,12 +2772,12 @@ function ProgressPage({
                 <div className="distribution-row" key={s}>
                   <span>
                     <i className={"dot state-dot " + s} />
-                    {statusLabels[s]}
+                    {tr(statusLabels[s])}
                   </span>
                   <strong>{analytics.distribution[s] ?? 0}</strong>
                 </div>
               ))}
-              <h3 className="mini-title">Por prioridad</h3>
+              <h3 className="mini-title">{tr("Por prioridad")}</h3>
               {PRIORITIES.map((p) => (
                 <div className="distribution-row" key={p}>
                   <Priority value={p} />
@@ -2925,10 +2796,10 @@ function ProgressPage({
             </section>
           </div>
           <section className="panel project-distribution">
-            <h3>Trabajo abierto por proyecto</h3>
+            <h3>{tr("Trabajo abierto por proyecto")}</h3>
             {[
               ...data.projects.map((p) => ({ id: p.id, name: p.name })),
-              { id: null, name: "Bandeja de entrada" },
+              { id: null, name: tr("Bandeja de entrada") },
             ].map((p) => (
               <div className="distribution-row" key={p.id ?? "inbox"}>
                 <span>{p.name}</span>
@@ -2946,13 +2817,13 @@ function ProgressPage({
             ))}
           </section>
           <div className="section-heading">
-            <h2>Lo que has conseguido</h2>
+            <h2>{tr("Lo que has conseguido")}</h2>
             <select
-              aria-label="Filtrar logros por proyecto"
+              aria-label={tr("Filtrar logros por proyecto")}
               value={project}
               onChange={(e) => setProject(e.target.value)}
             >
-              <option value="">Todos los proyectos</option>
+              <option value="">{tr("Todos los proyectos")}</option>
               {data.projects.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name}
@@ -2985,7 +2856,7 @@ function ProgressPage({
                         {niceDate(e.occurred_at, data.user.timezone)}
                       </small>
                     </button>
-                    <span className="achievement-type">Tarea completada</span>
+                    <span className="achievement-type">{tr("Tarea completada")}</span>
                   </div>
                 ) : null;
               })}
@@ -3001,16 +2872,16 @@ function ProgressPage({
                     <small>
                       {m.achieved_at
                         ? niceDate(m.achieved_at, data.user.timezone)
-                        : "Fecha desconocida / importada"}
+                        : tr("Fecha desconocida / importada")}
                     </small>
                   </div>
-                  <span className="achievement-type">Hito conseguido</span>
+                  <span className="achievement-type">{tr("Hito conseguido")}</span>
                 </div>
               ))}
             {!analytics.achievements.length && !analytics.milestones.length && (
               <Empty
-                title="Sin logros en este periodo"
-                text="Cambia el periodo para consultar otras finalizaciones."
+                title={tr("Sin logros en este periodo")}
+                text={tr("Cambia el periodo para consultar otras finalizaciones.")}
                 icon={CheckCircle2}
               />
             )}
@@ -3062,15 +2933,15 @@ function ArchivePage({
   return (
     <>
       <PageHeading
-        title="Tu archivo"
-        subtitle="Tareas, hitos y diarios anteriores."
+        title={tr("Tu archivo")}
+        subtitle={tr("Tareas, hitos y diarios anteriores.")}
       />
       <div className="archive-tools">
         <div className="segmented">
           {[
-            { key: "tasks", label: "Tareas" },
-            { key: "milestones", label: "Hitos" },
-            { key: "journals", label: "Diarios" },
+            { key: "tasks", label: tr("Tareas") },
+            { key: "milestones", label: tr("Hitos") },
+            { key: "journals", label: tr("Diarios") },
           ].map((k) => (
             <button
               key={k.key}
@@ -3081,17 +2952,13 @@ function ArchivePage({
             </button>
           ))}
         </div>
-        <label>
-          Desde
-          <input
+        <label>{tr("Desde")}<input
             type="date"
             value={start}
             onChange={(e) => setStart(e.target.value)}
           />
         </label>
-        <label>
-          Hasta
-          <input
+        <label>{tr("Hasta")}<input
             type="date"
             value={end}
             onChange={(e) => setEnd(e.target.value)}
@@ -3103,18 +2970,18 @@ function ArchivePage({
           <div className="search-field">
             <Search size={16} />
             <input
-              aria-label="Buscar en el histórico"
-              placeholder="Buscar en el histórico…"
+              aria-label={tr("Buscar en el histórico")}
+              placeholder={tr("Buscar en el histórico…")}
               value={historySearch}
               onChange={(e) => setHistorySearch(e.target.value)}
             />
           </div>
           <select
-            aria-label="Proyecto del histórico"
+            aria-label={tr("Proyecto del histórico")}
             value={historyProject}
             onChange={(e) => setHistoryProject(e.target.value)}
           >
-            <option value="">Todos los proyectos</option>
+            <option value="">{tr("Todos los proyectos")}</option>
             {data.projects.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.name}
@@ -3134,38 +3001,36 @@ function ArchivePage({
                   {...props}
                   extra={
                     <span className="archive-state">
-                      {statusLabels[t.status]}
+                      {tr(statusLabels[t.status])}
                     </span>
                   }
                 />
                 <div className="archive-timestamp">
                   {t.completed_at
-                    ? `Finalización: ${niceDate(t.completed_at, data.user.timezone)}`
+                    ? tr("Finalización: {0}", niceDate(t.completed_at, data.user.timezone))
                     : t.status === "completed"
-                      ? "Fecha desconocida / importada"
+                      ? tr("Fecha desconocida / importada")
                       : data.events.some(
                             (e) =>
                               e.task_id === t.id &&
                               e.event_type === "completed",
                           )
-                        ? "Finalizada anteriormente; ver historial"
+                        ? tr("Finalizada anteriormente; ver historial")
                         : t.cancelled_at
-                          ? `Cancelación: ${niceDate(t.cancelled_at, data.user.timezone)}`
-                          : "Sin fecha verificada"}{" "}
+                          ? tr("Cancelación: {0}", niceDate(t.cancelled_at, data.user.timezone))
+                          : tr("Sin fecha verificada")}{" "}
                   ·{" "}
                   <button
                     className="text-button"
                     onClick={() => props.openTask(t)}
-                  >
-                    Ver historial y prioridad al completar
-                  </button>
+                  >{tr("Ver historial y prioridad al completar")}</button>
                 </div>
               </div>
             ))}
             {!tasks.length && (
               <Empty
-                title="No hay tareas en el archivo"
-                text="Aquí encontrarás tareas completadas, canceladas y reabiertas. Prueba a ajustar los filtros."
+                title={tr("No hay tareas en el archivo")}
+                text={tr("Aquí encontrarás tareas completadas, canceladas y reabiertas. Prueba a ajustar los filtros.")}
                 icon={Inbox}
               />
             )}
@@ -3194,8 +3059,8 @@ function ArchivePage({
           />
           {!data.milestones.some((m) => m.status === "achieved") && (
             <Empty
-              title="Sin hitos logrados"
-              text="Aparecerán aquí cuando los marques como logrados."
+              title={tr("Sin hitos logrados")}
+              text={tr("Aparecerán aquí cuando los marques como logrados.")}
               icon={Flag}
             />
           )}
@@ -3246,16 +3111,14 @@ function ArchivePage({
                   {
                     data.blocks.filter((b) => b.journal_entry_id === j.id)
                       .length
-                  }{" "}
-                  bloques
-                </span>
+                  }{" "}{tr("bloques")}</span>
                 <ArrowUpRight size={16} />
               </button>
             ))}
           {!data.journals.length && (
             <Empty
-              title="Sin entradas de diario"
-              text="Las entradas guardadas aparecerán aquí."
+              title={tr("Sin entradas de diario")}
+              text={tr("Las entradas guardadas aparecerán aquí.")}
               icon={BookOpen}
             />
           )}
@@ -3273,11 +3136,13 @@ function SettingsPage({
     [name, setName] = useState(data.user.display_name),
     [timezone, setTimezone] = useState(data.user.timezone),
     [theme, setTheme] = useState(data.user.theme),
+    [language, setSelectedLanguage] = useState(data.user.language),
     [view, setView] = useState(data.user.preferred_task_view),
     [week, setWeek] = useState(data.user.week_start_day),
     [success, setSuccess] = useState(""),
     [error, setError] = useState(""),
     [preview, setPreview] = useState("");
+  useEffect(() => { setSelectedLanguage(data.user.language); }, [data.user.language]);
   const download = async (format: string) => {
     try {
       setError("");
@@ -3301,24 +3166,25 @@ function SettingsPage({
   return (
     <>
       <PageHeading
-        title="Configuración"
-        subtitle="Preferencias y exportación de datos."
+        title={tr("Configuración")}
+        subtitle={tr("Preferencias y exportación de datos.")}
       />
       <div className="settings-grid">
         <section className="panel">
           <PanelTitle
             icon={Settings}
-            title="Tu espacio"
-            subtitle="Preferencias personales y calendario."
+            title={tr("Tu espacio")}
+            subtitle={tr("Preferencias personales y calendario.")}
           />
           <form
             onSubmit={async (e) => {
               e.preventDefault();
               try {
-                Intl.DateTimeFormat("es", { timeZone: timezone });
+                Intl.DateTimeFormat(locale(), { timeZone: timezone });
                 if (
                   await mutate("/api/preferences", "PATCH", {
                     display_name: name,
+                    language,
                     timezone,
                     theme,
                     preferred_task_view: view,
@@ -3335,17 +3201,13 @@ function SettingsPage({
               }
             }}
           >
-            <label>
-              Nombre
-              <input
+            <label>{tr("Nombre")}<input
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />
             </label>
-            <label>
-              Zona horaria IANA
-              <input
+            <label>{tr("Zona horaria IANA")}<input
                 required
                 list="timezones"
                 value={timezone}
@@ -3364,44 +3226,41 @@ function SettingsPage({
                   <option key={t}>{t}</option>
                 ))}
               </datalist>
-              <small>Los días y semanas se calculan en esta zona.</small>
+              <small>{tr("Los días y semanas se calculan en esta zona.")}</small>
             </label>
             <div className="form-grid">
-              <label>
-                Apariencia
-                <select
+              <label>{tr("Idioma")}<select value={language} onChange={(e) => setSelectedLanguage(e.target.value as typeof language)}>
+                  <option value="es">{tr("Español")}</option>
+                  <option value="en">{tr("English")}</option>
+                </select>
+              </label>
+              <label>{tr("Apariencia")}<select
                   value={theme}
                   onChange={(e) => setTheme(e.target.value as typeof theme)}
                 >
-                  <option value="light">Clara</option>
-                  <option value="dark">Oscura</option>
-                  <option value="system">Seguir al sistema</option>
+                  <option value="light">{tr("Clara")}</option>
+                  <option value="dark">{tr("Oscura")}</option>
+                  <option value="system">{tr("Seguir al sistema")}</option>
                 </select>
               </label>
-              <label>
-                Vista de tareas
-                <select
+              <label>{tr("Vista de tareas")}<select
                   value={view}
                   onChange={(e) => setView(e.target.value as typeof view)}
                 >
-                  <option value="board">Kanban</option>
-                  <option value="table">Tabla</option>
+                  <option value="board">{tr("Kanban")}</option>
+                  <option value="table">{tr("Tabla")}</option>
                 </select>
               </label>
-              <label>
-                La semana empieza en
-                <select
+              <label>{tr("La semana empieza en")}<select
                   value={week}
                   onChange={(e) => setWeek(Number(e.target.value))}
                 >
-                  <option value={1}>Lunes</option>
-                  <option value={0}>Domingo</option>
+                  <option value={1}>{tr("Lunes")}</option>
+                  <option value={0}>{tr("Domingo")}</option>
                 </select>
               </label>
             </div>
-            <button className="button primary" disabled={props.busy}>
-              Guardar preferencias
-              <Check size={16} />
+            <button className="button primary" disabled={props.busy}>{tr("Guardar preferencias")}<Check size={16} />
             </button>
           </form>
         </section>
@@ -3409,30 +3268,20 @@ function SettingsPage({
           <section className="panel">
             <PanelTitle
               icon={Inbox}
-              title="Exportar datos"
-              subtitle="Descarga archivos de tu espacio, cuando quieras."
+              title={tr("Exportar datos")}
+              subtitle={tr("Descarga archivos de tu espacio, cuando quieras.")}
             />
-            <p className="settings-copy">
-              El JSON conserva identificadores, proyectos, objetivos, hitos,
-              tareas, eventos, bloques de diario y focos. Incluye versión de
-              esquema para facilitar futuras migraciones.
-            </p>
+            <p className="settings-copy">{tr("El JSON conserva identificadores, proyectos, objetivos, hitos, tareas, eventos, bloques de diario y focos. Incluye versión de esquema para facilitar futuras migraciones.")}</p>
             <div className="export-options">
               <button className="button" onClick={() => download("json")}>
-                <ArrowDown size={16} />
-                Exportar todo · JSON
-              </button>
+                <ArrowDown size={16} />{tr("Exportar todo · JSON")}</button>
               <button className="button" onClick={() => download("csv")}>
-                <ArrowDown size={16} />
-                Exportar tareas · CSV
-              </button>
+                <ArrowDown size={16} />{tr("Exportar tareas · CSV")}</button>
             </div>
             <div className="import-preview">
-              <h3>Validar una exportación</h3>
-              <p>Solo lectura. No importa ni modifica datos.</p>
-              <label className="button file-button">
-                Seleccionar JSON
-                <input
+              <h3>{tr("Validar una exportación")}</h3>
+              <p>{tr("Solo lectura. No importa ni modifica datos.")}</p>
+              <label className="button file-button">{tr("Seleccionar JSON")}<input
                   type="file"
                   accept="application/json,.json"
                   onChange={async (e) => {
@@ -3474,32 +3323,26 @@ function SettingsPage({
                   }}
                 />
               </label>
-              {preview && <p role="status">{preview}</p>}
+              {preview && <p role="status">{translateError(preview)}</p>}
             </div>
           </section>
           <section className="panel privacy-panel">
             <Leaf size={21} />
-            <h3>Privado por diseño.</h3>
-            <p>
-              Sin conexión a Notion. Sin datos públicos. Las operaciones se
-              limitan a tu espacio autenticado.
-            </p>
-            <p>
-              Para eliminar una tarea, abre su detalle y confirma la
-              eliminación. Archivar un proyecto conserva su historia.
-            </p>
+            <h3>{tr("Privado por diseño.")}</h3>
+            <p>{tr("Sin conexión a Notion. Sin datos públicos. Las operaciones se limitan a tu espacio autenticado.")}</p>
+            <p>{tr("Para eliminar una tarea, abre su detalle y confirma la eliminación. Archivar un proyecto conserva su historia.")}</p>
           </section>
         </div>
       </div>
       {success && (
         <div className="success-message" role="status">
           <CheckCircle2 size={17} />
-          {success}
+          {tr(success)}
         </div>
       )}
       {error && (
         <div role="alert" className="error-text">
-          {error}
+          {translateError(error)}
         </div>
       )}
     </>

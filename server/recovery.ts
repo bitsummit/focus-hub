@@ -4,20 +4,25 @@ import {readFileSync,lstatSync,existsSync,realpathSync,mkdirSync,openSync,closeS
 import {resolve,dirname,join} from 'node:path';
 
 export const RECOVERY_TABLES=['users','workspaces','workspace_members','sessions','strategic_goals','projects','milestones','tasks','task_events','journal_entries','journal_blocks','focus_items','idempotency_keys'] as const;
-export interface RecoveryReport {path:string;integrity:'ok';foreignKeys:'ok';counts:Record<string,number>;mainFileSha256:string;sessionsRevoked?:number}
+export interface RecoveryReport {path:string;integrity:'ok';schemaVersion:1|2;foreignKeys:'ok';counts:Record<string,number>;mainFileSha256:string;sessionsRevoked?:number}
 const migration=readFileSync(new URL('../migrations/001_initial.sql',import.meta.url),'utf8');
 function schema(db:DatabaseSync){return db.prepare("SELECT type,name,tbl_name,sql FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' ORDER BY type,name").all().map(row=>({...row,sql:String(row.sql).replace(/\s+/g,' ').trim()}));}
-const expected=(()=>{const db=new DatabaseSync(':memory:');try{db.exec(migration);return JSON.stringify(schema(db));}finally{db.close();}})();
+const expected=(()=>{const db=new DatabaseSync(':memory:');try{
+ db.exec(migration);const legacy=JSON.stringify(schema(db));
+ db.exec(readFileSync(new URL('../migrations/002_language.sql',import.meta.url),'utf8'));
+ return [legacy,JSON.stringify(schema(db))] as const;
+}finally{db.close();}})();
 function regular(path:string){const stat=lstatSync(path);if(!stat.isFile()||stat.isSymbolicLink())throw Error('La fuente debe ser un archivo regular, sin enlaces simbólicos.');return realpathSync(path);}
 function checksum(path:string){const hash=createHash('sha256'),buffer=Buffer.alloc(65536),fd=openSync(path,'r');try{let length;while((length=readSync(fd,buffer,0,buffer.length,null))>0)hash.update(buffer.subarray(0,length));return hash.digest('hex');}finally{closeSync(fd);}}
 function inspect(db:DatabaseSync,path:string):RecoveryReport {
  db.exec('PRAGMA trusted_schema=OFF; BEGIN');
  try {
-  if(JSON.stringify(schema(db))!==expected)throw Error('Esquema incompatible: se requiere el esquema completo de esta versión de Focus Hub.');
+  const version=expected.indexOf(JSON.stringify(schema(db)));
+  if(version<0)throw Error('Esquema incompatible: se requiere un esquema completo compatible de Focus Hub.');
   const integrity=db.prepare('PRAGMA integrity_check').all();if(integrity.length!==1||Object.values(integrity[0])[0]!=='ok')throw Error('La base no supera integrity_check.');
   if(db.prepare('PRAGMA foreign_key_check').all().length)throw Error('La base contiene relaciones inválidas (foreign_key_check).');
   const counts=Object.fromEntries(RECOVERY_TABLES.map(table=>[table,Number(db.prepare(`SELECT COUNT(*) AS count FROM ${table}`).get()!.count)]));
-  db.exec('COMMIT');return {path,integrity:'ok',foreignKeys:'ok',counts,mainFileSha256:checksum(path)};
+  db.exec('COMMIT');return {path,integrity:'ok',schemaVersion:(version+1) as 1|2,foreignKeys:'ok',counts,mainFileSha256:checksum(path)};
  }catch(error){db.exec('ROLLBACK');throw error;}
 }
 /** No migration or row contents are returned. Hash covers the main file, not a live WAL. */

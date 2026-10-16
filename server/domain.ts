@@ -43,7 +43,7 @@ export class Domain {
  private run(sql:string,...params:SQLInputValue[]) {return this.db.prepare(sql).run(...params);}
  private get ws(){return this.context.workspace_id;}
  private get uid(){return this.context.user_id;}
- private user():User {return this.one('SELECT id,email,display_name,timezone,theme,preferred_task_view,week_start_day,created_at FROM users WHERE id=?',this.uid) as User;}
+ private user():User {return this.one('SELECT id,email,display_name,timezone,theme,preferred_task_view,week_start_day,language,created_at FROM users WHERE id=?',this.uid) as User;}
  private scoped(table:string,id:unknown,extra=''):Row {
   const key=text(id,'Identificador',200);
   const row=this.one(`SELECT * FROM ${table} WHERE id=? AND workspace_id=? ${extra}`,key,this.ws);
@@ -206,9 +206,10 @@ export class Domain {
   transaction(this.db,()=>{const tasks=taskIds.map(id=>this.task(id));const existing=new Set(this.all('SELECT task_id FROM focus_items WHERE workspace_id=? AND user_id=? AND period_type=? AND period_start=?',this.ws,this.uid,type,entryDate).map(item=>item.task_id));for(const task of tasks)if(!isOpen(task.status)&&!existing.has(task.id))fail('Selecciona tareas abiertas para el foco.');this.run('DELETE FROM focus_items WHERE workspace_id=? AND user_id=? AND period_type=? AND period_start=?',this.ws,this.uid,type,entryDate);for(const [index,task]of tasks.entries())this.insert('focus_items',{id:randomUUID(),workspace_id:this.ws,user_id:this.uid,task_id:task.id,period_type:type,period_start:entryDate,sort_order:index,created_at:now()});});
  }
  preferences(input:unknown):User {
-  const value=object(input);allowed(value,['display_name','timezone','theme','preferred_task_view','week_start_day']);const changes:Row={};
+  const value=object(input);allowed(value,['display_name','timezone','theme','preferred_task_view','week_start_day','language']);const changes:Row={};
   if('display_name'in value)changes.display_name=text(value.display_name,'Nombre',150);
   if('timezone'in value){const zone=text(value.timezone,'Zona horaria',100);if(/^[+-]/.test(zone))fail('Selecciona una zona horaria IANA.');try{Temporal.Now.zonedDateTimeISO(zone);}catch{fail('Zona horaria IANA inválida.');}changes.timezone=zone;}
+  if('language'in value)changes.language=enumValue(value.language,['es','en'],'Idioma');
   if('theme'in value)changes.theme=enumValue(value.theme,['light','dark','system'],'Tema');
   if('preferred_task_view'in value)changes.preferred_task_view=enumValue(value.preferred_task_view,['board','table'],'Vista');
   if('week_start_day'in value)changes.week_start_day=integer(value.week_start_day,'Inicio de semana',0,1);
