@@ -38,7 +38,8 @@ test('direct server startup in Codespaces accepts HTTPS login without the shell 
   let response:Response|undefined;
   for(let i=0;i<100;i++){try{response=await fetch(base+'/api/health',{headers:{Origin:origin},signal:AbortSignal.timeout(500)});break;}catch{await new Promise(r=>setTimeout(r,100));}}
   assert.equal(response?.status,200,'The real server entry point must configure Codespaces before handling requests');
-  const login=await fetch(base+'/api/session',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json'},body:JSON.stringify(credentials)});
+  const challenge=await fetch(base+'/api/session/challenge',{headers:{Origin:origin}});assert.equal(challenge.status,200);const {loginToken}=await challenge.json();const challengeCookie=challenge.headers.get('set-cookie')!.split(';')[0];
+  const login=await fetch(base+'/api/session',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json',Cookie:challengeCookie,'X-Login-CSRF':loginToken},body:JSON.stringify(credentials)});
   assert.equal(login.status,200);assert.match(login.headers.get('set-cookie')||'',/;\s*Secure(?:;|$)/);
  }finally{
   if(child.exitCode===null){const exited=once(child,'exit');child.kill('SIGTERM');await exited;}

@@ -46,3 +46,11 @@ No se ha creado un Codespace desde esta instancia ni se ha consumido capacidad d
 Queda comprobar dentro de GitHub: aprovisionamiento de la imagen, disponibilidad de cuota/permiso Codespaces, forwarding del puerto 3000 con visibilidad **Private**, acceso autenticado HTTPS desde el navegador y persistencia al detener/reanudar ese Codespace. La configuración y los comandos de aplicación están probados; el servicio de alojamiento externo no se ha simulado como si estuviera validado.
 
 No hay despliegue público/producción, cambios de arquitectura, integración de Notion, datos reales ni integración automática del PR. La [guía de acceso](CODESPACES.md) explica cada paso, incluida la consulta privada de credenciales mediante el editor web.
+
+## Corrección posterior: origen reescrito en Codespaces
+
+La primera prueba real encontró que el proxy entrega Origin y Host como `http://localhost:3000`, aunque la pestaña usa el origen HTTPS correcto. Un curl interno con el origen público daba 200; el diagnóstico reducido confirmó la reescritura.
+
+La corrección admite únicamente el endpoint interno exacto con Codespaces activo y Fetch-Site same-origin; conserva restricciones de modo/destino cuando se reciben. El login exige un desafío previo aleatorio, de diez minutos y un solo uso, ligado a cookie __Host Secure/HttpOnly/SameSite Strict. Todas las escrituras posteriores mantienen el token CSRF de sesión. No se confía en X-Forwarded-Host ni se habilita CORS.
+
+Verificación actual: **17 pruebas backend/seguridad y 5 pruebas Chromium aprobadas**, más build. La prueba nueva usa un proxy HTTPS real local con la misma reescritura: login, captura y persistencia funcionan; una web atacante recibe 403. Se probaron retos ausentes, falsificados, repetidos, expirados y cookies duplicadas. El reinicio gestionado con la demo existente también pasó. La comprobación final desde el Codespace personal requiere actualizar, recompilar, reiniciar y recargar según CODESPACES.md; sus datos y contraseña se conservan.

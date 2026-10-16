@@ -49,7 +49,7 @@ npm run build
 npm run test:e2e
 ```
 
-Las pruebas usan cuentas y bases temporales ficticias, separadas de `.data/focus-hub.sqlite`. El navegador de pruebas utiliza Chromium; configura `CHROMIUM_PATH` si no está en `/usr/bin/chromium`. Resultados verificados: **9 pruebas API/calendario y 4 pruebas Chromium aprobadas**, más compilación de producción. Consulta [la matriz de los 15 criterios](docs/ACCEPTANCE.md) para evidencia y límites. `npm run smoke:demo` comprueba autenticación y persistencia en una demo arrancada.
+Las pruebas usan cuentas y bases temporales ficticias, separadas de `.data/focus-hub.sqlite`. El navegador de pruebas utiliza Chromium; configura `CHROMIUM_PATH` si no está en `/usr/bin/chromium`. Resultados verificados: **17 pruebas API/calendario/seguridad y 5 pruebas Chromium aprobadas**, más compilación de producción. Consulta [la matriz de los 15 criterios](docs/ACCEPTANCE.md) para evidencia y límites. `npm run smoke:demo` comprueba autenticación y persistencia en una demo arrancada.
 
 ## Seguridad y portabilidad
 

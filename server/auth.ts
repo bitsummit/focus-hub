@@ -46,6 +46,14 @@ export function sameOrigin(req:Request,res:Response,next:NextFunction){
   res.status(403).json({code:'ORIGIN',message:'Origen no permitido',reason});
  };
  if(req.headers['sec-fetch-site']==='cross-site'){reject('cross_site');return;}
- if(origin){try{const url=new URL(origin);const configured=process.env.FOCUS_PUBLIC_ORIGIN;const matches=configured?url.origin===new URL(configured).origin:url.host===req.headers.host;if(!matches||!['http:','https:'].includes(url.protocol)){reject('origin_mismatch');return;}}catch{reject('invalid_origin');return;}}
+ if(origin){try{const url=new URL(origin);const configured=process.env.FOCUS_PUBLIC_ORIGIN;const matches=configured?url.origin===new URL(configured).origin:url.host===req.headers.host;
+   const port=String(Number(process.env.PORT||3000));
+   const publicUrl=configured?new URL(configured):null;
+   const mode=req.headers['sec-fetch-mode'],destination=req.headers['sec-fetch-dest'];
+   // Codespaces was observed rewriting both Host and Origin to this exact internal endpoint.
+   // This exception is not identity: login additionally requires a one-use challenge,
+   // and every authenticated write still requires the server-issued session CSRF token.
+   const rewritten=process.env.CODESPACES==='true'&&publicUrl?.protocol==='https:'&&url.origin===`http://localhost:${port}`&&origin===url.origin&&req.headers.host===`localhost:${port}`&&req.headers['sec-fetch-site']==='same-origin'&&(mode===undefined||mode==='cors'||mode==='same-origin')&&(destination===undefined||destination==='empty');
+   if((!matches&&!rewritten)||!['http:','https:'].includes(url.protocol)){reject('origin_mismatch');return;}}catch{reject('invalid_origin');return;}}
  next();
 }

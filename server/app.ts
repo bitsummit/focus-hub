@@ -4,13 +4,17 @@ import {resolve} from 'node:path';
 import {existsSync} from 'node:fs';
 import {authMiddleware,publicUser,readSession,sameOrigin,setSession,verifyPassword,type AuthRequest} from './auth.ts';
 import {Domain} from './domain.ts';
+import {loginChallenges} from './login-challenge.ts';
 export function createApp(db:DatabaseSync) {
  const app=express(); app.disable('x-powered-by');
  app.use((_req,res,next)=>{res.set({'X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','X-Frame-Options':'DENY','Cache-Control':'no-store','Content-Security-Policy':"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"});next();});
  app.use('/api',sameOrigin,express.json({limit:'512kb'}));
  app.get('/api/health',(_req,res)=>res.json({status:'ok'}));
+ const challenge=loginChallenges();
+ app.get('/api/session/challenge',challenge.issue);
  const attempts=new Map<string,{count:number;reset:number}>();
  app.post('/api/session',(req,res)=>{
+  if(!req.is('application/json')||!challenge.validate(req)){res.status(403).json({code:'LOGIN_CSRF',message:'Actualiza el acceso e inténtalo de nuevo'});return;}
   const key=req.ip||'local';const now=Date.now();let a=attempts.get(key);if(!a||a.reset<now){a={count:0,reset:now+60000};attempts.set(key,a);}if(++a.count>10){res.status(429).json({code:'RATE_LIMIT',message:'Demasiados intentos. Espera un minuto'});return;}
   const {email,password}=req.body||{};
   if(typeof email!=='string'||typeof password!=='string'||email.length>254||password.length>256){res.status(400).json({code:'VALIDATION',message:'Introduce tu correo y contraseña'});return;}
@@ -18,7 +22,7 @@ export function createApp(db:DatabaseSync) {
   // Always run scrypt so unknown accounts do not have a cheap timing path.
   const valid=verifyPassword(password,row?String(row.password_hash):'00000000000000000000000000000000:'+ '00'.repeat(64));
   if(!row||!valid){res.status(401).json({code:'CREDENTIALS',message:'Correo o contraseña incorrectos'});return;}
-  const csrfToken=setSession(db,res,String(row.id));res.json({user:publicUser(row),csrfToken});
+  const csrfToken=setSession(db,res,String(row.id));challenge.clear(res);res.json({user:publicUser(row),csrfToken});
  });
  app.get('/api/session',(req,res)=>{const session=readSession(db,req);if(!session){res.status(401).json({code:'UNAUTHENTICATED',message:'Inicia sesión para continuar'});return;}const row=db.prepare('SELECT * FROM users WHERE id=?').get(session.user_id);if(!row){res.status(401).end();return;}res.json({user:publicUser(row),csrfToken:session.csrf_token});});
  app.use('/api',authMiddleware(db));

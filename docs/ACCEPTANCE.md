@@ -60,3 +60,7 @@ Reusable `install_script` and `start_skill` were saved in the cloud environment 
 ## Delivery update: Codespaces
 
 The Codespaces delivery was tested from a fresh GitHub clone: 11 API/calendar/security tests and 4 Chromium workflows passed, as did the frozen installation and production build. Lifecycle scripts were exercised on port 3000 (including exact HTTPS-origin simulation), repeated setup preserved the database/credentials, and a foreign occupied port was rejected without receiving demo credentials. See DELIVERY.md and CODESPACES.md for the distinction between verified commands and the pending first real Codespace launch.
+
+## Codespaces origin rewrite regression
+
+A real user-side log confirmed that Codespaces rewrites Origin and Host to the exact internal localhost endpoint. The fix adds a one-use pre-login CSRF challenge and a strictly scoped Codespaces rewrite case while preserving authenticated CSRF. Current checks: **17 backend/calendar/security tests and 5 Chromium tests passed**, plus build. A real local HTTPS reverse proxy reproduces the rewrite, successful browser login/CRUD and rejection of a cross-origin attacker. Final personal Codespace retry remains distinct from this tested reproduction.

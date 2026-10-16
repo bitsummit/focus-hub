@@ -19,7 +19,8 @@ async function fixture() {
  const address=server.address();if(!address||typeof address==='string')throw Error('Missing address');
  const base=`http://127.0.0.1:${address.port}`;
  async function login(email:string) {
-  const r=await fetch(base+'/api/session',{method:'POST',headers:{'Content-Type':'application/json',Origin:base},body:JSON.stringify({email,password})});assert.equal(r.status,200,await r.clone().text());
+  const challenge=await fetch(base+'/api/session/challenge');assert.equal(challenge.status,200);const {loginToken}=await challenge.json();const challengeCookie=challenge.headers.get('set-cookie')!.split(';')[0];
+  const r=await fetch(base+'/api/session',{method:'POST',headers:{'Content-Type':'application/json',Origin:base,Cookie:challengeCookie,'X-Login-CSRF':loginToken},body:JSON.stringify({email,password})});assert.equal(r.status,200,await r.clone().text());
   const session=await r.json();const cookie=r.headers.get('set-cookie')!.split(';')[0];
   async function request(method:string,url:string,data?:unknown,extra:Record<string,string>={}) {
    return fetch(base+url,{method,headers:{'Content-Type':'application/json',Cookie:cookie,Origin:base,'X-CSRF-Token':session.csrfToken,...extra},body:data===undefined?undefined:JSON.stringify(data)});

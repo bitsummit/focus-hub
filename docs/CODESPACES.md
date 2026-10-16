@@ -89,8 +89,11 @@ El error se produce antes de comprobar la contraseña. Conserva la demo y las cr
 ```sh
 git pull --ff-only
 node .devcontainer/service.mjs stop
+npm run build
 bash .devcontainer/start.sh
 ```
+
+Recarga la pestaña para cargar el formulario actualizado. La demo y la contraseña se conservan.
 
 Si persiste tras recargar la pestaña, intenta entrar una vez y consulta solo el diagnóstico de origen:
 
@@ -99,3 +102,9 @@ grep FOCUS_ORIGIN_REJECTED .data/codespaces-server.log | tail -3
 ```
 
 Esas líneas contienen el origen/host y la procedencia de la solicitud; no registran contraseñas, cookies ni el cuerpo de las peticiones. Permiten distinguir un origen reescrito por el proxy de una configuración incorrecta. No desactives CSRF ni añadas comodines de dominios para evitar el error. `npm start` también configura ahora el origen y las cookies a partir de las variables oficiales de Codespaces.
+
+### Corrección del proxy observada en Codespaces
+
+Se confirmó un caso real: el navegador usa el origen HTTPS privado, pero el proxy entrega al servidor `Origin: http://localhost:3000` y `Host: localhost:3000`, con `Sec-Fetch-Site: same-origin`. La comprobación anterior rechazaba esa reescritura.
+
+Se permite únicamente ese endpoint interno exacto para el puerto configurado, con Codespaces activo, origen público HTTPS configurado y metadatos de misma procedencia. No se confía en dominios comodín ni en X-Forwarded-Host. El login requiere además un desafío previo de diez minutos y un solo uso: cookie __Host Secure/HttpOnly/SameSite Strict y token en cabecera, emitido por JSON sin caché. Todas las escrituras autenticadas mantienen el token CSRF de la sesión. Los clientes API deben obtener GET /api/session/challenge y enviar su loginToken como X-Login-CSRF junto con la cookie antes de POST /api/session.

@@ -615,9 +615,10 @@ function Login({
               setBusy(true);
               setError("");
               try {
+                const challenge = await read("/api/session/challenge");
                 const s = await read("/api/session", {
                   method: "POST",
-                  headers: { "Content-Type": "application/json" },
+                  headers: { "Content-Type": "application/json", "X-Login-CSRF": challenge.loginToken },
                   body: JSON.stringify({ email, password }),
                 });
                 await onLogin(s);
