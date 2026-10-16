@@ -56,3 +56,7 @@ No tools/bindings or verified starter for Sites/D1/ChatGPT auth are present; off
 Bulk task actions and destructive data import are optional enhancements and are not included. JSON import preview is read-only and checks collection structure; a future importer must validate schema version, ownership and referential integrity before writing. SQLite is appropriate to this personal v1; large multi-user workloads need pagination and a separately verified hosting/storage adapter.
 
 Reusable `install_script` and `start_skill` were saved in the cloud environment draft. That does not publish the app or prove restoration in a new task. To activate that environment configuration, review/save the draft in environment settings and publish the environment snapshot when desired.
+
+## Delivery update: Codespaces
+
+The Codespaces delivery was tested from a fresh GitHub clone: 11 API/calendar/security tests and 4 Chromium workflows passed, as did the frozen installation and production build. Lifecycle scripts were exercised on port 3000 (including exact HTTPS-origin simulation), repeated setup preserved the database/credentials, and a foreign occupied port was rejected without receiving demo credentials. See DELIVERY.md and CODESPACES.md for the distinction between verified commands and the pending first real Codespace launch.
