@@ -114,3 +114,7 @@ Esas líneas contienen el origen/host y la procedencia de la solicitud; no regis
 Se confirmó un caso real: el navegador usa el origen HTTPS privado, pero el proxy entrega al servidor `Origin: http://localhost:3000` y `Host: localhost:3000`, con `Sec-Fetch-Site: same-origin`. La comprobación anterior rechazaba esa reescritura.
 
 Se permite únicamente ese endpoint interno exacto para el puerto configurado, con Codespaces activo, origen público HTTPS configurado y metadatos de misma procedencia. No se confía en dominios comodín ni en X-Forwarded-Host. El login requiere además un desafío previo de diez minutos y un solo uso: cookie __Host Secure/HttpOnly/SameSite Strict y token en cabecera, emitido por JSON sin caché. Todas las escrituras autenticadas mantienen el token CSRF de la sesión. Los clientes API deben obtener GET /api/session/challenge y enviar su loginToken como X-Login-CSRF junto con la cookie antes de POST /api/session.
+
+## Auditoría y actualización de seguridad
+
+Consulta [SECURITY_AUDIT.md](SECURITY_AUDIT.md) antes de usar datos reales. La actualización de Vite y backend requiere `git pull --ff-only`, detener el servicio, `npm ci` y arrancar de nuevo. La cookie HTTPS usa ahora `__Host-focus_session`: vuelve a iniciar sesión. Para cambiar la contraseña de demo sin perder tareas ejecuta `FOCUS_DB=.data/demo.sqlite npm run password`; pide entrada oculta y revoca sus sesiones. No se sustituye la contraseña automáticamente.

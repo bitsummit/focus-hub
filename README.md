@@ -64,3 +64,7 @@ JSON tiene versión de esquema e incluye identidades, relaciones, eventos, diari
 Este entorno no expone herramientas, bindings ni autenticación de ChatGPT Sites. El proxy impidió consultar la documentación oficial (CONNECT 403). Por ello se implementa la alternativa local privada descrita en el plan, con almacenamiento SQLite real. **No se ha verificado un despliegue Sites, D1 alojado ni Sign in with ChatGPT.** No hay una URL pública o un despliegue externo.
 
 Una migración futura debe aportar un adaptador D1 con operaciones atómicas/batch y un proveedor de identidad oficialmente verificado. El SQL relacional y los contratos de dominio se mantienen separados de las rutas y la UI. Exponer el servicio requiere una tarea de despliegue posterior: HTTPS, cookies Secure, copias de seguridad, control de acceso privado y aprobación del propietario. No conectar Notion, importar registros reales, publicar ni hacer push sin autorización.
+
+## Seguridad y piloto privado
+
+La primera auditoría interna y sus correcciones están en [docs/SECURITY_AUDIT.md](docs/SECURITY_AUDIT.md). Incluye actualización del Codespace, rotación de contraseña y riesgos pendientes. Antes de incorporar datos reales: contraseña fuerte, base personal separada y copia/restauración comprobada. El servidor Vite se mantiene para desarrollo con datos ficticios.

@@ -220,7 +220,16 @@ export class Domain {
   const seenCompletions=new Set<string>();const achievements:Row[]=[];for(const event of period)if(event.event_type==='completed'&&!seenCompletions.has(event.task_id)){seenCompletions.add(event.task_id);achievements.push(event);}
   const state=new Map<string,{status:string;deleted:boolean}>();for(const event of events){let current=state.get(event.task_id);if(event.event_type==='created'){let created:Row={};try{created=JSON.parse(event.to_value_json??'{}');}catch{}current={status:created.status??'pending',deleted:false};state.set(event.task_id,current);}else if(current){if(event.event_type==='status_changed'){try{const next=JSON.parse(event.to_value_json);current.status=typeof next==='string'?next:next.status;}catch{}}if(event.event_type==='deleted')current.deleted=true;if(event.event_type==='restored')current.deleted=false;}}
   const distribution:Record<string,number>=Object.fromEntries(STATUSES.map(s=>[s,0]));let ending=0;for(const item of state.values())if(!item.deleted){distribution[item.status]=(distribution[item.status]??0)+1;if(isOpen(item.status))ending++;}
-  const series:Analytics['series']=[];for(let day=start;day<end;day=addDays(day,1)){const dayEvents=period.filter(e=>localDate(zone,e.occurred_at)===day);series.push({date:day,created:new Set(dayEvents.filter(e=>e.event_type==='created').map(e=>e.task_id)).size,completed:new Set(dayEvents.filter(e=>e.event_type==='completed').map(e=>e.task_id)).size});}
+  // Convert each relevant timestamp once. Scanning every event for every day
+  // blocked the shared event loop for long, otherwise-valid history requests.
+  const daily=new Map<string,{created:Set<string>;completed:Set<string>}>();
+  for(const event of period){
+   if(event.event_type!=='created'&&event.event_type!=='completed')continue;
+   const day=localDate(zone,event.occurred_at);
+   let counts=daily.get(day);if(!counts){counts={created:new Set(),completed:new Set()};daily.set(day,counts);}
+   counts[event.event_type as 'created'|'completed'].add(event.task_id);
+  }
+  const series:Analytics['series']=[];for(let day=start;day<end;day=addDays(day,1)){const counts=daily.get(day);series.push({date:day,created:counts?.created.size??0,completed:counts?.completed.size??0});}
   const created=distinct('created'),completed=distinct('completed');
   return {created,completed,reopened:distinct('reopened'),cancelled:distinct('cancelled'),net:completed-created,ending_backlog:ending,series,achievements:achievements as Analytics['achievements'],milestones:this.all('SELECT * FROM milestones WHERE workspace_id=? AND achieved_at>=? AND achieved_at<? ORDER BY achieved_at',this.ws,bounds.start,bounds.end) as Analytics['milestones'],distribution};
  }

@@ -14,7 +14,8 @@ export function resolveRuntime(env:NodeJS.ProcessEnv) {
   if(!['http:','https:'].includes(parsed.protocol)||parsed.username||parsed.password||parsed.search||parsed.hash||parsed.pathname!=='/'||(codespaces&&parsed.protocol!=='https:'))throw new Error('FOCUS_PUBLIC_ORIGIN debe ser un origen exacto, sin rutas ni credenciales; Codespaces requiere HTTPS');
   origin=parsed.origin;
  }
- return {port,origin,secure:codespaces || (env.COOKIE_SECURE===undefined ? !!origin?.startsWith("https:") : env.COOKIE_SECURE==="true")};
+ // An HTTPS deployment must never downgrade its session cookies through a stale env flag.
+ return {port,origin,secure:codespaces || !!origin?.startsWith('https:') || env.COOKIE_SECURE==='true'};
 }
 
 export function configureRuntime(env:NodeJS.ProcessEnv=process.env){

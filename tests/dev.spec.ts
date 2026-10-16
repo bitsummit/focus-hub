@@ -4,7 +4,7 @@ import {createServer as createHTTP,request as requestHTTP,type Server} from 'nod
 import {createServer as createHTTPS} from 'node:https';
 import {connect,type Socket} from 'node:net';
 import {once} from 'node:events';
-import {mkdtempSync,readFileSync,writeFileSync,rmSync,mkdirSync} from 'node:fs';
+import {mkdtempSync,readFileSync,writeFileSync,rmSync,mkdirSync,symlinkSync} from 'node:fs';
 import {join,resolve} from 'node:path';
 import {tmpdir} from 'node:os';
 import {randomUUID} from 'node:crypto';
@@ -52,10 +52,14 @@ for(const proxyMode of [false,true]){
   const name=`__focus_dev_qa_${randomUUID().replaceAll('-','')}`;
   const cssFile=join(root,'src',name+'.css');
   const markerFile=join(root,'.data',name+'.txt'),marker='Fictional nonsecret dev fixture '+name;
+  const privateFiles=[join(root,name+'.sqlite'),join(root,name+'.txt'),join(root,'src',name+'.sqlite'),join(root,'src','.env.'+name)];
+  const linkedFile=join(root,'src',name+'_link.txt');
   const dbFile=join(dir,'fixture.sqlite'),db=openDatabase(dbFile);
   createOwner(db,{email:'dev-browser@example.test',password:'Fictional-Dev-Browser-2026!',display_name:'Desarrollo ficticio QA'});db.close();
   mkdirSync(join(root,'.data'),{recursive:true,mode:0o700});writeFileSync(markerFile,marker,{mode:0o600});
   writeFileSync(cssFile,'body { --focus-dev-qa: before; }\n');
+  for(const file of privateFiles)writeFileSync(file,marker,{mode:0o600});
+  symlinkSync(markerFile,linkedFile);
   const backendPort=await unusedPort(),proxyPort=proxyMode?await unusedPort():undefined;
   const origin=proxyMode?`https://127.0.0.1:${proxyPort}`:`http://127.0.0.1:${backendPort}`;
   const internalHost=`localhost:${backendPort}`;
@@ -88,18 +92,23 @@ for(const proxyMode of [false,true]){
    child=spawn(process.execPath,['--import','tsx',proxyMode?'server/index.ts':'server/dev.ts'],{cwd:root,env,stdio:['ignore','pipe','pipe']});
    child.stdout?.on('data',chunk=>{output+=String(chunk);});child.stderr?.on('data',chunk=>{output+=String(chunk);});
    await expect.poll(async()=>{try{return(await fetch(`http://127.0.0.1:${backendPort}/api/health`)).status;}catch{return 0;}},{message:'Isolated development backend starts',timeout:20000}).toBe(200);
-   await exercise(page,origin,'/src/'+name+'.css',cssFile);
-   for(const path of ['/.data/demo-access.json','/.data/'+name+'.txt','/@fs/'+markerFile]){
+   // These requests are anonymous: Vite must enforce the filesystem boundary itself.
+   const privatePaths=['/.data/demo-access.json','/.data/'+name+'.txt','/@fs/'+markerFile,
+    '/src/'+name+'_link.txt','/@fs/'+linkedFile,'/.%64ata/'+name+'.txt','/src/..%2f.data/'+name+'.txt',
+    '/.codex/config.toml','/.devcontainer/devcontainer.json','/server/auth.ts','/AGENTS.md',
+    ...privateFiles.flatMap(file=>['/'+file.slice(root.length+1),'/@fs/'+file])];
+   for(const path of privatePaths.flatMap(path=>[path,path+'?raw',path+'?import'])){
     const result=await page.request.get(origin+path,{ignoreHTTPSErrors:proxyMode});
     expect([403,404],`private path is denied: ${path}`).toContain(result.status());
     expect(await result.text()).not.toContain(marker);
    }
+   await exercise(page,origin,'/src/'+name+'.css',cssFile);
   }catch(error){throw new Error(`${error instanceof Error?error.message:String(error)}\nDevelopment server output:\n${output}`,{cause:error});}
   finally{
    await page.goto('about:blank');for(const socket of sockets)socket.destroy();
    if(child)await stop(child);
    if(proxy){proxy.closeAllConnections();await new Promise<void>(done=>proxy!.close(()=>done()));}
-   rmSync(cssFile,{force:true});rmSync(markerFile,{force:true});rmSync(dir,{recursive:true,force:true});
+   rmSync(cssFile,{force:true});rmSync(linkedFile,{force:true});rmSync(markerFile,{force:true});for(const file of privateFiles)rmSync(file,{force:true});rmSync(dir,{recursive:true,force:true});
   }
  });
 }
