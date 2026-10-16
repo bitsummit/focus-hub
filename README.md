@@ -2,11 +2,17 @@
 
 Aplicación privada de tareas, proyectos y diario con una única fuente de datos persistente. Interfaz en español; código TypeScript. Consulta [el plan técnico](docs/ARCHITECTURE.md) y [la especificación](FOCUS_HUB_CODEX_MASTER_PROMPT.md).
 
-Capturas con datos ficticios: [escritorio](docs/screenshots/home-desktop.png) · [móvil](docs/screenshots/home-mobile.png).
+Capturas con datos ficticios: [escritorio](docs/screenshots/v1.1/dashboard-desktop.png) · [móvil](docs/screenshots/v1.1/dashboard-mobile.png).
+
+Versión **1.1**: [revisión UX y pruebas](docs/UX_REVIEW_V1_1.md),
+[preparación para uso cotidiano y recuperación](docs/DAILY_USE_READINESS.md).
+La entrega incorpora lista móvil editable, filtros rápidos, captura inferior,
+Kanban adaptable y copias SQLite verificables. Consulta la guía de Codespaces
+para actualizar tu entorno existente conservando datos y credenciales.
 
 ## Probar en el navegador con Codespaces
 
-Abre la [rama de entrega](https://github.com/bitsummit/focus-hub/tree/dev/focus-hub-v1-codespaces) y elige **Code → Codespaces → Create codespace**. La configuración instala, compila, crea una demo SQLite aislada y arranca automáticamente. Confirma **Private** en el puerto **3000** y pulsa **Open in Browser**.
+Abre la [rama de entrega](https://github.com/bitsummit/focus-hub/tree/dev/focus-hub-v1.1-ux-readiness) y elige **Code → Codespaces → Create codespace**. La configuración instala, compila, crea una demo SQLite aislada y arranca automáticamente. Confirma **Private** en el puerto **3000** y pulsa **Open in Browser**.
 
 En la terminal del Codespace ejecuta `code .data/demo-access.json` para consultar las credenciales aleatorias, que nunca se incluyen en Git. Sigue la [guía paso a paso de Codespaces](docs/CODESPACES.md) para acceso, reinicios y límites de verificación.
 
@@ -24,7 +30,7 @@ npm start
 
 `owner` solicita correo, nombre y contraseña (mínimo 12 caracteres, entrada oculta). Solo permite crear el propietario inicial: no existe registro público ni contraseña predeterminada. No introduzcas contraseñas en argumentos de línea de comandos ni en archivos versionados. El servidor escucha exclusivamente en la interfaz local, puerto 3000. La versión compilada se sirve desde el mismo proceso que la API. No se ha publicado ningún servicio.
 
-La base de datos se crea automáticamente en `.data/focus-hub.sqlite` (ignorada por Git). `FOCUS_DB` permite elegir otra ruta; `PORT` cambia el puerto. Las migraciones se aplican sin borrar registros. Conserva la carpeta `.data` entre reinicios; no la uses como fixture. Para una copia de seguridad consistente, detén el servidor antes de copiar la base y sus archivos WAL, o usa una herramienta SQLite de backup. Nunca guardes datos privados en Git.
+La base de datos se crea automáticamente en `.data/focus-hub.sqlite` (ignorada por Git). `FOCUS_DB` permite elegir otra ruta; `PORT` cambia el puerto. Las migraciones se aplican sin borrar registros. Conserva la carpeta `.data` entre reinicios; no la uses como fixture. Para una copia consistente online, usa `npm run backup -- --source RUTA --out ARCHIVO_NUEVO` y verifica/restaura siguiendo [la guía de recuperación](docs/DAILY_USE_READINESS.md). Nunca guardes datos privados en Git.
 
 Para desarrollar con recarga automática, ejecuta `npm run dev`. Vite, la API y su WebSocket comparten el puerto privado 3000; no necesitas otra terminal, otro puerto ni recompilar el frontend. Los cambios de CSS se aplican al instante y los módulos del frontend se actualizan o recargan según corresponda. Los cambios del backend requieren reiniciar el proceso. `npm start` conserva el modo compilado y requiere `npm run build` previo. Codespaces usa el modo de desarrollo por defecto.
 

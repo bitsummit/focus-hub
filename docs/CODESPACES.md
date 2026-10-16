@@ -5,8 +5,8 @@ Esta entrega conserva la v1: React/TypeScript, servidor Node, SQLite persistente
 ## 1. Abrir el entorno desde el navegador
 
 1. Inicia sesión en GitHub con la cuenta que tiene acceso al [repositorio privado](https://github.com/bitsummit/focus-hub).
-2. Abre la [rama de entrega](https://github.com/bitsummit/focus-hub/tree/dev/focus-hub-v1-codespaces). Confirma que el selector de rama muestra **dev/focus-hub-v1-codespaces**; `main` ya contiene la v1 inicial, pero esta rama incorpora su configuración de Codespaces hasta revisar e integrar el nuevo PR.
-3. Pulsa **Code → Codespaces → Create codespace on dev/focus-hub-v1-codespaces**. Si GitHub muestra **New with options**, selecciona esa rama y `.devcontainer/devcontainer.json`. Bastan 2 CPU y 4 GB de RAM.
+2. Abre la [rama de entrega](https://github.com/bitsummit/focus-hub/tree/dev/focus-hub-v1.1-ux-readiness). Confirma que el selector de rama muestra **dev/focus-hub-v1.1-ux-readiness**; `main` ya contiene la v1 inicial, pero esta rama incorpora su configuración de Codespaces hasta revisar e integrar el nuevo PR.
+3. Pulsa **Code → Codespaces → Create codespace on dev/focus-hub-v1.1-ux-readiness**. Si GitHub muestra **New with options**, selecciona esa rama y `.devcontainer/devcontainer.json`. Bastan 2 CPU y 4 GB de RAM.
 4. Espera a que termine la creación. Automáticamente se ejecutan `npm ci`, una compilación de comprobación, la creación inicial de la demo y el arranque en modo desarrollo con Vite. El proceso termina comprobando login, datos persistentes y referencias del diario. No se imprimen contraseñas.
 5. Abre la pestaña **Ports / Puertos** del panel inferior. Debe aparecer **3000 · Focus Hub · privado**. Comprueba que **Port Visibility / Visibilidad del puerto** es **Private**. Es el valor predeterminado de GitHub para un puerto nuevo. No elijas `Public` ni `Private to Organization`.
 6. Pulsa el icono **Open in Browser / Abrir en el navegador** de la fila 3000. GitHub puede pedirte autenticarte para acceder al puerto privado. La dirección externa usa HTTPS aunque la conexión interna del contenedor sea HTTP.
@@ -20,6 +20,35 @@ bash .devcontainer/start.sh
 ```
 
 El comando es idempotente y no duplica el servidor. Puedes consultar `.data/codespaces-server.log` si falla. No se detienen procesos ajenos que ocupen el puerto.
+
+## Actualizar tu Codespace existente a v1.1
+
+Conserva el mismo Codespace para conservar su base y credenciales. Antes de
+actualizar, revisa `git status`: si hay cambios tuyos, guárdalos en un commit o
+copia aparte y resuelve su integración; no uses reset, checkout forzado ni limpieza.
+
+Desde la terminal, en la raíz del repositorio:
+
+```sh
+git status
+git fetch origin dev/focus-hub-v1.1-ux-readiness:refs/remotes/origin/dev/focus-hub-v1.1-ux-readiness
+git switch dev/focus-hub-v1.1-ux-readiness
+git merge --ff-only origin/dev/focus-hub-v1.1-ux-readiness
+node .devcontainer/service.mjs stop
+npm ci
+bash .devcontainer/start.sh
+```
+
+El fetch explícito funciona también si el clon original solo sigue `main`.
+`git switch` crea el seguimiento de la rama remota si todavía no existe localmente;
+si Git rechaza el cambio para proteger archivos, detente y conserva esos cambios.
+El arranque comprueba la compilación y vuelve a servir Vite con HMR. No reconstruye
+el contenedor, no reemplaza SQLite y no cambia tu contraseña. Recarga el navegador
+al terminar y abre **Ports → 3000 → Open in Browser** manteniendo **Private**.
+
+Prueba primero captura sin proyecto, chip Bandeja, cambio directo de proyecto,
+estado y prioridad, lista/Kanban móvil y «Tu espacio». Consulta
+[la revisión v1.1](UX_REVIEW_V1_1.md) y [recuperación y uso cotidiano](DAILY_USE_READINESS.md).
 
 ## 2. Obtener las credenciales de prueba
 
