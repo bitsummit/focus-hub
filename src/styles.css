@@ -3582,10 +3582,10 @@ html[data-theme="dark"] .avatar {
   }
 }
 
-/* Neutral, soft-white content cards with readable contrast in every shell theme. */
+/* White content surfaces sampled from the supplied Notion reference. */
 :root .app-shell :is(.panel, .project-card, .metric, .goal-card, .achievement, .status-summary, .period-nav, .board-column, .task-card, .table-wrap, .archive-list, .journal-paper) {
-  --surface: #fdfdfd;
-  --surface-soft: #f6f6f6;
+  --surface: #ffffff;
+  --surface-soft: #ffffff;
   --text: #252a2e;
   --muted: #596168;
   --line: #dfe2e5;
