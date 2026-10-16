@@ -88,13 +88,14 @@ export class Domain {
  }
  private createTask(input:CaptureInput,projectContext:string|null=null,parentContext:string|null=null):Task {
   const parsed=this.parsedCapture(input.text,input.project_id===undefined?projectContext:this.reference('projects',input.project_id));
+  if(input.priority!==undefined)parsed.priority=enumValue(input.priority,PRIORITIES,'Prioridad');
   const parent=this.reference('tasks',input.parent_task_id===undefined?parentContext:input.parent_task_id);
   const time=now(),id=randomUUID();
   this.insert('tasks',{id,workspace_id:this.ws,...parsed,parent_task_id:parent,created_by_user_id:this.uid,created_at:time,updated_at:time});
   const task=this.task(id);this.event(id,'created',undefined,task,time);return task;
  }
  capture(input:CaptureInput):Task {
-  const value=object(input);allowed(value,['text','request_id','project_id','parent_task_id','journal_date','indent_level']);text(value.text,'Tarea',2000);
+  const value=object(input);allowed(value,['text','request_id','project_id','parent_task_id','journal_date','indent_level','priority']);text(value.text,'Tarea',2000);
   return transaction(this.db,()=>this.idempotent('capture',value.request_id,value,()=>{
    const task=this.createTask(input);
    if(input.journal_date){const entry=this.entry(date(input.journal_date));this.newBlock(entry,'task_reference','',task.id,input.indent_level===undefined?0:integer(input.indent_level,'Sangría'));this.bump(entry);}

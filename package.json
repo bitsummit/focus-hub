@@ -1,6 +1,6 @@
 {
   "name": "focus-hub",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -15,7 +15,11 @@
     "test": "tsx --test tests/*.test.ts",
     "test:e2e": "playwright test",
     "demo": "tsx server/demo.ts",
-    "smoke:demo": "tsx scripts/smoke-demo.ts"
+    "smoke:demo": "tsx scripts/smoke-demo.ts",
+    "backup": "tsx scripts/database.ts backup",
+    "backup:verify": "tsx scripts/database.ts verify",
+    "restore": "tsx scripts/database.ts restore",
+    "screenshots:v11": "tsx scripts/ux-v11-screenshots.ts"
   },
   "dependencies": {
     "@js-temporal/polyfill": "0.5.1",

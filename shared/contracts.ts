@@ -17,7 +17,7 @@ export interface JournalBlock extends Base {journal_entry_id:string; block_type:
 export interface FocusItem {id:string; workspace_id:string; user_id:string; task_id:string; period_type:'daily'|'weekly'; period_start:string; sort_order:number; created_at:string}
 export interface Snapshot {user:User; workspace:Workspace; tasks:Task[]; projects:Project[]; goals:Goal[]; milestones:Milestone[]; events:TaskEvent[]; journals:JournalEntry[]; blocks:JournalBlock[]; focus:FocusItem[]}
 export interface Session {user:User; csrfToken:string}
-export interface CaptureInput {text:string; request_id:string; project_id?:string|null; parent_task_id?:string|null; journal_date?:string; indent_level?:number}
+export interface CaptureInput {text:string; request_id:string; priority?:Priority; project_id?:string|null; parent_task_id?:string|null; journal_date?:string; indent_level?:number}
 export interface JournalAppend {text:string; request_id:string; revision:number; indent_level?:number; task_id?:string}
 export interface Analytics {created:number; completed:number; reopened:number; cancelled:number; net:number; ending_backlog:number; series:{date:string;created:number;completed:number}[]; achievements:TaskEvent[]; milestones:Milestone[]; distribution:Record<string,number>}
 export interface AuthContext {user_id:string; workspace_id:string}

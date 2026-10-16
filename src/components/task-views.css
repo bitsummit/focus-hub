@@ -1,0 +1,50 @@
+/* Operational task layouts. Status colors come from the global semantic tokens. */
+.v11-visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+.v11-priority-compact { position: relative; }
+.v11-priority-control { position: relative; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 44px; width: 44px; height: 44px; border: 0; box-shadow: inset 0 0 0 1px transparent; border-radius: 7px; }
+.v11-priority-control select, .v11-task-table td .v11-priority-control select { position: absolute; inset: 0; width: 100%; height: 100%; min-width: 0; max-width: none; opacity: 0; cursor: pointer; }
+.v11-priority-control:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+.v11-priority-control:hover { box-shadow: inset 0 0 0 1px currentColor; }
+.v11-priority-control:has(select:disabled) { opacity: .6; }
+.v11-check-task { flex: 0 0 44px; width: 44px; min-width: 44px; height: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; padding: 0; }
+.v11-task-table td.v11-priority-cell { width: 80px; min-width: 80px; text-align: center; }
+.v11-task-table td { padding: 8px 10px; }
+.v11-task-table .table-task { gap: 4px; }
+.v11-task-table .table-title { max-width: 360px; overflow-wrap: anywhere; }
+.v11-task-table .v11-waiting-cell { white-space: normal; min-width: 100px; max-width: 240px; overflow-wrap: anywhere; }
+.v11-task-table .status-select { min-height: 40px; }
+.v11-task-list, .v11-status-group { min-width: 0; max-width: 100%; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); }
+.v11-task-row { display: flex; align-items: flex-start; gap: 4px; padding: 6px 8px 6px 2px; min-width: 0; border-bottom: 1px solid var(--line); }
+.v11-task-row:last-child { border-bottom: 0; }
+.v11-task-row-content { display: grid; grid-template-columns: minmax(0, 1fr) 44px; align-items: start; flex: 1; min-width: 0; }
+.v11-task-title { display: block; min-height: 44px; width: 100%; text-align: left; font-size: 1rem; line-height: 1.45; padding: 8px 2px; overflow-wrap: anywhere; color: var(--text); }
+.v11-task-row.is-completed .v11-task-title { text-decoration: line-through; }
+.v11-task-row-project { max-width: 100%; min-width: 0; }
+.v11-task-row .v11-project-control { width: 100%; max-width: 100%; min-width: 0; min-height: 44px; padding: 6px 24px 6px 2px; border-color: transparent; background-color: transparent; font-size: .875rem; color: var(--muted); text-overflow: ellipsis; }
+.v11-task-row-meta { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: 6px; min-width: 0; }
+.v11-task-row .status-select { flex: 0 1 auto; width: 100%; max-width: 100%; min-width: 0; min-height: 44px; font-size: .8125rem; padding: 7px 20px 7px 6px; margin: 0; text-overflow: ellipsis; }
+.v11-task-date { grid-column: 1 / -1; display: inline-flex; gap: 5px; align-items: center; font-size: .8125rem; color: var(--muted); padding: 3px 2px; }
+.v11-task-empty { border: 1px solid var(--line); border-radius: 9px; padding: 24px 18px; color: var(--muted); background: var(--surface); }
+.v11-task-empty h3 { margin: 8px 0; font-size: 1rem; color: var(--text); }
+.v11-task-empty p { margin: 0 0 8px; font-size: .9375rem; line-height: 1.5; }
+.v11-desktop-board { overflow-x: auto; overflow-y: visible; min-height: 0; align-items: flex-start; }
+.v11-desktop-board .board-column { flex-basis: 260px; min-height: 0; }
+.v11-desktop-board .column-heading { margin: 0; padding: 4px 3px 12px; font-size: .9375rem; line-height: 1.4; font-weight: 500; }
+.v11-column-title { flex: 1; min-width: 0; }
+.v11-column-count { display: inline-flex; align-items: center; justify-content: center; min-width: 24px; min-height: 24px; padding: 2px 6px; border-radius: 5px; color: var(--status-fg, var(--text)); background: var(--status-bg, var(--surface-soft)); font-size: .8125rem; }
+.v11-board-card { padding: 8px 10px 10px; }
+.v11-board-card-title { display: flex; align-items: flex-start; gap: 2px; }
+.v11-board-card-title .task-card-title { margin: 0; padding-top: 9px; flex: 1; min-width: 0; font-size: 1rem; line-height: 1.45; }
+.v11-board-card .v11-board-project { display: block; max-width: 100%; overflow-wrap: anywhere; margin: 2px 0 0 2px; font-size: .8125rem; }
+.v11-board-card .card-meta { margin-top: 2px; }
+.v11-board-card .status-select { margin-top: 4px; min-height: 40px; }
+.v11-mobile-board { display: flex; flex-direction: column; gap: 10px; min-width: 0; width: 100%; }
+.v11-status-group { overflow: clip; }
+.v11-status-group > summary { display: flex; align-items: center; gap: 8px; min-height: 52px; padding: 9px 12px; cursor: pointer; list-style: none; color: var(--status-fg, var(--text)); background: var(--status-bg, var(--surface-soft)); border-bottom: 1px solid var(--status-border, var(--line)); font-size: .9375rem; font-weight: 600; }
+.v11-status-group > summary::-webkit-details-marker { display: none; }
+.v11-status-group > summary > svg { transition: transform .15s; }
+.v11-status-group:not([open]) > summary { border-bottom: 0; }
+.v11-status-group:not([open]) > summary > svg { transform: rotate(-90deg); }
+.v11-group-empty { margin: 0; padding: 12px; font-size: .875rem; color: var(--muted); }
+@media (pointer: coarse) { .v11-task-row .v11-project-control { min-height: 44px; } }
+@media (prefers-reduced-motion: reduce) { .v11-status-group > summary > svg { transition: none; } }

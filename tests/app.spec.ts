@@ -34,13 +34,13 @@ test('tasks table is the landing page despite a legacy board preference and desk
  await expect(page.getByRole('button',{name:'Tabla',exact:true})).toHaveClass(/selected/);
  await page.reload();await expect(page.getByRole('table')).toBeVisible();
  const sidebar=page.locator('.sidebar nav');
- await expect(sidebar.getByRole('button')).toHaveText([/^Tareas\s*\d+$/,'Dashboard','Diario','Mis avances','Proyectos','Archivo','Ajustes']);
- await sidebar.getByRole('button',{name:'Dashboard',exact:true}).click();
- await expect(page).toHaveURL(/\/dashboard$/);await expect(page.getByRole('heading',{name:/hola,/i})).toBeVisible();
+ await expect(sidebar.getByRole('button')).toHaveText([/^Tareas\s*\d*$/,'Tu espacio','Diario','Mis avances','Proyectos','Archivo','Ajustes']);
+ await sidebar.getByRole('button',{name:'Tu espacio',exact:true}).click();
+ await expect(page).toHaveURL(/\/dashboard$/);await expect(page.getByRole('heading',{name:'Tu espacio',exact:true})).toBeVisible();
  await page.reload();await expect(page.locator('.weekly-panel')).toBeVisible();
  await sidebar.getByRole('button',{name:/^Tareas/}).click();await expect(page).toHaveURL(/\/tasks$/);
  await expect(page.getByRole('heading',{name:'Tus tareas',exact:true})).toBeVisible();
- await page.goBack();await expect(page.getByRole('heading',{name:/hola,/i})).toBeVisible();
+ await page.goBack();await expect(page.getByRole('heading',{name:'Tu espacio',exact:true})).toBeVisible();
  await page.goForward();await expect(page.getByRole('heading',{name:'Tus tareas',exact:true})).toBeVisible();
  await page.locator('.sidebar .brand').click();await expect(page).toHaveURL(/\/$/);
  await expect(page.getByRole('table')).toBeVisible();
@@ -53,16 +53,16 @@ test('14: smartphone navigation, keyboard operation, readable sections and no pa
  }
  await page.goto('/');
  const mobile=page.locator('.mobile-nav');
- await expect(mobile.getByRole('button')).toHaveText(['Tareas','Dashboard','Diario','Mis avances','Más']);
- await mobile.getByRole('button',{name:'Dashboard',exact:true}).click();
- await expect(page).toHaveURL(/\/dashboard$/);await expect(page.getByRole('heading',{name:/hola,/i})).toBeVisible();
+ await expect(mobile.getByRole('button')).toHaveText(['Tareas','Tu espacio','Diario','Mis avances','Más']);
+ await mobile.getByRole('button',{name:'Tu espacio',exact:true}).click();
+ await expect(page).toHaveURL(/\/dashboard$/);await expect(page.getByRole('heading',{name:'Tu espacio',exact:true})).toBeVisible();
  await mobile.getByRole('button',{name:'Más',exact:true}).click();
  await expect(page.locator('.mobile-more').getByRole('button')).toHaveText(['Proyectos','Archivo','Ajustes']);
  await page.locator('.mobile-more').getByRole('button',{name:'Proyectos',exact:true}).click();
  await expect(page).toHaveURL(/\/projects$/);await expect(page.locator('.mobile-more')).toHaveCount(0);
- await page.goBack();await expect(page.getByRole('heading',{name:/hola,/i})).toBeVisible();
+ await page.goBack();await expect(page.getByRole('heading',{name:'Tu espacio',exact:true})).toBeVisible();
  await page.goBack();await expect(page.getByRole('heading',{name:'Tus tareas',exact:true})).toBeVisible();
- await expect(page.getByRole('table')).toBeVisible();
+ await expect(page.getByRole('region',{name:'Lista de tareas'})).toBeVisible();
  await page.keyboard.press('Tab');
  expect(await page.evaluate(()=>document.activeElement?.tagName)).not.toBe('BODY');
 });
@@ -87,7 +87,7 @@ test('02,03,04,05,07,08,12: journal canonical task, board/table state, focus, ar
  await dialog.getByRole('combobox',{name:'Estado',exact:true}).selectOption('waiting_external');await dialog.getByLabel('Seguimiento',{exact:true}).fill('2026-10-20');await dialog.getByLabel('En espera de',{exact:true}).fill('Respuesta ficticia');await dialog.getByRole('button',{name:'Guardar cambios'}).click();await expect(dialog).toHaveCount(0);
  await page.goto('/dashboard');const weekly=page.locator('.weekly-panel');await weekly.getByRole('button',{name:/Elegir tarea/}).click();await page.locator('#focus-weekly').selectOption({label:'Presentación canónica QA'});await expect(weekly.getByRole('button',{name:/^Presentación canónica QA/})).toBeVisible();
  await page.reload();await expect(weekly.getByRole('button',{name:/^Presentación canónica QA/})).toBeVisible();
- await page.goto('/tasks');await page.getByRole('button',{name:'Tabla',exact:true}).click();const completed=page.waitForResponse(r=>r.url().includes('/api/tasks/')&&r.request().method()==='PATCH');await page.getByRole('button',{name:'Completar Presentación canónica QA',exact:true}).click();expect((await completed).ok()).toBeTruthy();
+ await page.goto('/tasks');await page.getByRole('button',{name:'Tabla',exact:true}).click();const completed=page.waitForResponse(r=>r.url().includes('/api/tasks/')&&r.request().method()==='PATCH');await page.getByRole('checkbox',{name:'Completar Presentación canónica QA',exact:true}).click();expect((await completed).ok()).toBeTruthy();
  await page.goto('/archive');await expect(page.getByRole('button',{name:/^Presentación canónica QA/})).toBeVisible();await expect(page.getByText(/Finalización:/)).toBeVisible();
  await page.goto('/settings');
  const jsonDownload=page.waitForEvent('download');await page.getByRole('button',{name:'Exportar todo · JSON'}).click();const json=await jsonDownload;const exported=JSON.parse(await readFile((await json.path())!,'utf8'));const task=exported.tasks.find((t:any)=>t.title==='Presentación canónica QA');expect(task.completed_at).toBeTruthy();expect(exported.tasks.filter((t:any)=>t.title===task.title)).toHaveLength(1);expect(exported.blocks.filter((b:any)=>b.task_id===task.id)).toHaveLength(1);expect(exported.events.some((e:any)=>e.task_id===task.id&&e.event_type==='completed')).toBeTruthy();

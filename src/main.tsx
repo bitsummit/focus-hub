@@ -42,8 +42,13 @@ import {
   type Goal,
   type Analytics,
   type JournalBlock,
+  type CaptureInput,
 } from "../shared/contracts";
 import "./styles.css";
+import { Board, TaskTable, StatusControl, Priority } from "./components/TaskViews";
+import { MobileQuickCapture } from "./components/QuickCapture";
+import { filterTask, matchesQuickFilter, type QuickFilter } from "./task-filters";
+import "./ux-v11.css";
 
 type Page =
   | "home"
@@ -55,7 +60,7 @@ type Page =
   | "settings";
 const nav: { key: Page; path: string; label: string; icon: typeof Home }[] = [
   { key: "tasks", path: "/tasks", label: "Tareas", icon: Home },
-  { key: "home", path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { key: "home", path: "/dashboard", label: "Tu espacio", icon: LayoutDashboard },
   { key: "journal", path: "/journal", label: "Diario", icon: BookOpen },
   { key: "progress", path: "/progress", label: "Mis avances", icon: BarChart3 },
   { key: "projects", path: "/projects", label: "Proyectos", icon: FolderOpen },
@@ -117,11 +122,31 @@ function App() {
     [ready, setReady] = useState(false),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(0),
+    [showSaving, setShowSaving] = useState(false),
     [route, setRoute] = useState(pathState),
     [editor, setEditor] = useState<Task | null>(null),
     [capture, setCapture] = useState(""),
     [captureRequest, setCaptureRequest] = useState(requestId()),
-    [more, setMore] = useState(false);
+    [more, setMore] = useState(false),
+    [captureSheet, setCaptureSheet] = useState(false),
+    [captureBusy, setCaptureBusy] = useState(false),
+    [quickFilter, setQuickFilter] = useState<QuickFilter>("all"),
+    [feedback, setFeedback] = useState<{message:string; undo?:{id:string;before:Status;after:Status}}|null>(null),
+    [archiveFilters, setArchiveFilters] = useState({search:"",project:"",status:"",priority:""});
+  useEffect(() => {
+    if (!busy) { setShowSaving(false); return; }
+    const timer = setTimeout(() => setShowSaving(true), 250);
+    return () => clearTimeout(timer);
+  }, [busy > 0]);
+  const capturePending = useRef(false);
+  const pendingTaskIds = useRef(new Set<string>());
+  const snapshotRef = useRef(snapshot);
+  snapshotRef.current = snapshot;
+  useEffect(() => {
+    if (!feedback || feedback.undo) return;
+    const timer = setTimeout(() => setFeedback(null), 4500);
+    return () => clearTimeout(timer);
+  }, [feedback]);
   const [search, setSearch] = useState(""),
     [projectFilter, setProjectFilter] = useState(""),
     [statusFilter, setStatusFilter] = useState(""),
@@ -189,7 +214,9 @@ function App() {
       }
       if (e.key === "k" && (e.ctrlKey || e.metaKey)) {
         e.preventDefault();
-        document.querySelector<HTMLInputElement>("#quick-capture")?.focus();
+        if (document.querySelector('.task-dialog, dialog[open]')) return;
+        if (window.matchMedia("(max-width: 767px)").matches) setCaptureSheet(true);
+        else document.querySelector<HTMLInputElement>("#quick-capture")?.focus();
       }
     };
     window.addEventListener("keydown", fn);
@@ -205,6 +232,7 @@ function App() {
     path: string,
     method = "POST",
     body?: unknown,
+    quietError = false,
   ): Promise<boolean> => {
     setBusy((n) => n + 1);
     setError("");
@@ -219,26 +247,45 @@ function App() {
       });
       if (data?.tasks) setSnapshot(data);
       else await refresh();
+      setFeedback({message: path === "/api/tasks" && method === "POST" ? "Tarea creada" : "Cambios guardados"});
       return true;
     } catch (e) {
-      setError((e as Error).message);
+      if (!quietError) setError((e as Error).message);
       return false;
     } finally {
       setBusy((n) => n - 1);
     }
   };
-  const updateTask = (id: string, fields: Partial<Task>) =>
-    mutate("/api/tasks/" + id, "PATCH", fields);
+  const updateTask = async (id: string, fields: Partial<Task>) => {
+    if (pendingTaskIds.current.has(id)) return false;
+    pendingTaskIds.current.add(id);
+    const previous = snapshotRef.current?.tasks.find(task => task.id === id)?.status;
+    try {
+      const saved = await mutate("/api/tasks/" + id, "PATCH", fields);
+      if (saved && fields.status && previous && previous !== fields.status)
+        setFeedback({message: fields.status === "completed" ? "Tarea completada" : "Estado actualizado", undo:{id,before:previous,after:fields.status}});
+      return saved;
+    } finally { pendingTaskIds.current.delete(id); }
+  };
+  const undoStatus = async () => {
+    const undo=feedback?.undo;if(!undo)return;
+    try {
+      const latest:Snapshot=await read("/api/state");setSnapshot(latest);
+      if(latest.tasks.find(task=>task.id===undo.id)?.status!==undo.after){setFeedback({message:"La tarea ha cambiado. Revisa su estado antes de deshacer."});return;}
+      if(await mutate("/api/tasks/"+undo.id,"PATCH",{status:undo.before}))setFeedback({message:"Estado anterior restaurado"});
+    } catch(e){setError((e as Error).message);}
+  };
+  const onCapture = (input:CaptureInput) => mutate("/api/tasks","POST",input);
   const quickCapture = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!capture.trim()) return;
-    const text = capture;
-    if (
-      await mutate("/api/tasks", "POST", { text, request_id: captureRequest })
-    ) {
-      setCapture("");
-      setCaptureRequest(requestId());
-    }
+    if (!capture.trim() || capturePending.current) return;
+    capturePending.current=true;setCaptureBusy(true);
+    try {
+      if(await onCapture({text:capture,request_id:captureRequest})){
+        setCapture("");setCaptureRequest(requestId());
+        document.querySelector<HTMLInputElement>("#quick-capture")?.focus({preventScroll:true});
+      }
+    } finally {capturePending.current=false;setCaptureBusy(false);}
   };
   useEffect(() => {
     // The app's entry URL always starts in the table. Explicit /tasks links
@@ -272,19 +319,12 @@ function App() {
     open = data.tasks.filter(
       (t) => !t.deleted_at && !["completed", "cancelled"].includes(t.status),
     );
-  const filterTasks = (tasks: Task[]) =>
-    tasks.filter(
-      (t) =>
-        !t.deleted_at &&
-        (!search ||
-          [t.title, t.description, ...t.tags]
-            .join(" ")
-            .toLowerCase()
-            .includes(search.toLowerCase())) &&
-        (!projectFilter || t.project_id === projectFilter) &&
-        (!statusFilter || t.status === statusFilter) &&
-        (!priorityFilter || t.priority === priorityFilter),
-    );
+  const advancedFilters={search,project:projectFilter,status:statusFilter,priority:priorityFilter};
+  const filterTasks = (tasks:Task[]) => tasks.filter(task=>filterTask(task,archiveFilters));
+  const todayIds=new Set(data.focus.filter(item=>item.period_type==="daily"&&item.period_start===today).map(item=>item.task_id));
+  const taskResults=data.tasks.filter(task=>filterTask(task,advancedFilters)&&matchesQuickFilter(task,quickFilter,todayIds));
+  const taskFiltersActive=Boolean(search||projectFilter||statusFilter||priorityFilter||quickFilter!=="all");
+  const clearTaskFilters=()=>{setSearch("");setProjectFilter("");setStatusFilter("");setPriorityFilter("");setQuickFilter("all");};
   const shared = {
     data,
     mutate,
@@ -317,6 +357,8 @@ function App() {
               key={n.key}
               className={"nav-link " + (route.page === n.key ? "active" : "")}
               onClick={() => go(n.key)}
+              aria-label={n.label}
+              title={n.label}
             >
               <n.icon size={19} />
               {n.label}
@@ -326,13 +368,6 @@ function App() {
             </button>
           ))}
         </nav>
-        <div className="sidebar-note">
-          <div className="little-leaf">
-            <Leaf size={20} />
-          </div>
-          <p>Un paso cada vez.</p>
-          <span>Dedica tu energía a lo que importa.</span>
-        </div>
         <div className="profile">
           <div className="avatar">
             {data.user.display_name.slice(0, 1).toUpperCase()}
@@ -372,7 +407,8 @@ function App() {
             <input
               id="quick-capture"
               aria-label="Captura rápida de tarea"
-              placeholder="Captura una tarea y pulsa Enter…"
+              placeholder="Añade una tarea y pulsa Enter"
+              readOnly={captureBusy}
               value={capture}
               onChange={(e) => {
                 setCapture(e.target.value);
@@ -384,7 +420,7 @@ function App() {
               type="submit"
               className="icon-button"
               aria-label="Crear tarea"
-              disabled={!capture.trim() || busy > 0}
+              disabled={!capture.trim() || captureBusy}
             >
               <ArrowUpRight size={17} />
             </button>
@@ -402,7 +438,7 @@ function App() {
             </button>
           </div>
         )}
-        {busy > 0 && (
+        {showSaving && busy > 0 && (
           <div className="saving" role="status">
             <LoaderCircle size={13} className="spin" /> Guardando…
           </div>
@@ -412,9 +448,7 @@ function App() {
           {route.page === "tasks" && (
             <>
               <PageHeading
-                eyebrow="MENOS RUIDO, MÁS CLARIDAD"
                 title="Tus tareas"
-                subtitle="Todo en su sitio. Un único lugar para seguir avanzando."
                 action={
                   <div className="segmented">
                     <button
@@ -434,7 +468,16 @@ function App() {
                   </div>
                 }
               />
+              <div className="quick-filters" role="group" aria-label="Filtros rápidos">
+                {([
+                  ["all","Todas"],["inbox","Bandeja"],["today","Hoy"],
+                  ["priority","Prioritarias"],["waiting","En espera"],["blocked","Bloqueadas"],
+                ] as const).map(([key,label])=><button type="button" key={key} className="filter-chip" aria-pressed={quickFilter===key} onClick={()=>setQuickFilter(key)}>{label}</button>)}
+              </div>
               <Filters
+                activeOnly
+                onClear={clearTaskFilters}
+                extraActive={quickFilter!=="all"}
                 data={data}
                 {...{
                   search,
@@ -449,21 +492,17 @@ function App() {
               />
               {taskView === "board" ? (
                 <Board
-                  tasks={filterTasks(data.tasks).filter(
-                    (t) =>
-                      statusFilter ||
-                      !["completed", "cancelled"].includes(t.status),
-                  )}
+                  tasks={taskResults}
+                  emptyFiltered={taskFiltersActive}
+                  onClearFilters={clearTaskFilters}
                   {...shared}
-                  showAll={!!statusFilter}
+                  showAll={false}
                 />
               ) : (
                 <TaskTable
-                  tasks={filterTasks(data.tasks).filter(
-                    (t) =>
-                      statusFilter ||
-                      !["completed", "cancelled"].includes(t.status),
-                  )}
+                  tasks={taskResults}
+                  emptyFiltered={taskFiltersActive}
+                  onClearFilters={clearTaskFilters}
                   {...shared}
                 />
               )}
@@ -489,16 +528,14 @@ function App() {
               filters={
                 <Filters
                   data={data}
-                  {...{
-                    search,
-                    setSearch,
-                    projectFilter,
-                    setProjectFilter,
-                    statusFilter,
-                    setStatusFilter,
-                    priorityFilter,
-                    setPriorityFilter,
-                  }}
+                  search={archiveFilters.search}
+                  setSearch={value=>setArchiveFilters(current=>({...current,search:value}))}
+                  projectFilter={archiveFilters.project}
+                  setProjectFilter={value=>setArchiveFilters(current=>({...current,project:value}))}
+                  statusFilter={archiveFilters.status}
+                  setStatusFilter={value=>setArchiveFilters(current=>({...current,status:value}))}
+                  priorityFilter={archiveFilters.priority}
+                  setPriorityFilter={value=>setArchiveFilters(current=>({...current,priority:value}))}
                 />
               }
               go={go}
@@ -509,7 +546,7 @@ function App() {
           )}
         </main>
         <footer className="main-footer">
-          <Leaf size={13} /> Tu tiempo merece intención.
+          <Leaf size={13} /> Focus Hub
           <span>
             {data.workspace.name} · {data.user.timezone}
           </span>
@@ -545,12 +582,17 @@ function App() {
         className="mobile-add"
         aria-label="Capturar una tarea"
         onClick={() => {
-          document.querySelector<HTMLInputElement>("#quick-capture")?.focus();
-          window.scrollTo({ top: 0, behavior: "smooth" });
+          setCaptureSheet(true);
         }}
       >
         <Plus size={25} />
       </button>
+      <MobileQuickCapture open={captureSheet} onClose={()=>setCaptureSheet(false)} projects={data.projects} onCapture={input=>mutate("/api/tasks","POST",input,true)}/>
+      {feedback && <div className="action-feedback" role="status" aria-live="polite">
+        <span>{feedback.message}</span>
+        {feedback.undo && <button type="button" onClick={undoStatus}>Deshacer</button>}
+        <button type="button" aria-label="Cerrar confirmación" onClick={()=>setFeedback(null)}>×</button>
+      </div>}
       {currentTask && (
         <TaskDialog
           key={currentTask.id}
@@ -592,27 +634,27 @@ function Login({
           Focus Hub.
         </div>
         <div>
-          <span className="eyebrow">MENOS GESTIONAR. MÁS AVANZAR.</span>
+          <span className="eyebrow">FOCUS HUB</span>
           <h1>
-            Haz espacio
+            Tareas,
             <br />
-            para lo que
+            proyectos y
             <br />
-            <em>importa.</em>
+            <em>diario.</em>
           </h1>
           <p>
-            Tus proyectos, tus ideas y tu próximo paso.
+            Captura, organiza y consulta tu trabajo.
             <br />
-            Un espacio tranquilo para darles forma.
+            Tus tareas y su historial, en un solo lugar.
           </p>
         </div>
-        <span className="story-footer">Un paso cada vez, con intención.</span>
+        <span className="story-footer">Acceso privado</span>
       </section>
       <section className="login-form">
         <div>
           <span className="eyebrow">TU ESPACIO PERSONAL</span>
-          <h2>Qué bueno verte.</h2>
-          <p>Entra para retomar donde lo dejaste.</p>
+          <h2>Acceder a Focus Hub</h2>
+          <p>Introduce tus credenciales.</p>
           <form
             onSubmit={async (e) => {
               e.preventDefault();
@@ -695,7 +737,7 @@ function PageHeading({
   );
 }
 function Empty({
-  title = "Aquí empieza algo bueno.",
+  title = "No hay elementos",
   text = "Captura tu primera tarea en la barra superior.",
   icon: Icon = Leaf,
 }: {
@@ -709,39 +751,6 @@ function Empty({
       <h3>{title}</h3>
       <p>{text}</p>
     </div>
-  );
-}
-function StatusControl({
-  task,
-  updateTask,
-}: {
-  task: Task;
-  updateTask: Shared["updateTask"];
-}) {
-  return (
-    <select
-      aria-label={"Estado de " + task.title}
-      className={"status-select status-" + task.status}
-      value={task.status}
-      onClick={(e) => e.stopPropagation()}
-      onChange={(e) =>
-        updateTask(task.id, { status: e.target.value as Status })
-      }
-    >
-      {STATUSES.map((s) => (
-        <option key={s} value={s}>
-          {statusLabels[s]}
-        </option>
-      ))}
-    </select>
-  );
-}
-function Priority({ value }: { value: Task["priority"] }) {
-  return (
-    <span className={"priority priority-" + value}>
-      <Flag size={11} />
-      {priorityLabels[value]}
-    </span>
   );
 }
 function TaskLine({
@@ -788,14 +797,9 @@ function TaskLine({
             <i className={"dot state-dot " + task.status} />
             {statusLabels[task.status]}
           </span>
-          {p && (
-            <span
-              className="project-dot"
-              style={{ "--project-color": p.color } as React.CSSProperties}
-            >
-              {p.name}
-            </span>
-          )}
+          <span className="project-dot" style={{"--project-color":p?.color??"#757e88"} as React.CSSProperties}>
+            {p?.name??"Bandeja de entrada"}
+          </span>
           {task.waiting_on && ` · ${task.waiting_on}`}
           <span className="inline-mobile-priority">
             <Priority value={task.priority} />
@@ -840,8 +844,7 @@ function HomePage(props: Shared & { go: (p: Page, path?: string) => void }) {
         })
           .format(new Date(today + "T12:00:00Z"))
           .toUpperCase()}
-        title={`Hola, ${data.user.display_name.split(" ")[0]}.`}
-        subtitle="No tienes que hacerlo todo. Solo lo que importa."
+        title="Tu espacio"
         action={
           <PeriodNav date={week} onChange={setWeek} step={7} label="Semana" />
         }
@@ -851,7 +854,7 @@ function HomePage(props: Shared & { go: (p: Page, path?: string) => void }) {
           <PanelTitle
             icon={Target}
             title="Mi foco de la semana"
-            subtitle="Tus compromisos, elegidos con intención."
+            subtitle="Selecciona hasta 5 tareas para esta semana."
             tag="HASTA 5"
           />
           <FocusPanel {...props} type="weekly" date={week} />
@@ -860,7 +863,7 @@ function HomePage(props: Shared & { go: (p: Page, path?: string) => void }) {
           <PanelTitle
             icon={CheckCircle2}
             title="Hoy"
-            subtitle="Tres pasos que marcan la diferencia."
+            subtitle="Selecciona hasta 3 tareas para hoy."
             tag={Temporal.PlainDate.from(today).day.toString()}
           />
           <FocusPanel {...props} type="daily" date={today} />
@@ -868,7 +871,6 @@ function HomePage(props: Shared & { go: (p: Page, path?: string) => void }) {
       </div>
       <div className="section-heading">
         <div>
-          <span className="eyebrow">MIRA UN POCO MÁS ALLÁ</span>
           <h2>Objetivos estratégicos</h2>
         </div>
         <button className="text-button" onClick={() => go("projects")}>
@@ -883,7 +885,7 @@ function HomePage(props: Shared & { go: (p: Page, path?: string) => void }) {
         {!goals.length && (
           <div className="panel full">
             <Empty
-              title="Dale una dirección a tu esfuerzo."
+              title="Sin objetivos activos"
               text="Define un objetivo y sus hitos en Proyectos."
               icon={Target}
             />
@@ -892,7 +894,6 @@ function HomePage(props: Shared & { go: (p: Page, path?: string) => void }) {
       </div>
       <div className="section-heading">
         <div>
-          <span className="eyebrow">DEL PLAN A LA ACCIÓN</span>
           <h2>
             Proyectos activos <span className="count">{active.length}</span>
           </h2>
@@ -914,8 +915,8 @@ function HomePage(props: Shared & { go: (p: Page, path?: string) => void }) {
         {!active.length && (
           <div className="panel full">
             <Empty
-              title="Tu próximo proyecto empieza aquí."
-              text="Crea un proyecto con su nombre. El resto puede esperar."
+              title="Sin proyectos activos"
+              text="Crea un proyecto para organizar tus tareas."
               icon={FolderOpen}
             />
           </div>
@@ -923,7 +924,6 @@ function HomePage(props: Shared & { go: (p: Page, path?: string) => void }) {
       </div>
       <div className="section-heading">
         <div>
-          <span className="eyebrow">CADA PASO CUENTA</span>
           <h2>Mis avances</h2>
         </div>
         <button className="text-button" onClick={() => go("progress")}>
@@ -959,10 +959,7 @@ function HomePage(props: Shared & { go: (p: Page, path?: string) => void }) {
           caption="En espera o revisión"
         />
       </div>
-      <div className="gentle-note">
-        <Leaf size={17} />
-        <span>Avanzar también es decidir qué puede esperar.</span>
-      </div>
+
     </>
   );
 }
@@ -982,7 +979,7 @@ function Metric({
   caption: string;
 }) {
   return (
-    <div className="metric">
+    <div className="metric" data-tone={label==="Tareas completadas"?"completed":label==="Nuevas tareas"?"created":label==="Reducción neta"?(value>0?"positive":value<0?"negative":"neutral"):"neutral"}>
       <span>{label}</span>
       <strong>
         {value > 0 && label === "Reducción neta" ? "+" : ""}
@@ -1170,8 +1167,8 @@ function GoalCard({ goal, data }: { goal: Goal; data: Snapshot }) {
       <span className="goal-label">
         <Target size={14} />
         {goal.period_end
-          ? `HASTA ${niceDate(goal.period_end)}`
-          : "OBJETIVO ACTIVO"}
+          ? `Hasta ${niceDate(goal.period_end)}`
+          : "Objetivo activo"}
       </span>
       <h3>{goal.title}</h3>
       {goal.description && <p>{goal.description}</p>}
@@ -1235,23 +1232,22 @@ function ProjectCard({
           {data.goals.find((g) => g.id === p.goal_id)?.title}
         </div>
       )}
-      <p>{p.description || "Un proyecto, muchas posibilidades."}</p>
+      <p>{p.description || "Sin descripción"}</p>
       <div className="project-card-counts">
         <span>
           <strong>{tasks.length}</strong> abiertas
         </span>
         <span>
-          <i className="dot teal" />
+          <i className="dot state-dot in_progress" aria-hidden="true" />
           {tasks.filter((t) => t.status === "in_progress").length} en curso
         </span>
         <span>
-          <i className="dot amber" />
-          {
-            tasks.filter((t) =>
-              ["pending_review", "waiting_external"].includes(t.status),
-            ).length
-          }{" "}
-          en espera
+          <i className="dot state-dot pending_review" aria-hidden="true" />
+          {tasks.filter((t) => t.status === "pending_review").length} en revisión
+        </span>
+        <span>
+          <i className="dot state-dot waiting_external" aria-hidden="true" />
+          {tasks.filter((t) => t.status === "waiting_external").length} en espera
         </span>
       </div>
       {next && (
@@ -1265,6 +1261,7 @@ function ProjectCard({
 }
 
 type FilterProps = {
+  activeOnly?:boolean; onClear?:()=>void; extraActive?:boolean;
   data: Snapshot;
   search: string;
   setSearch: (s: string) => void;
@@ -1276,292 +1273,31 @@ type FilterProps = {
   setPriorityFilter: (s: string) => void;
 };
 function Filters(p: FilterProps) {
-  return (
-    <div className="filters">
-      <div className="search-field">
-        <Search size={16} />
-        <input
-          aria-label="Buscar tareas"
-          placeholder="Buscar tareas…"
-          value={p.search}
-          onChange={(e) => p.setSearch(e.target.value)}
-        />
+  const active=Boolean(p.search||p.projectFilter||p.statusFilter||p.priorityFilter||p.extraActive);
+  const advanced=Boolean(p.projectFilter||p.statusFilter||p.priorityFilter);
+  const clear=()=>{p.setSearch("");p.setProjectFilter("");p.setStatusFilter("");p.setPriorityFilter("");p.onClear?.();};
+  return <div className="task-filter-tools">
+    <div className="filters filter-search-row">
+      <div className="search-field"><Search size={16}/><input aria-label="Buscar tareas" placeholder="Buscar tareas…" value={p.search} onChange={event=>p.setSearch(event.target.value)}/></div>
+      {active&&<button type="button" className="text-button" onClick={clear}>Limpiar filtros</button>}
+    </div>
+    <details className="advanced-filters" open={advanced||undefined}>
+      <summary>Filtros avanzados{advanced?" · activos":""}</summary>
+      <div className="filters">
+        <select aria-label="Filtrar por proyecto" value={p.projectFilter} onChange={event=>p.setProjectFilter(event.target.value)}>
+          <option value="">Todos los proyectos</option><option value="inbox">Bandeja de entrada</option>
+          {p.data.projects.map(project=><option key={project.id} value={project.id}>{project.name}</option>)}
+        </select>
+        <select aria-label="Filtrar por estado" value={p.statusFilter} onChange={event=>p.setStatusFilter(event.target.value)}>
+          <option value="">{p.activeOnly?"Estados activos":"Todos los estados"}</option>
+          {STATUSES.filter(status=>!p.activeOnly||!["completed","cancelled"].includes(status)).map(status=><option key={status} value={status}>{statusLabels[status]}</option>)}
+        </select>
+        <select aria-label="Filtrar por prioridad" value={p.priorityFilter} onChange={event=>p.setPriorityFilter(event.target.value)}>
+          <option value="">Toda prioridad</option>{PRIORITIES.map(priority=><option key={priority} value={priority}>{priorityLabels[priority]}</option>)}
+        </select>
       </div>
-      <select
-        aria-label="Filtrar por proyecto"
-        value={p.projectFilter}
-        onChange={(e) => p.setProjectFilter(e.target.value)}
-      >
-        <option value="">Todos los proyectos</option>
-        {p.data.projects.map((x) => (
-          <option key={x.id} value={x.id}>
-            {x.name}
-          </option>
-        ))}
-      </select>
-      <select
-        aria-label="Filtrar por estado"
-        value={p.statusFilter}
-        onChange={(e) => p.setStatusFilter(e.target.value)}
-      >
-        <option value="">Estados activos</option>
-        {STATUSES.map((s) => (
-          <option key={s} value={s}>
-            {statusLabels[s]}
-          </option>
-        ))}
-      </select>
-      <select
-        aria-label="Filtrar por prioridad"
-        value={p.priorityFilter}
-        onChange={(e) => p.setPriorityFilter(e.target.value)}
-      >
-        <option value="">Toda prioridad</option>
-        {PRIORITIES.map((s) => (
-          <option key={s} value={s}>
-            {priorityLabels[s]}
-          </option>
-        ))}
-      </select>
-      {(p.search || p.projectFilter || p.statusFilter || p.priorityFilter) && (
-        <button
-          className="text-button"
-          onClick={() => {
-            p.setSearch("");
-            p.setProjectFilter("");
-            p.setStatusFilter("");
-            p.setPriorityFilter("");
-          }}
-        >
-          Limpiar
-        </button>
-      )}
-    </div>
-  );
-}
-function Board({
-  tasks,
-  showAll,
-  ...props
-}: Shared & { tasks: Task[]; showAll: boolean }) {
-  const { data, updateTask, openTask } = props;
-  const columns = STATUSES.filter(
-    (s) => showAll || !["completed", "cancelled"].includes(s),
-  );
-  return (
-    <div className="board" aria-label="Tablero Kanban">
-      {columns.map((s) => (
-        <section
-          key={s}
-          className={"board-column status-" + s}
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={(e) => {
-            e.preventDefault();
-            const id = e.dataTransfer.getData("text/plain");
-            if (data.tasks.some((t) => t.id === id))
-              updateTask(id, { status: s });
-          }}
-        >
-          <div className="column-heading">
-            <span className={"dot state-dot " + s} />
-            <h2>{statusLabels[s]}</h2>
-            <span>{tasks.filter((t) => t.status === s).length}</span>
-          </div>
-          <div className="column-cards">
-            {tasks
-              .filter((t) => t.status === s)
-              .map((t) => (
-                <article
-                  key={t.id}
-                  className="task-card"
-                  draggable
-                  onDragStart={(e) =>
-                    e.dataTransfer.setData("text/plain", t.id)
-                  }
-                >
-                  <button
-                    className="task-card-title"
-                    onClick={() => openTask(t)}
-                  >
-                    {t.title}
-                  </button>
-                  {t.parent_task_id && (
-                    <small className="subtask-label">↳ Subtarea</small>
-                  )}
-                  {t.project_id && (
-                    <span className="project-dot">
-                      {data.projects.find((p) => p.id === t.project_id)?.name}
-                    </span>
-                  )}
-                  <div className="card-meta">
-                    <Priority value={t.priority} />
-                    {t.due_at && (
-                      <small>{niceDate(t.due_at.slice(0, 10))}</small>
-                    )}
-                  </div>
-                  {t.waiting_on && (
-                    <div className="waiting-note">
-                      En espera de {t.waiting_on}
-                    </div>
-                  )}
-                  {t.follow_up_at && (
-                    <small>
-                      Seguimiento: {niceDate(t.follow_up_at.slice(0, 10))}
-                    </small>
-                  )}
-                  <StatusControl task={t} updateTask={updateTask} />
-                </article>
-              ))}
-            {!tasks.some((t) => t.status === s) && (
-              <div className="column-empty">Sin tareas por aquí</div>
-            )}
-          </div>
-        </section>
-      ))}
-    </div>
-  );
-}
-function TaskTable({
-  tasks,
-  defaultSort = "updated_at",
-  ...props
-}: Shared & { tasks: Task[]; defaultSort?: string }) {
-  const [sort, setSort] = useState(defaultSort),
-    [asc, setAsc] = useState(false);
-  const sorted = [...tasks].sort((a, b) => {
-    const av =
-        sort === "priority"
-          ? PRIORITIES.indexOf(a.priority)
-          : String(a[sort as keyof Task] ?? ""),
-      bv =
-        sort === "priority"
-          ? PRIORITIES.indexOf(b.priority)
-          : String(b[sort as keyof Task] ?? "");
-    return (av < bv ? -1 : av > bv ? 1 : 0) * (asc ? 1 : -1);
-  });
-  const head = (key: string, label: string) => (
-    <button
-      onClick={() => {
-        if (sort === key) setAsc(!asc);
-        else {
-          setSort(key);
-          setAsc(true);
-        }
-      }}
-    >
-      {label}
-      {sort === key && (asc ? " ↑" : " ↓")}
-    </button>
-  );
-  return tasks.length ? (
-    <div className="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>{head("title", "Tarea")}</th>
-            <th>{head("priority", "Prioridad")}</th>
-            <th>{head("project_id", "Proyecto")}</th>
-            <th>{head("status", "Estado")}</th>
-            <th>{head("updated_at", "Actualizada")}</th>
-            <th>{head("due_at", "Vencimiento")}</th>
-            <th>En espera de</th>
-          </tr>
-        </thead>
-        <tbody>
-          {sorted.map((t) => (
-            <tr key={t.id}>
-              <td>
-                <div className="table-task">
-                  <button
-                    className="check-task"
-                    aria-label={"Completar " + t.title}
-                    onClick={() =>
-                      props.updateTask(t.id, {
-                        status:
-                          t.status === "completed" ? "pending" : "completed",
-                      })
-                    }
-                  >
-                    {t.status === "completed" ? (
-                      <CheckCircle2 size={18} />
-                    ) : (
-                      <Circle size={18} />
-                    )}
-                  </button>
-                  <button
-                    className="table-title"
-                    onClick={() => props.openTask(t)}
-                  >
-                    {t.parent_task_id && "↳ "}
-                    {t.title}
-                  </button>
-                </div>
-              </td>
-              <td>
-                <select
-                  aria-label={"Prioridad de " + t.title}
-                  value={t.priority}
-                  onChange={(e) =>
-                    props.updateTask(t.id, {
-                      priority: e.target.value as Task["priority"],
-                    })
-                  }
-                >
-                  {PRIORITIES.map((p) => (
-                    <option key={p} value={p}>
-                      {priorityLabels[p]}
-                    </option>
-                  ))}
-                </select>
-              </td>
-              <td>
-                <select
-                  aria-label={"Proyecto de " + t.title}
-                  value={t.project_id ?? ""}
-                  onChange={(e) =>
-                    props.updateTask(t.id, {
-                      project_id: e.target.value || null,
-                    })
-                  }
-                >
-                  <option value="">Bandeja de entrada</option>
-                  {props.data.projects.map((p) => (
-                    <option value={p.id} key={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
-              </td>
-              <td>
-                <StatusControl task={t} updateTask={props.updateTask} />
-              </td>
-              <td className="muted">
-                {niceDate(t.updated_at, props.data.user.timezone)}
-              </td>
-              <td>
-                <input
-                  type="date"
-                  aria-label={"Vencimiento de " + t.title}
-                  value={t.due_at?.slice(0, 10) ?? ""}
-                  onChange={(e) =>
-                    props.updateTask(t.id, { due_at: e.target.value || null })
-                  }
-                />
-              </td>
-              <td className="muted">{t.waiting_on || "—"}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  ) : (
-    <div className="panel">
-      <Empty
-        title="Espacio para tu próximo paso."
-        text="Captura una tarea arriba o ajusta tus filtros."
-      />
-    </div>
-  );
+    </details>
+  </div>;
 }
 
 function TaskDialog({
@@ -1581,6 +1317,9 @@ function TaskDialog({
   const set = (key: keyof Task, value: unknown) =>
     setDraft((d) => ({ ...d, [key]: value }));
   useEffect(() => {
+    const opener=document.activeElement instanceof HTMLElement?document.activeElement:null;
+    const previousOverflow=document.body.style.overflow;
+    document.body.style.overflow="hidden";
     const first =
       document.querySelector<HTMLInputElement>(".task-dialog input");
     first?.focus();
@@ -1602,7 +1341,7 @@ function TaskDialog({
       }
     };
     document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
+    return () => {document.removeEventListener("keydown", handler);document.body.style.overflow=previousOverflow;opener?.focus({preventScroll:true});};
   }, []);
   return (
     <div
@@ -1682,6 +1421,7 @@ function TaskDialog({
             <label>
               Estado
               <select
+                className={"status-select status-" + draft.status}
                 value={draft.status}
                 onChange={(e) => set("status", e.target.value)}
               >
@@ -1977,9 +1717,8 @@ function JournalPage({
   return (
     <>
       <PageHeading
-        eyebrow="PIENSA EN PAPEL. ACTÚA CON CLARIDAD."
         title="Mi diario"
-        subtitle="Un lugar para pensar, capturar y seguir el hilo."
+        subtitle="Notas y tareas vinculadas por día."
         action={
           <div className="journal-date">
             <PeriodNav date={date} onChange={onDate} />
@@ -2246,9 +1985,8 @@ function ProjectsPage({
   return (
     <>
       <PageHeading
-        eyebrow="DA DIRECCIÓN A TUS IDEAS"
         title="Proyectos y objetivos"
-        subtitle="Conecta lo que haces cada día con lo que quieres conseguir."
+        subtitle="Proyectos, objetivos e hitos."
         action={
           <button className="button primary" onClick={() => setCreate(!create)}>
             <Plus size={16} />
@@ -2369,8 +2107,8 @@ function ProjectsPage({
           {!data.projects.length && (
             <div className="panel full">
               <Empty
-                title="Haz sitio a un proyecto."
-                text="Solo necesitas un nombre para empezar."
+                title="No hay proyectos"
+                text="Crea un proyecto con su nombre."
                 icon={FolderOpen}
               />
             </div>
@@ -2676,7 +2414,7 @@ function GoalsManager(props: Shared) {
       {!data.goals.length && (
         <div className="panel">
           <Empty
-            title="La dirección importa."
+            title="Sin objetivos"
             text="Define un objetivo y mide avances reales mediante hitos, no por cantidad de tareas."
             icon={Target}
           />
@@ -2819,7 +2557,7 @@ function ProjectDetail({
         {STATUSES.map((s) => (
           <div key={s}>
             <strong>{tasks.filter((t) => t.status === s).length}</strong>
-            <span>{statusLabels[s]}</span>
+            <span className={"task-inline-status status-"+s}>{statusLabels[s]}</span>
           </div>
         ))}
       </div>
@@ -2977,9 +2715,8 @@ function ProgressPage({
   return (
     <>
       <PageHeading
-        eyebrow="EL PROGRESO TIENE MUCHAS FORMAS"
         title="Mis avances"
-        subtitle="Una mirada honesta a lo que ya has conseguido."
+        subtitle="Resultados verificados del periodo."
         action={
           <div className="segmented">
             <button
@@ -3066,12 +2803,13 @@ function ProgressPage({
               Cancelaciones: <strong>{analytics.cancelled}</strong>
             </span>
             <span>Una misma tarea cuenta una vez por periodo.</span>
+            <span>Capturar trabajo nuevo puede aumentar el backlog; no mide productividad.</span>
           </div>
           <div className="dashboard-grid">
             <section className="panel chart-panel">
               <PanelTitle
                 icon={BarChart3}
-                title="Un paso, otro paso"
+                title="Actividad diaria"
                 subtitle="Creaciones y finalizaciones verificadas por día."
               />
               <div className="chart-legend">
@@ -3272,8 +3010,8 @@ function ProgressPage({
               ))}
             {!analytics.achievements.length && !analytics.milestones.length && (
               <Empty
-                title="Tu progreso encontrará su lugar aquí."
-                text="Sin logros registrados en este periodo. Cada pequeño paso cuenta."
+                title="Sin logros en este periodo"
+                text="Cambia el periodo para consultar otras finalizaciones."
                 icon={CheckCircle2}
               />
             )}
@@ -3325,9 +3063,8 @@ function ArchivePage({
   return (
     <>
       <PageHeading
-        eyebrow="NADA DE LO HECHO SE PIERDE"
         title="Tu archivo"
-        subtitle="Tu historia de avances, sin copiar listas ni duplicar tareas."
+        subtitle="Tareas, hitos y diarios anteriores."
       />
       <div className="archive-tools">
         <div className="segmented">
@@ -3428,7 +3165,7 @@ function ArchivePage({
             ))}
             {!tasks.length && (
               <Empty
-                title="Una historia por construir."
+                title="No hay tareas en el archivo"
                 text="Aquí encontrarás tareas completadas, canceladas y reabiertas. Prueba a ajustar los filtros."
                 icon={Inbox}
               />
@@ -3458,7 +3195,7 @@ function ArchivePage({
           />
           {!data.milestones.some((m) => m.status === "achieved") && (
             <Empty
-              title="Tus hitos conseguidos, a salvo."
+              title="Sin hitos logrados"
               text="Aparecerán aquí cuando los marques como logrados."
               icon={Flag}
             />
@@ -3518,8 +3255,8 @@ function ArchivePage({
             ))}
           {!data.journals.length && (
             <Empty
-              title="Cada día tiene su lugar."
-              text="Tus entradas se conservan sin necesidad de duplicarlas."
+              title="Sin entradas de diario"
+              text="Las entradas guardadas aparecerán aquí."
               icon={BookOpen}
             />
           )}
@@ -3565,9 +3302,8 @@ function SettingsPage({
   return (
     <>
       <PageHeading
-        eyebrow="A TU MANERA"
         title="Configuración"
-        subtitle="Un espacio que se adapta a ti. Tus datos siguen siendo tuyos."
+        subtitle="Preferencias y exportación de datos."
       />
       <div className="settings-grid">
         <section className="panel">
@@ -3674,7 +3410,7 @@ function SettingsPage({
           <section className="panel">
             <PanelTitle
               icon={Inbox}
-              title="Tus datos, contigo"
+              title="Exportar datos"
               subtitle="Descarga archivos de tu espacio, cuando quieras."
             />
             <p className="settings-copy">

@@ -1,0 +1,35 @@
+.v11-capture-sheet {
+  position: fixed;
+  inset: auto 0 var(--v11-capture-inset, 0px);
+  margin: 0 auto;
+  padding: 20px 20px max(20px, env(safe-area-inset-bottom));
+  width: min(100%, 560px);
+  max-width: 100%;
+  max-height: min(90dvh, calc(var(--v11-capture-height, 100dvh) - 16px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--line);
+  border-bottom: 0;
+  border-radius: 18px 18px 0 0;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 -8px 36px #0002;
+}
+.v11-capture-sheet::backdrop { background: #11221d70; }
+.v11-capture-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.v11-capture-heading h2 { margin: 0; font-size: 1.25rem; }
+.v11-capture-heading button { min-width: 44px; min-height: 44px; font-size: 1.75rem; border-radius: 8px; }
+.v11-capture-title-label { display: block; font-size: .9375rem; margin-bottom: 6px; }
+.v11-capture-sheet input { width: 100%; font-size: 1rem; min-height: 48px; }
+.v11-capture-options { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 12px; margin-top: 14px; }
+.v11-capture-options label { min-width: 0; display: grid; gap: 6px; font-size: .9375rem; }
+.v11-capture-options select { width: 100%; min-height: 44px; padding-left: 8px; padding-right: 4px; font-size: 1rem; text-overflow: ellipsis; }
+.v11-capture-message { min-height: 30px; padding-top: 8px; font-size: .9375rem; }
+.v11-capture-message p { margin: 0 0 8px; line-height: 1.45; }
+.v11-capture-message [role="alert"] { color: var(--status-blocked-fg, #a73d38); }
+.v11-capture-message .capture-feedback { color: var(--accent); }
+.v11-capture-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.v11-capture-actions button { min-height: 46px; padding: 10px 8px; border: 1px solid var(--line); border-radius: 8px; font-size: .9375rem; }
+.v11-capture-actions .v11-capture-primary { background: #356f61; color: #fff; border-color: #356f61; }
+.v11-capture-sheet button:focus-visible, .v11-capture-sheet input:focus-visible, .v11-capture-sheet select:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { .v11-capture-sheet, .v11-capture-sheet * { scroll-behavior: auto; transition: none; animation: none; } }
