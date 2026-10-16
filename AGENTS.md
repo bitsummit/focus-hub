@@ -1,0 +1,22 @@
+# Focus Hub — Codex repository instructions
+
+## Source of truth
+- Read `FOCUS_HUB_CODEX_MASTER_PROMPT.md` completely before proposing architecture or implementation. It defines product scope, UX, security, data model, phases and 15 acceptance tests. It wins over a convenience plan if they conflict.
+- Read `CODEX_START_HERE.md` for the initial brief. Keep all user-facing UI in Spanish and code identifiers in English/TypeScript.
+- Build a full-stack working personal productivity app with a single canonical task record across journal, board, table, focus, archive and analytics. This must be a functional v1, not a static mockup or a cut-down checklist app.
+
+## Multi-agent orchestration
+- The primary agent is **coordinator/integrator** and owns architecture, shared schema, interfaces, versioned dependencies, integration and final verification.
+- Prefer delegating independent, bounded work to actual Codex subagents. Use `frontend`, `backend` and `qa` when those defined custom agents are available, or built-in subagents as appropriate. Explicitly launch subagents, wait for results and summarize them; do not merely pretend to be multiple agents.
+- During Phase 0 spawn up to 3 read-only discovery subagents concurrently for platform/runtime feasibility, data/security architecture and UX/acceptance coverage. Merge findings before choosing architecture.
+- Before concurrent code edits, agree on DB schema, domain types, API contracts and file ownership. Assign each subagent nonoverlapping modules. No concurrent edits to migrations, shared types, package manifests, auth policy or project-wide configs; the coordinator owns these or serializes changes.
+- Every delegation should specify objective, files/modules owned, inputs/contracts, acceptance tests and expected report. Use separate worktrees/branches when appropriate for parallel writes, and merge after review.
+- If a task is dependent or tiny, do it sequentially. More agents are not an end in themselves. Subagents cost extra tokens.
+- At each phase gate the coordinator runs tests, reviews diffs, ensures single source of truth, documents changes and unresolved issues and checks relevant acceptance tests.
+- Report **actual** agents used, tests run and outcomes; never represent intended delegation as work performed.
+
+## Security and engineering limits
+- Verify current official Sites/D1/auth deployment capabilities before depending on them. If unsupported, report a blocker and compatible fallback rather than simulating persistence or inventing platform support.
+- Persist data durably through a typed repository/service boundary; never make `localStorage` the source of truth. Enforce workspace/user isolation on the server, prepared queries, secret hygiene, and auditable task events.
+- Do not connect Notion, import private/professional records, publish publicly, push remotely or spend money without the owner's explicit approval.
+- Keep the implementation portable and use only fictional test data. Preserve the 15 acceptance tests and run nontrivial tests/builds with real evidence.
