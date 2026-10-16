@@ -16,6 +16,7 @@ import {
   FolderOpen,
   Home,
   Inbox,
+  LayoutDashboard,
   LayoutGrid,
   Leaf,
   List,
@@ -53,8 +54,8 @@ type Page =
   | "archive"
   | "settings";
 const nav: { key: Page; path: string; label: string; icon: typeof Home }[] = [
-  { key: "tasks", path: "/tasks", label: "Tareas", icon: LayoutGrid },
-  { key: "home", path: "/dashboard", label: "Dashboard", icon: Home },
+  { key: "tasks", path: "/tasks", label: "Tareas", icon: Home },
+  { key: "home", path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { key: "journal", path: "/journal", label: "Diario", icon: BookOpen },
   { key: "progress", path: "/progress", label: "Mis avances", icon: BarChart3 },
   { key: "projects", path: "/projects", label: "Proyectos", icon: FolderOpen },
