@@ -6,6 +6,7 @@
 - Build a full-stack working personal productivity app with a single canonical task record across journal, board, table, focus, archive and analytics. This must be a functional v1, not a static mockup or a cut-down checklist app.
 
 ## Multi-agent orchestration
+- Project role definitions are registered in `.codex/config.toml` and stored in `.codex/agents/`: `frontend`, `backend`, `qa` and read-only `security`. See `.codex/agents/README.md` for responsibilities and runtime compatibility. If custom-role loading is unavailable, read and pass the relevant profile to a native subagent and report that limitation; never claim automatic activation.
 - The primary agent is **coordinator/integrator** and owns architecture, shared schema, interfaces, versioned dependencies, integration and final verification.
 - Prefer delegating independent, bounded work to actual Codex subagents. Use `frontend`, `backend` and `qa` when those defined custom agents are available, or built-in subagents as appropriate. Explicitly launch subagents, wait for results and summarize them; do not merely pretend to be multiple agents.
 - During Phase 0 spawn up to 3 read-only discovery subagents concurrently for platform/runtime feasibility, data/security architecture and UX/acceptance coverage. Merge findings before choosing architecture.
