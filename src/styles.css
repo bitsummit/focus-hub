@@ -8,9 +8,9 @@
     "Segoe UI",
     sans-serif;
   color: #293b39;
-  background: #f8f9f6;
+  background: #f5f5f5;
   font-synthesis: none;
-  --bg: #f8f9f6;
+  --bg: #f5f5f5;
   --surface: #fff;
   --surface-soft: #f5f7f4;
   --text: #293b39;
@@ -3582,24 +3582,21 @@ html[data-theme="dark"] .avatar {
   }
 }
 
-/* Comfortable reading size and near-white task surfaces, including when the shell is dark. */
-:root .app-shell :is(.weekly-panel, .today-panel, .board-column, .task-card, .table-wrap, .archive-list, .journal-paper) {
-  --surface: #fffefd;
-  --surface-soft: #fafbf9;
-  --text: #293b39;
-  --muted: #66756b;
-  --line: #e3e8e2;
+/* Neutral, soft-white content cards with readable contrast in every shell theme. */
+:root .app-shell :is(.panel, .project-card, .metric, .goal-card, .achievement, .status-summary, .period-nav, .board-column, .task-card, .table-wrap, .archive-list, .journal-paper) {
+  --surface: #fdfdfd;
+  --surface-soft: #f6f6f6;
+  --text: #252a2e;
+  --muted: #596168;
+  --line: #dfe2e5;
   --accent: #39796a;
   --accent-soft: #edf4ee;
   color: var(--text);
   background: var(--surface);
 }
-:root .app-shell .board-column {
-  background: #fcfdfb;
-}
 :root .table-wrap th {
   background: var(--surface-soft);
-  color: #5f715f;
+  color: #4e555c;
 }
 .app-shell :is(.task-line-title strong, .task-card-title, .table-title, .milestone-title) {
   font-size: 1.0625rem;
@@ -3631,4 +3628,15 @@ html[data-theme="dark"] .avatar {
 :root .app-shell :is(.weekly-panel, .today-panel, .board-column, .table-wrap, .archive-list, .journal-paper) .priority-low {
   color: #637579;
   background: #f2f5f5;
+}
+
+/* Keep supporting copy neutral and legible instead of the previous pale sage. */
+:root .app-shell :is(.panel, .project-card, .metric, .goal-card, .achievement, .status-summary, .period-nav, .task-card, .table-wrap, .archive-list, .journal-paper) :is(h2, h3, .task-line-title strong, .task-card-title, .table-title, .milestone-title) {
+  color: var(--text);
+}
+:root .app-shell :is(.project-card > p, .project-card-counts, .project-card-counts strong, .next-milestone, .project-goal, .metric > span, .metric > small, .panel-title p, .panel-tag, .focus-number, .task-inline-status, .project-dot, .task-line-title > span, .waiting-note, .status-summary span, .goal-card p, .privacy-panel p, .journal-tips p, .journal-tips dt, .journal-tips dd, .achievement small, .achievement-type) {
+  color: #596168;
+}
+:root .app-shell .panel-tag {
+  color: #596168;
 }
