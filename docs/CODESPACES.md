@@ -81,3 +81,21 @@ No hay importación destructiva, conexiones a Notion ni un despliegue de producc
 - Los mismos scripts pasaron desde un clon limpio de GitHub con Node 24: instalación/build, 11 pruebas API/calendario/seguridad y 4 recorridos Chromium; arranque/reinicio en 3000 y conservación de datos. Las pruebas HTTP simulan el proxy HTTPS y verifican cookies/origen/CSRF. La primera creación real debe confirmar imagen, forwarding privado y login desde tu navegador. No se afirma que estas comprobaciones externas estén hechas.
 
 Fuentes: [puertos de Codespaces](https://docs.github.com/en/codespaces/developing-in-a-codespace/forwarding-ports-in-your-codespace), [esquema devcontainer](https://github.com/devcontainers/spec/blob/main/schemas/devContainer.base.schema.json), [imagen oficial Node](https://github.com/devcontainers/images/tree/main/src/javascript-node). Las fuentes GitHub se consultaron mediante sus archivos oficiales en `raw.githubusercontent.com` cuando el proxy bloqueaba los sitios de documentación.
+
+## Si el login muestra «Origen no permitido»
+
+El error se produce antes de comprobar la contraseña. Conserva la demo y las credenciales. Desde la rama de entrega actualizada, reinicia únicamente el servidor gestionado:
+
+```sh
+git pull --ff-only
+node .devcontainer/service.mjs stop
+bash .devcontainer/start.sh
+```
+
+Si persiste tras recargar la pestaña, intenta entrar una vez y consulta solo el diagnóstico de origen:
+
+```sh
+grep FOCUS_ORIGIN_REJECTED .data/codespaces-server.log | tail -3
+```
+
+Esas líneas contienen el origen/host y la procedencia de la solicitud; no registran contraseñas, cookies ni el cuerpo de las peticiones. Permiten distinguir un origen reescrito por el proxy de una configuración incorrecta. No desactives CSRF ni añadas comodines de dominios para evitar el error. `npm start` también configura ahora el origen y las cookies a partir de las variables oficiales de Codespaces.

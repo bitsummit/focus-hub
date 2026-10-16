@@ -37,7 +37,15 @@ export function authMiddleware(db:DatabaseSync){return(req:AuthRequest,res:Respo
 };}
 export function sameOrigin(req:Request,res:Response,next:NextFunction){
  const origin=req.headers.origin;
- if(req.headers['sec-fetch-site']==='cross-site'){res.status(403).json({code:'ORIGIN',message:'Origen no permitido'});return;}
- if(origin){try{const url=new URL(origin);const configured=process.env.FOCUS_PUBLIC_ORIGIN;const matches=configured?url.origin===new URL(configured).origin:url.host===req.headers.host;if(!matches||!['http:','https:'].includes(url.protocol))throw new Error();}catch{res.status(403).json({code:'ORIGIN',message:'Origen no permitido'});return;}}
+ const reject=(reason:string)=>{
+  if(process.env.CODESPACES==='true'||process.env.FOCUS_DEBUG_ORIGIN==='true'){
+   const normalized=(value:string|undefined)=>{try{return value?new URL(value).origin:null;}catch{return 'invalid';}};
+   const site=req.headers['sec-fetch-site'];
+   console.warn('FOCUS_ORIGIN_REJECTED',JSON.stringify({reason,receivedOrigin:normalized(origin),expectedOrigin:normalized(process.env.FOCUS_PUBLIC_ORIGIN),host:normalized(req.headers.host?'http://'+req.headers.host:undefined),fetchSite:typeof site==='string'&&['none','same-origin','same-site','cross-site'].includes(site)?site:'unknown'}));
+  }
+  res.status(403).json({code:'ORIGIN',message:'Origen no permitido',reason});
+ };
+ if(req.headers['sec-fetch-site']==='cross-site'){reject('cross_site');return;}
+ if(origin){try{const url=new URL(origin);const configured=process.env.FOCUS_PUBLIC_ORIGIN;const matches=configured?url.origin===new URL(configured).origin:url.host===req.headers.host;if(!matches||!['http:','https:'].includes(url.protocol)){reject('origin_mismatch');return;}}catch{reject('invalid_origin');return;}}
  next();
 }
