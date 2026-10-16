@@ -12,7 +12,8 @@ function alive(pid){
 }
 function ownerPid(){
  if(!existsSync(pidPath))return null;
- const pid=Number(readFileSync(pidPath,'utf8').trim());if(!Number.isSafeInteger(pid)||pid<1)throw Error('PID de servicio no válido; no se modifica ningún proceso.');
+ const stored=JSON.parse(readFileSync(pidPath,'utf8'));
+ const pid=typeof stored==='number'?stored:stored.pid;if(!Number.isSafeInteger(pid)||pid<1)throw Error('PID de servicio no válido; no se modifica ningún proceso.');
  if(!alive(pid)){unlinkSync(pidPath);return null;}
  // Only manage the exact server launched by this checkout. Never kill a process merely occupying a port.
  const args=readFileSync(`/proc/${pid}/cmdline`,'utf8').split('\0');
@@ -37,7 +38,11 @@ try{
   mkdirSync('.data',{recursive:true,mode:0o700});
   const port=Number(process.env.PORT||3000);if(!Number.isInteger(port)||port<1||port>65535)throw Error('PORT inválido.');
   const pid=ownerPid();
-  if(pid){await smoke();console.log(`Focus Hub ya está activo en el puerto ${port}.`);}
+  if(pid){
+   const saved=JSON.parse(readFileSync(pidPath,'utf8'));
+   if(saved.port!==port||saved.origin!==(process.env.FOCUS_PUBLIC_ORIGIN||null)||saved.secure!==(process.env.COOKIE_SECURE==='true'))throw Error('El servicio gestionado usa otra configuración. Deténlo antes de cambiar puerto u origen.');
+   await smoke();console.log(`Focus Hub ya está activo en el puerto ${port}.`);
+  }
   else{
    // Refuse to reuse an unrelated process or disclose credentials to a server already on this port.
    const {createConnection}=await import('node:net');
@@ -46,7 +51,7 @@ try{
    const log=openSync(logPath,'a',0o600);
    const child=spawn(process.execPath,['--import','tsx',serverPath],{cwd:root,env:process.env,stdio:['ignore',log,log],detached:true});closeSync(log);
    let spawnError;child.once('error',e=>{spawnError=e;});child.unref();
-   if(child.pid)writeFileSync(pidPath,String(child.pid),{mode:0o600});
+   if(child.pid)writeFileSync(pidPath,JSON.stringify({pid:child.pid,port,origin:process.env.FOCUS_PUBLIC_ORIGIN||null,secure:process.env.COOKIE_SECURE==='true'}),{mode:0o600});
    let healthy=false;
    for(let i=0;i<120;i++){if(spawnError)throw spawnError;try{const r=await fetch(`http://127.0.0.1:${port}/api/health`,{signal:AbortSignal.timeout(1000)});if(r.ok){healthy=true;break;}}catch{}await pause(250);}
    if(!healthy){await stop();throw Error('No se alcanzó readiness. Revisa .data/codespaces-server.log.');}
