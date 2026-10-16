@@ -198,3 +198,17 @@ Las capturas se regeneraron después de esa compilación.
 La inspección final de capturas extendió los tokens de contraste a notas de
 estadísticas, navegación temporal, acciones secundarias, metas y vacíos; retiró
 el microcopy decorativo residual del diario, objetivos y foco vacío.
+
+## Entrega en GitHub
+
+Rama publicada en el repositorio privado:
+[dev/focus-hub-v1.1-ux-readiness](https://github.com/bitsummit/focus-hub/tree/dev/focus-hub-v1.1-ux-readiness).
+Commits de código `7149167`, `79b65de`; entrega documental `aa58306`.
+No hay merge a main, force push, publicación pública ni base/credenciales en Git.
+
+La creación automática del PR se intentó con `gh pr create --draft`, pero la API
+`api.github.com/graphql` respondió **403 Forbidden**; la consulta REST también
+está bloqueada. Git HTTPS sí permitió subir la rama. **El PR no ha podido crearse
+desde este entorno.** Abrir [el formulario de PR](https://github.com/bitsummit/focus-hub/compare/main...dev/focus-hub-v1.1-ux-readiness?expand=1)
+y utilizar la descripción guardada en [PR_V1_1.md](PR_V1_1.md). Revisar la base main
+y conservar el PR sin integrar hasta la aprobación del propietario.
