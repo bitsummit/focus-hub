@@ -4,6 +4,12 @@ Aplicación privada de tareas, proyectos y diario con una única fuente de datos
 
 Capturas con datos ficticios: [escritorio](docs/screenshots/home-desktop.png) · [móvil](docs/screenshots/home-mobile.png).
 
+## Probar en el navegador con Codespaces
+
+Abre la [rama de entrega](https://github.com/bitsummit/focus-hub/tree/dev/focus-hub-v1-codespaces) y elige **Code → Codespaces → Create codespace**. La configuración instala, compila, crea una demo SQLite aislada y arranca automáticamente. Confirma **Private** en el puerto **3000** y pulsa **Open in Browser**.
+
+En la terminal del Codespace ejecuta `code .data/demo-access.json` para consultar las credenciales aleatorias, que nunca se incluyen en Git. Sigue la [guía paso a paso de Codespaces](docs/CODESPACES.md) para acceso, reinicios y límites de verificación.
+
 ## Requisitos y ejecución privada
 
 Node.js 24 o superior y npm. Usa el checkout existente; cada tarea cloud ya está aislada y no necesita crear otro worktree.

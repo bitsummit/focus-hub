@@ -5,3 +5,13 @@ dist/
 *.log
 test-results/
 playwright-report/
+
+# Local configuration, databases and keys must never enter Git.
+.env.*
+!.env.example
+*.sqlite
+*.sqlite-*
+*.db
+*.db-*
+*.pem
+*.key

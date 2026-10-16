@@ -38,6 +38,6 @@ export function authMiddleware(db:DatabaseSync){return(req:AuthRequest,res:Respo
 export function sameOrigin(req:Request,res:Response,next:NextFunction){
  const origin=req.headers.origin;
  if(req.headers['sec-fetch-site']==='cross-site'){res.status(403).json({code:'ORIGIN',message:'Origen no permitido'});return;}
- if(origin){try{const url=new URL(origin);if(url.host!==req.headers.host||!['http:','https:'].includes(url.protocol))throw new Error();}catch{res.status(403).json({code:'ORIGIN',message:'Origen no permitido'});return;}}
+ if(origin){try{const url=new URL(origin);const configured=process.env.FOCUS_PUBLIC_ORIGIN;const matches=configured?url.origin===new URL(configured).origin:url.host===req.headers.host;if(!matches||!['http:','https:'].includes(url.protocol))throw new Error();}catch{res.status(403).json({code:'ORIGIN',message:'Origen no permitido'});return;}}
  next();
 }
