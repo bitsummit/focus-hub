@@ -1,0 +1,37 @@
+{
+  "name": "focus-hub",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "dev": "tsx server/index.ts",
+    "build": "tsc --noEmit && vite build",
+    "start": "tsx server/index.ts",
+    "owner": "tsx server/owner.ts",
+    "test": "tsx --test tests/*.test.ts",
+    "test:e2e": "playwright test",
+    "demo": "tsx server/demo.ts",
+    "smoke:demo": "tsx scripts/smoke-demo.ts"
+  },
+  "dependencies": {
+    "@js-temporal/polyfill": "0.5.1",
+    "express": "5.1.0",
+    "react": "19.1.1",
+    "react-dom": "19.1.1",
+    "lucide-react": "0.468.0",
+    "zod": "4.1.12"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1",
+    "@types/express": "5.0.3",
+    "@types/node": "24.7.2",
+    "@types/react": "19.1.16",
+    "@types/react-dom": "19.1.9",
+    "tsx": "4.20.6",
+    "typescript": "5.9.3",
+    "vite": "7.1.9"
+  }
+}
