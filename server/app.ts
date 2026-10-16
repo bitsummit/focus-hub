@@ -5,9 +5,9 @@ import {existsSync} from 'node:fs';
 import {authMiddleware,publicUser,readSession,sameOrigin,setSession,verifyPassword,type AuthRequest} from './auth.ts';
 import {Domain} from './domain.ts';
 import {loginChallenges} from './login-challenge.ts';
-export function createApp(db:DatabaseSync) {
+export function createApp(db:DatabaseSync,options:{frontend?:express.RequestHandler[];developmentSocketOrigin?:string}={}) {
  const app=express(); app.disable('x-powered-by');
- app.use((_req,res,next)=>{res.set({'X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','X-Frame-Options':'DENY','Cache-Control':'no-store','Content-Security-Policy':"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"});next();});
+ app.use((_req,res,next)=>{res.set({'X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','X-Frame-Options':'DENY','Cache-Control':'no-store','Content-Security-Policy':`default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'${options.developmentSocketOrigin?' '+options.developmentSocketOrigin:''}; frame-ancestors 'none'; base-uri 'none'; form-action 'self'`});next();});
  app.use('/api',sameOrigin,express.json({limit:'512kb'}));
  app.get('/api/health',(_req,res)=>res.json({status:'ok'}));
  const challenge=loginChallenges();
@@ -46,7 +46,8 @@ export function createApp(db:DatabaseSync) {
  app.get('/api/analytics',(req,res)=>res.json(domain(req).analytics(String(req.query.start||''),String(req.query.end||''))));
  app.get('/api/export',(req,res)=>{const d=domain(req);if(req.query.format==='csv'){res.set({'Content-Type':'text/csv; charset=utf-8','Content-Disposition':'attachment; filename="focus-hub-tasks.csv"'}).send(d.exportCSV());}else{res.set({'Content-Type':'application/json; charset=utf-8','Content-Disposition':'attachment; filename="focus-hub.json"'}).send(JSON.stringify(d.exportJSON(),null,2));}});
  app.use('/api',(_req,res)=>res.status(404).json({code:'NOT_FOUND',message:'Ruta no encontrada'}));
- if(existsSync(resolve('dist/index.html'))){app.use(express.static(resolve('dist'),{index:false}));app.get('/{*path}',(_req,res)=>res.sendFile(resolve('dist/index.html')));}
+ if(options.frontend)app.use(...options.frontend);
+ else if(existsSync(resolve('dist/index.html'))){app.use(express.static(resolve('dist'),{index:false}));app.get('/{*path}',(_req,res)=>res.sendFile(resolve('dist/index.html')));}
  app.use((error:unknown,_req:Request,res:Response,_next:NextFunction)=>{
   const e=error as {status?:number;code?:string;message?:string;issues?:unknown};
   const status=e.status&&e.status>=400&&e.status<600?e.status:e.issues?400:500;

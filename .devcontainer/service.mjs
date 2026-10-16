@@ -34,13 +34,13 @@ async function stop(){
 try{
  if(process.argv[2]==='stop'){await stop();}
  else if(process.argv[2]==='start'){
-  if(!existsSync('dist/index.html')||!existsSync('.data/demo.sqlite')||!existsSync('.data/demo-access.json'))throw Error('Primero ejecuta bash .devcontainer/setup.sh; no se crea ni sobrescribe una demo durante el arranque.');
+  if((process.env.FOCUS_DEV!=='true'&&!existsSync('dist/index.html'))||!existsSync('.data/demo.sqlite')||!existsSync('.data/demo-access.json'))throw Error('Primero ejecuta bash .devcontainer/setup.sh; no se crea ni sobrescribe una demo durante el arranque.');
   mkdirSync('.data',{recursive:true,mode:0o700});
   const port=Number(process.env.PORT||3000);if(!Number.isInteger(port)||port<1||port>65535)throw Error('PORT inválido.');
   const pid=ownerPid();
   if(pid){
    const saved=JSON.parse(readFileSync(pidPath,'utf8'));
-   if(saved.port!==port||saved.origin!==(process.env.FOCUS_PUBLIC_ORIGIN||null)||saved.secure!==(process.env.COOKIE_SECURE==='true'))throw Error('El servicio gestionado usa otra configuración. Deténlo antes de cambiar puerto u origen.');
+   if(saved.port!==port||saved.origin!==(process.env.FOCUS_PUBLIC_ORIGIN||null)||saved.secure!==(process.env.COOKIE_SECURE==='true')||Boolean(saved.development)!==(process.env.FOCUS_DEV==='true'))throw Error('El servicio gestionado usa otra configuración. Deténlo antes de cambiar puerto, origen o modo de desarrollo.');
    await smoke();console.log(`Focus Hub ya está activo en el puerto ${port}.`);
   }
   else{
@@ -51,7 +51,7 @@ try{
    const log=openSync(logPath,'a',0o600);
    const child=spawn(process.execPath,['--import','tsx',serverPath],{cwd:root,env:process.env,stdio:['ignore',log,log],detached:true});closeSync(log);
    let spawnError;child.once('error',e=>{spawnError=e;});child.unref();
-   if(child.pid)writeFileSync(pidPath,JSON.stringify({pid:child.pid,port,origin:process.env.FOCUS_PUBLIC_ORIGIN||null,secure:process.env.COOKIE_SECURE==='true'}),{mode:0o600});
+   if(child.pid)writeFileSync(pidPath,JSON.stringify({pid:child.pid,port,origin:process.env.FOCUS_PUBLIC_ORIGIN||null,secure:process.env.COOKIE_SECURE==='true',development:process.env.FOCUS_DEV==='true'}),{mode:0o600});
    let healthy=false;
    for(let i=0;i<120;i++){if(spawnError)throw spawnError;try{const r=await fetch(`http://127.0.0.1:${port}/api/health`,{signal:AbortSignal.timeout(1000)});if(r.ok){healthy=true;break;}}catch{}await pause(250);}
    if(!healthy){await stop();throw Error('No se alcanzó readiness. Revisa .data/codespaces-server.log.');}

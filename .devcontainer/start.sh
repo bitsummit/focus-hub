@@ -3,6 +3,7 @@ set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 umask 077
 export FOCUS_DB=.data/demo.sqlite
+export FOCUS_DEV="${FOCUS_DEV:-true}"
 export PORT="${PORT:-3000}"
 if [[ "${CODESPACES:-false}" == true ]]; then
   if [[ ! "${CODESPACE_NAME:-}" =~ ^[a-z0-9-]+$ || ! "${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN:-}" =~ ^[a-z0-9.-]+$ ]]; then

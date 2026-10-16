@@ -26,7 +26,7 @@ npm start
 
 La base de datos se crea automáticamente en `.data/focus-hub.sqlite` (ignorada por Git). `FOCUS_DB` permite elegir otra ruta; `PORT` cambia el puerto. Las migraciones se aplican sin borrar registros. Conserva la carpeta `.data` entre reinicios; no la uses como fixture. Para una copia de seguridad consistente, detén el servidor antes de copiar la base y sus archivos WAL, o usa una herramienta SQLite de backup. Nunca guardes datos privados en Git.
 
-Para desarrollo del frontend con recarga, ejecuta `npm start` y en otra terminal `npx vite --host 127.0.0.1`; Vite reenvía la API al servidor. La compilación sigue siendo necesaria para probar el servicio integrado.
+Para desarrollar con recarga automática, ejecuta `npm run dev`. Vite, la API y su WebSocket comparten el puerto privado 3000; no necesitas otra terminal, otro puerto ni recompilar el frontend. Los cambios de CSS se aplican al instante y los módulos del frontend se actualizan o recargan según corresponda. Los cambios del backend requieren reiniciar el proceso. `npm start` conserva el modo compilado y requiere `npm run build` previo. Codespaces usa el modo de desarrollo por defecto.
 
 ## Demo ficticia opcional
 

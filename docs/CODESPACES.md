@@ -7,7 +7,7 @@ Esta entrega conserva la v1: React/TypeScript, servidor Node, SQLite persistente
 1. Inicia sesión en GitHub con la cuenta que tiene acceso al [repositorio privado](https://github.com/bitsummit/focus-hub).
 2. Abre la [rama de entrega](https://github.com/bitsummit/focus-hub/tree/dev/focus-hub-v1-codespaces). Confirma que el selector de rama muestra **dev/focus-hub-v1-codespaces**; `main` ya contiene la v1 inicial, pero esta rama incorpora su configuración de Codespaces hasta revisar e integrar el nuevo PR.
 3. Pulsa **Code → Codespaces → Create codespace on dev/focus-hub-v1-codespaces**. Si GitHub muestra **New with options**, selecciona esa rama y `.devcontainer/devcontainer.json`. Bastan 2 CPU y 4 GB de RAM.
-4. Espera a que termine la creación. Automáticamente se ejecutan `npm ci`, la compilación, la creación inicial de la demo y el arranque. El proceso termina comprobando login, datos persistentes y referencias del diario. No se imprimen contraseñas.
+4. Espera a que termine la creación. Automáticamente se ejecutan `npm ci`, una compilación de comprobación, la creación inicial de la demo y el arranque en modo desarrollo con Vite. El proceso termina comprobando login, datos persistentes y referencias del diario. No se imprimen contraseñas.
 5. Abre la pestaña **Ports / Puertos** del panel inferior. Debe aparecer **3000 · Focus Hub · privado**. Comprueba que **Port Visibility / Visibilidad del puerto** es **Private**. Es el valor predeterminado de GitHub para un puerto nuevo. No elijas `Public` ni `Private to Organization`.
 6. Pulsa el icono **Open in Browser / Abrir en el navegador** de la fila 3000. GitHub puede pedirte autenticarte para acceder al puerto privado. La dirección externa usa HTTPS aunque la conexión interna del contenedor sea HTTP.
 
@@ -49,17 +49,23 @@ Se abrirá un archivo privado en el editor. Copia `email` y `password` en el for
 
 La [matriz de los 15 criterios](ACCEPTANCE.md) recoge la verificación funcional de la v1. Usa solo datos ficticios en este entorno de prueba.
 
-## 4. Reanudar, recompilar y seguir desarrollando
+## 4. Reanudar y seguir desarrollando con recarga automática
 
 Para volver a entrar, visita GitHub → Codespaces y abre el Codespace existente. `postStartCommand` reinicia el servicio si hace falta. No crees otro por accidente si deseas conservar las pruebas.
 
-Para detener el servicio y recompilar después de editar código:
+Si tu Codespace ya existía antes de activar este modo, actualízalo una sola vez:
 
 ```sh
+git pull --ff-only
 node .devcontainer/service.mjs stop
-npm run build
 bash .devcontainer/start.sh
 ```
+
+Desde entonces, Vite sirve el frontend directamente desde `src`, sin depender de `dist`. Al guardar CSS, el navegador aplica los estilos sin recargar la página; los cambios de JavaScript/TypeScript se actualizan o provocan una recarga según el módulo. La API, el frontend y el WebSocket de Vite usan **el mismo puerto privado 3000**, también bajo HTTPS en Codespaces. No abras otro puerto.
+
+Los cambios hechos desde Codex llegan a otro checkout: necesitas `git pull --ff-only` para traerlos a tu Codespace. Si solo cambian archivos del frontend, Vite los detecta al terminar el pull y no hace falta ejecutar `build` ni reiniciar. Si cambian dependencias, ejecuta `npm ci`; si cambia el backend o la configuración del servidor, detén y arranca el servicio con los dos comandos anteriores. No necesitas reconstruir el contenedor por un cambio de código.
+
+Para arrancar manualmente fuera del servicio gestionado puedes usar `npm run dev` (compatible con PowerShell). Usa la base y las credenciales de la demo mediante las instrucciones anteriores en Codespaces. `npm start` sigue sirviendo la versión compilada para pruebas de entrega; para usar ese modo con el gestor ejecuta `npm run build` y después `FOCUS_DEV=false bash .devcontainer/start.sh`, con el servicio anterior detenido.
 
 Para verificar la demo y las reglas del backend:
 
