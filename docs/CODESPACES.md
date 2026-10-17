@@ -31,7 +31,8 @@ Desde la terminal, en la raíz del repositorio:
 
 ```sh
 git status
-git fetch origin dev/focus-hub-v1.1-ux-readiness:refs/remotes/origin/dev/focus-hub-v1.1-ux-readiness
+git remote set-branches origin '*'
+git fetch --prune origin
 git switch dev/focus-hub-v1.1-ux-readiness
 git merge --ff-only origin/dev/focus-hub-v1.1-ux-readiness
 node .devcontainer/service.mjs stop
@@ -39,7 +40,7 @@ npm ci
 bash .devcontainer/start.sh
 ```
 
-El fetch explícito funciona también si el clon original solo sigue `main`.
+La configuración de seguimiento funciona también si el clon original solo seguía `main`; no crea ramas nuevas. `fetch --prune` limpia referencias remotas retiradas.
 `git switch` crea el seguimiento de la rama remota si todavía no existe localmente;
 si Git rechaza el cambio para proteger archivos, detente y conserva esos cambios.
 El arranque comprueba la compilación y vuelve a servir Vite con HMR. No reconstruye

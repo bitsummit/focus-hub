@@ -24,11 +24,14 @@ Utiliza el Codespace actual para conservar tus datos y credenciales. En su
 terminal, desde la carpeta del proyecto, pega:
 
 ```sh
-git fetch origin dev/focus-hub-v1.1-ux-readiness:refs/remotes/origin/dev/focus-hub-v1.1-ux-readiness &&
+git remote set-branches origin '*' &&
+git fetch --prune origin &&
 git switch dev/focus-hub-v1.1-ux-readiness &&
 git merge --ff-only origin/dev/focus-hub-v1.1-ux-readiness
 ```
 
+La primera línea normaliza qué ramas sigue tu copia local; no crea ramas ni
+cambia la URL de GitHub. El fetch elimina referencias remotas obsoletas.
 Los comandos no sobrescriben cambios locales. Si Git avisa de cambios pendientes
 o de una divergencia, conserva la salida y pide ayuda; no uses `reset --hard`,
 `clean` ni un cambio forzado de rama.

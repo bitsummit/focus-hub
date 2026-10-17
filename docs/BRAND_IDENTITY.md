@@ -139,7 +139,8 @@ no se crean ramas por tarea. [Política de Git](GIT_WORKFLOW.md).
 Para probarla en un Codespace existente sin reemplazar su base de datos:
 
 ```sh
-git fetch origin dev/focus-hub-v1.1-ux-readiness:refs/remotes/origin/dev/focus-hub-v1.1-ux-readiness
+git remote set-branches origin '*'
+git fetch --prune origin
 git switch dev/focus-hub-v1.1-ux-readiness
 git merge --ff-only origin/dev/focus-hub-v1.1-ux-readiness
 ```
