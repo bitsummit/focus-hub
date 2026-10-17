@@ -212,3 +212,28 @@ está bloqueada. Git HTTPS sí permitió subir la rama. **El PR no ha podido cre
 desde este entorno.** Abrir [el formulario de PR](https://github.com/bitsummit/focus-hub/compare/main...dev/focus-hub-v1.1-ux-readiness?expand=1)
 y utilizar la descripción guardada en [PR_V1_1.md](PR_V1_1.md). Revisar la base main
 y conservar el PR sin integrar hasta la aprobación del propietario.
+
+## Subtareas visibles junto a su tarea padre
+
+Tabla, lista móvil y Kanban muestran las subtareas como filas compactas dentro
+del bloque de su padre, con checkbox propio y acceso al editor desde el título.
+Se conservan las completadas, tachadas, para poder reabrirlas. Completar una
+subtarea no completa al padre ni modifica las fórmulas estadísticas existentes.
+No se añade un modelo de checklist ni se duplican registros.
+
+La ordenación y las columnas Kanban se aplican a los bloques principales; las
+subtareas permanecen debajo del padre aunque tengan otro estado. Los contadores
+de columna indican bloques principales visibles. Los filtros seleccionan los
+bloques: si incluyen al padre se muestra su lista completa de subtareas; si solo
+coincide una subtarea, esta permanece accesible como resultado independiente.
+No se muestran subtareas eliminadas. Se mantienen los campos, fechas y eventos
+canónicos existentes, sin migraciones ni cambios de API.
+
+Validación de esta mejora: `npm run build` correcto, `npm test` 56/56 y
+`npx playwright test tests/subtasks.spec.ts tests/app.spec.ts` 7/7 en Chromium.
+Los dos escenarios nuevos cubren 1440 y 390 px, Tabla y Kanban, checkbox con
+teclado/ratón, completar/reabrir tras recargar, padre independiente, editor,
+búsqueda de subtarea sin padre y ausencia de duplicados/desbordamiento móvil.
+Capturas de datos ficticios generadas en `test-results/` (directorio ignorado).
+Coordinador: interfaz e integración; subagente real `subtasks_qa`, siguiendo el
+perfil `.codex/agents/qa.toml`: nuevas pruebas de navegador y regresión original.

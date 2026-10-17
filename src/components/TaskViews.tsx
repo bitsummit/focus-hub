@@ -112,7 +112,54 @@ function ProjectControl({ task, projects, updateTask, disabled }: {
   </select>;
 }
 
-function CompactRow({ task, projects, updateTask, openTask, disabled }: {
+// Group existing canonical records without changing filtering, status or metrics.
+function taskHierarchy(tasks: Task[], data: Snapshot) {
+  const records = new Map(data.tasks.filter(task => !task.deleted_at).map(task => [task.id, task]));
+  const visible = new Set(tasks.map(task => task.id));
+  const children = new Map<string, Task[]>();
+  for (const task of records.values()) {
+    if (!task.parent_task_id) continue;
+    const siblings = children.get(task.parent_task_id) ?? [];
+    siblings.push(task);
+    children.set(task.parent_task_id, siblings);
+  }
+  for (const siblings of children.values()) siblings.sort((a, b) => a.sort_order - b.sort_order || a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id));
+  const roots = tasks.filter(task => {
+    let parent = task.parent_task_id;
+    const visited = new Set([task.id]);
+    while (parent && !visited.has(parent)) {
+      if (visible.has(parent)) return false;
+      visited.add(parent);
+      parent = records.get(parent)?.parent_task_id ?? null;
+    }
+    return true;
+  });
+  return { roots, children };
+}
+
+type SubtaskProps = {
+  childrenByParent: Map<string, Task[]>;
+  pending: Set<string>;
+};
+
+function SubtaskList({ task, childrenByParent, pending, updateTask, openTask, ancestors = [] }: SubtaskProps & {
+  task: Task; updateTask: UpdateTask; openTask: SharedProps["openTask"]; ancestors?: string[];
+}) {
+  const path = [...ancestors, task.id];
+  const children = (childrenByParent.get(task.id) ?? []).filter(child => !path.includes(child.id));
+  if (!children.length) return null;
+  return <ul className="v11-subtasks" aria-label={t("Subtareas") + ": " + task.title}>
+    {children.map(child => <li key={child.id} className="v11-subtask-item">
+      <div className={"v11-subtask-row" + (child.status === "completed" ? " is-completed" : "")}>
+        <CompleteControl task={child} updateTask={updateTask} disabled={pending.has(child.id)} />
+        <button type="button" className="v11-subtask-title" onClick={() => openTask(child)}>{child.title}</button>
+      </div>
+      <SubtaskList task={child} childrenByParent={childrenByParent} pending={pending} updateTask={updateTask} openTask={openTask} ancestors={path} />
+    </li>)}
+  </ul>;
+}
+
+function CompactRow({ task, projects, updateTask, openTask, disabled, childrenByParent, pending }: SubtaskProps & {
   task: Task; projects: Project[]; updateTask: UpdateTask; openTask: SharedProps["openTask"]; disabled: boolean;
 }) {
   return <article className={"v11-task-row status-" + task.status + (task.status === "completed" ? " is-completed" : "")}>
@@ -127,6 +174,7 @@ function CompactRow({ task, projects, updateTask, openTask, disabled }: {
         <StatusControl task={task} updateTask={updateTask} disabled={disabled} />
       </div>
       {task.due_at && <span className="v11-task-date" title={t("Vencimiento")}><CalendarDays size={13} aria-hidden="true" />{formatDate(task.due_at.slice(0, 10))}</span>}
+      <SubtaskList task={task} childrenByParent={childrenByParent} pending={pending} updateTask={updateTask} openTask={openTask} />
     </div>
   </article>;
 }
@@ -145,7 +193,8 @@ export function TaskTable({ tasks, defaultSort = "updated_at", ...props }: Share
   const [asc, setAsc] = useState(false);
   const compact = useCompactViewport();
   const { update, pending } = useTaskMutations(props.updateTask);
-  const sorted = [...tasks].sort((a, b) => {
+  const { roots, children } = taskHierarchy(tasks, props.data);
+  const sorted = [...roots].sort((a, b) => {
     const av = sort === "priority" ? PRIORITIES.indexOf(a.priority) : String(a[sort as keyof Task] ?? "");
     const bv = sort === "priority" ? PRIORITIES.indexOf(b.priority) : String(b[sort as keyof Task] ?? "");
     return (av < bv ? -1 : av > bv ? 1 : 0) * (asc ? 1 : -1);
@@ -156,14 +205,15 @@ export function TaskTable({ tasks, defaultSort = "updated_at", ...props }: Share
   if (!tasks.length) return <EmptyTasks emptyFiltered={props.emptyFiltered} onClearFilters={props.onClearFilters} />;
   if (compact) return <div className="v11-task-list" role="region" aria-label={t("Lista de tareas")}>
     {sorted.map((task) => <CompactRow key={task.id} task={task} projects={props.data.projects} updateTask={update}
-      openTask={props.openTask} disabled={pending.has(task.id)} />)}
+      openTask={props.openTask} disabled={pending.has(task.id)} childrenByParent={children} pending={pending} />)}
   </div>;
   return <div className="table-wrap v11-task-table"><table aria-label={t("Tabla de tareas")}>
     <thead><tr>{[["title", "Tarea"], ["priority", "Prioridad"], ["project_id", "Proyecto"], ["status", "Estado"], ["updated_at", "Actualizada"], ["due_at", "Vencimiento"]].map(([key, label]) =>
       <th key={key} scope="col" aria-sort={sort === key ? asc ? "ascending" : "descending" : undefined}>{head(key, label)}</th>)}<th scope="col">{t("En espera de")}</th></tr></thead>
     <tbody>{sorted.map((task) => <tr key={task.id}>
       <td><div className="table-task"><CompleteControl task={task} updateTask={update} disabled={pending.has(task.id)} />
-        <button type="button" className="table-title" onClick={() => props.openTask(task)}>{task.parent_task_id && "↳ "}{task.title}</button></div></td>
+        <button type="button" className="table-title" onClick={() => props.openTask(task)}>{task.parent_task_id && "↳ "}{task.title}</button></div>
+        <SubtaskList task={task} childrenByParent={children} pending={pending} updateTask={update} openTask={props.openTask} /></td>
       <td className="v11-priority-cell"><PriorityControl task={task} updateTask={update} disabled={pending.has(task.id)} /></td>
       <td><ProjectControl task={task} projects={props.data.projects} updateTask={update} disabled={pending.has(task.id)} /></td>
       <td><StatusControl task={task} updateTask={update} disabled={pending.has(task.id)} /></td>
@@ -180,7 +230,8 @@ export function Board({ tasks, showAll, ...props }: SharedProps & { tasks: Task[
   const { update, pending } = useTaskMutations(props.updateTask);
   const columns = STATUSES.filter((status) => showAll || !["completed", "cancelled"].includes(status));
   const groups = new Map<Status, Task[]>(columns.map((status) => [status, []]));
-  tasks.forEach((task) => groups.get(task.status)?.push(task));
+  const { roots, children } = taskHierarchy(tasks, props.data);
+  roots.forEach((task) => groups.get(task.status)?.push(task));
   if (!tasks.length && props.emptyFiltered) return <EmptyTasks emptyFiltered onClearFilters={props.onClearFilters} />;
   return <div className={compact ? "v11-mobile-board" : "board v11-desktop-board"} aria-label={t("Tablero Kanban")} role="region">
     {columns.map((status) => {
@@ -189,7 +240,7 @@ export function Board({ tasks, showAll, ...props }: SharedProps & { tasks: Task[
       if (compact) return <details className={"v11-status-group status-" + status} key={status} open>
         <summary>{heading}<ChevronDown size={17} aria-hidden="true" /></summary>
         <div className="v11-status-group-tasks">{group.length ? group.map((task) => <CompactRow key={task.id} task={task} projects={props.data.projects}
-          updateTask={update} openTask={props.openTask} disabled={pending.has(task.id)} />) : <p className="v11-group-empty">{t("Sin tareas")}</p>}</div>
+          updateTask={update} openTask={props.openTask} disabled={pending.has(task.id)} childrenByParent={children} pending={pending} />) : <p className="v11-group-empty">{t("Sin tareas")}</p>}</div>
       </details>;
       return <section className={"board-column status-" + status} key={status} aria-label={t(statusLabels[status])}
         onDragOver={(event) => event.preventDefault()} onDrop={(event) => {
@@ -210,6 +261,7 @@ export function Board({ tasks, showAll, ...props }: SharedProps & { tasks: Task[
           {task.waiting_on && <div className="waiting-note">{t("En espera de ")}{task.waiting_on}</div>}
           {task.follow_up_at && <small>{t("Seguimiento: ")}{formatDate(task.follow_up_at.slice(0, 10))}</small>}
           <StatusControl task={task} updateTask={update} disabled={pending.has(task.id)} />
+          <SubtaskList task={task} childrenByParent={children} pending={pending} updateTask={update} openTask={props.openTask} />
         </article>)}</div>
         {!group.length && <p className="column-empty">{t("Sin tareas")}</p>}
       </section>;

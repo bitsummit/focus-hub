@@ -48,3 +48,16 @@
 .v11-group-empty { margin: 0; padding: 12px; font-size: .875rem; color: var(--muted); }
 @media (pointer: coarse) { .v11-task-row .v11-project-control { min-height: 44px; } }
 @media (prefers-reduced-motion: reduce) { .v11-status-group > summary > svg { transition: none; } }
+
+/* Subtasks stay in their parent's block; only the title and completion control. */
+.v11-subtasks { grid-column: 1 / -1; list-style: none; margin: 6px 0 0 22px; padding: 4px 0 0 8px; border-left: 1px solid var(--line); min-width: 0; }
+.v11-subtasks .v11-subtasks { margin-left: 12px; }
+.v11-subtask-row { display: flex; align-items: flex-start; gap: 2px; min-width: 0; }
+.v11-subtask-title { flex: 1; min-width: 0; min-height: 44px; padding: 10px 2px; text-align: left; font-size: .9375rem; line-height: 1.5; color: var(--text); white-space: normal; overflow-wrap: anywhere; }
+.v11-subtask-row.is-completed .v11-subtask-title { text-decoration: line-through; color: var(--muted); }
+.v11-subtask-title:hover { text-decoration: underline; }
+.v11-subtask-title:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 4px; }
+.v11-task-table .v11-subtasks { margin-left: 24px; }
+
+:root .app-shell .v11-subtask-row .check-task { color: var(--ux-muted); }
+:root .app-shell .v11-subtask-row.is-completed .check-task { color: var(--status-completed-fg); }
