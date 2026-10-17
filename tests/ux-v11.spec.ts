@@ -11,7 +11,7 @@ async function mutate(request:APIRequestContext,path:string,data:unknown,method=
  const response=await request.fetch(path,{method,data,headers:{Origin:root,'X-CSRF-Token':session.csrfToken}});expect(response.ok(),await response.text()).toBeTruthy();return response.json();
 }
 async function capture(request:APIRequestContext,title:string):Promise<Task>{const state=await mutate(request,'/api/tasks',{text:title,request_id:randomUUID()});return state.tasks.find(t=>t.title===title)!;}
-async function patch(page:Page,label:string,value:string){const response=page.waitForResponse(r=>r.url().includes('/api/tasks/')&&r.request().method()==='PATCH');await page.getByLabel(label,{exact:true}).selectOption(value);expect((await response).ok()).toBeTruthy();}
+async function patch(page:Page,label:string,value:string){const response=page.waitForResponse(r=>r.url().includes('/api/tasks/')&&r.request().method()==='PATCH');await page.getByLabel(label,{exact:true}).selectOption(value);if(label.startsWith('Proyecto de '))await page.getByRole('alertdialog',{name:'Cambiar proyecto',exact:true}).getByRole('button',{name:'Confirmar',exact:true}).click();expect((await response).ok()).toBeTruthy();}
 async function noOverflow(page:Page){expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBeTruthy();}
 
 test('v1.1 rapid inbox capture, direct organization, chips, canonical completion and archive',async({page})=>{

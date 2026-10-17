@@ -3,6 +3,7 @@ import { CalendarDays, CheckCircle2, ChevronDown, Circle, Flag, Inbox } from "lu
 import { PRIORITIES, STATUSES, priorityLabels, statusLabels, type Project, type Snapshot, type Status, type Task } from "../../shared/contracts";
 import { locale, t } from "../i18n";
 import "./task-views.css";
+import { ProjectSelect } from "./ProjectSelect";
 
 type UpdateTask = (id: string, fields: Partial<Task>) => Promise<boolean>;
 type SharedProps = {
@@ -103,13 +104,10 @@ function CompleteControl({ task, updateTask, disabled }: { task: Task; updateTas
 function ProjectControl({ task, projects, updateTask, disabled }: {
   task: Task; projects: Project[]; updateTask: UpdateTask; disabled: boolean;
 }) {
-  return <select className="v11-project-control" aria-label={t("Proyecto de ") + task.title}
+  return <ProjectSelect className="v11-project-control" aria-label={t("Proyecto de ") + task.title}
     title={projects.find((project) => project.id === task.project_id)?.name ?? t("Bandeja de entrada")}
-    value={task.project_id ?? ""} disabled={disabled}
-    onChange={(event) => updateTask(task.id, { project_id: event.target.value || null })}>
-    <option value="">{t("Bandeja de entrada")}</option>
-    {projects.map((project) => <option value={project.id} key={project.id}>{project.name}</option>)}
-  </select>;
+    value={task.project_id} disabled={disabled} projects={projects} taskTitle={task.title}
+    onChange={projectId => updateTask(task.id, { project_id: projectId })} />;
 }
 
 // Group existing canonical records without changing filtering, status or metrics.

@@ -237,3 +237,29 @@ búsqueda de subtarea sin padre y ausencia de duplicados/desbordamiento móvil.
 Capturas de datos ficticios generadas en `test-results/` (directorio ignorado).
 Coordinador: interfaz e integración; subagente real `subtasks_qa`, siguiendo el
 perfil `.codex/agents/qa.toml`: nuevas pruebas de navegador y regresión original.
+
+## Confirmación al reasignar proyectos
+
+El selector de proyecto de una tarea existente propone el cambio mediante un
+diálogo «Cambiar proyecto», con proyecto actual, destino y opciones «Confirmar»
+y «Cancelar». Se aplica a Tabla, lista móvil y editor (incluido el acceso desde
+Kanban), y también al volver a Bandeja de entrada. La creación de tareas conserva
+su flujo rápido sin confirmación adicional.
+
+Cancelar o Escape no cambia el valor ni envía una petición de actualización.
+El foco vuelve al selector; Escape mantiene abierto el editor de tarea. Confirmar
+en edición acepta el borrador: «Guardar cambios» conserva su función de guardado.
+El diálogo utiliza la modalidad nativa del navegador, etiquetas accesibles,
+controles táctiles y traducción español/inglés, con los colores del tema activo.
+
+Verificación: compilación y TypeScript correctos; 56/56 pruebas Node aprobadas.
+En Chromium pasaron 15 casos distintos en ejecuciones separadas: 5 de
+`app.spec.ts`, 2 de `subtasks.spec.ts`, 5 de `ux-v11.spec.ts` y los 3 nuevos de
+`project-confirmation.spec.ts`. Estos últimos verifican confirmar/cancelar,
+Escape sin cerrar el editor, ausencia de PATCH al cancelar, persistencia y
+traducción inglesa, en 1440/390 px. Se añadió una etiqueta accesible explícita al
+selector del editor. La ejecución conjunta inicial alcanzó el límite de login
+de la cuenta ficticia compartida: se repitieron los bloques con fixtures nuevos,
+sin modificar los límites de seguridad. No se usaron bases ni cuentas reales.
+El subagente real `project_confirmation_qa`, siguiendo `.codex/agents/qa.toml`,
+implementó y ejecutó las pruebas; el coordinador integró y validó la interfaz.

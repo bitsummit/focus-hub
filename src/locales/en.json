@@ -438,5 +438,9 @@
   "Reintentar": "Retry",
   "{0}: {1} completadas, {2} creadas": "{0}: {1} completed, {2} created",
   "Todo lo importante, de un vistazo.": "Everything that matters, at a glance.",
-  "{0} tareas abiertas": "{0} open tasks"
+  "{0} tareas abiertas": "{0} open tasks",
+  "Cambiar proyecto": "Change project",
+  "¿Cambiar el proyecto de «{0}»?": "Change the project for “{0}”?",
+  "Proyecto actual": "Current project",
+  "Confirmar": "Confirm"
 }

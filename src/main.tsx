@@ -46,6 +46,7 @@ import {
 } from "../shared/contracts";
 import "./styles.css";
 import { Board, TaskTable, StatusControl, Priority } from "./components/TaskViews";
+import { ProjectSelect } from "./components/ProjectSelect";
 import { MobileQuickCapture } from "./components/QuickCapture";
 import { filterTask, matchesQuickFilter, type QuickFilter } from "./task-filters";
 import "./ux-v11.css";
@@ -1426,17 +1427,13 @@ function TaskDialog({
                 ))}
               </select>
             </label>
-            <label>{tr("Proyecto")}<select
-                value={draft.project_id ?? ""}
-                onChange={(e) => set("project_id", e.target.value || null)}
-              >
-                <option value="">{tr("Bandeja de entrada")}</option>
-                {data.projects.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
+            <label>{tr("Proyecto")}<ProjectSelect
+                aria-label={tr("Proyecto")}
+                value={draft.project_id}
+                projects={data.projects}
+                taskTitle={draft.title}
+                onChange={projectId => set("project_id", projectId)}
+              />
             </label>
             <label>{tr("Tarea principal")}<select
                 value={draft.parent_task_id ?? ""}
