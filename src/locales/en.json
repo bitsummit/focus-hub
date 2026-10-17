@@ -1,5 +1,4 @@
 {
-  "Acceder a Focus Hub": "Sign in to Focus Hub",
   "Acceso privado": "Private access",
   "Acceso privado. La cuenta se configura con el comando de administración del entorno.": "Private access. Set up your account using the environment's administration command.",
   "Actividad diaria": "Daily activity",
@@ -196,8 +195,8 @@
   "Lunes": "Monday",
   "Mes": "Month",
   "Mi diario": "My journal",
-  "Mi espacio": "My workspace",
-  "Mi espacio de trabajo": "My workspace",
+  "Mi espacio": "My space",
+  "Mi espacio de trabajo": "My space",
   "Mi foco de la semana": "My weekly focus",
   "Mis avances": "My progress",
   "Más": "More",
@@ -352,7 +351,6 @@
   "Todos los proyectos": "All projects",
   "Trabajo abierto por proyecto": "Open work by project",
   "Tu archivo": "Your archive",
-  "Tu espacio": "Your workspace",
   "Tus próximas finalizaciones aparecerán aquí.": "Your next completed tasks will appear here.",
   "Tus tareas": "Your tasks",
   "Tus tareas y su historial, en un solo lugar.": "Your tasks and their history in one place.",
@@ -443,5 +441,7 @@
   "¿Cambiar el proyecto de «{0}»?": "Change the project for “{0}”?",
   "Proyecto actual": "Current project",
   "Confirmar": "Confirm",
-  "Cambia los filtros o límpialos.": "Change or clear the filters."
+  "Cambia los filtros o límpialos.": "Change or clear the filters.",
+  "Bienvenido de nuevo": "Welcome back",
+  "progreso.": "progress."
 }

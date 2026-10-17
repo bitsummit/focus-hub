@@ -1,4 +1,4 @@
-# Uso cotidiano y recuperación · Focus Hub v1.1
+# Uso cotidiano y recuperación · Focus. v1.1
 
 ## Dictamen y límites
 

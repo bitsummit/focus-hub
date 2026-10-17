@@ -1,0 +1,82 @@
+/* Brand authority: docs/BRAND_IDENTITY.md. Keep page-specific logo styles out. */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url('/fonts/manrope-variable.woff2') format('woff2');
+}
+
+:root {
+  --brand-green: #39796a;
+  --brand-word-light: #293b39;
+  --brand-word-dark: #edf4f1;
+  --brand-word-color: var(--brand-word-light);
+  --brand-story-bg: #eef3e9;
+  --brand-headline-middle: var(--brand-green);
+  --brand-headline-end: #708568;
+  --brand-tagline: #526b62;
+  --brand-orbit-line: #d6e2ca;
+  --brand-orbit-near: #e5eddf;
+  --brand-orbit-middle: #e8efe3;
+  --brand-orbit-far: #eaf1e6;
+  --brand-font-family: 'Manrope', sans-serif;
+  --brand-font-weight: 800;
+  --brand-symbol-size: 35px;
+  --brand-word-size: 23px;
+  --brand-word-tracking: -0.9px;
+  --brand-logo-gap: 10px;
+}
+
+:root[data-theme='dark'] {
+  --brand-word-color: var(--brand-word-dark);
+  --brand-story-bg: #202e29;
+  --brand-headline-middle: #91b9a7;
+  --brand-headline-end: #bdd0b8;
+  --brand-tagline: #b8c9c1;
+  --brand-orbit-line: #496052;
+  --brand-orbit-near: #2c4035;
+  --brand-orbit-middle: #293c32;
+  --brand-orbit-far: #26372f;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-theme='system'] {
+    --brand-word-color: var(--brand-word-dark);
+    --brand-story-bg: #202e29;
+    --brand-headline-middle: #91b9a7;
+    --brand-headline-end: #bdd0b8;
+    --brand-tagline: #b8c9c1;
+  --brand-orbit-line: #496052;
+  --brand-orbit-near: #2c4035;
+  --brand-orbit-middle: #293c32;
+  --brand-orbit-far: #26372f;
+  }
+}
+
+.brand-logo {
+  --brand-logo-scale: 1.2;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: calc(var(--brand-logo-gap) * var(--brand-logo-scale));
+  color: var(--brand-word-color);
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.brand-logo--compact { --brand-logo-scale: 1; }
+.brand-logo--large { --brand-logo-scale: 1.6; }
+.brand-symbol {
+  display: block;
+  flex-shrink: 0;
+  width: calc(var(--brand-symbol-size) * var(--brand-logo-scale));
+  height: calc(var(--brand-symbol-size) * var(--brand-logo-scale));
+}
+.brand-word {
+  font-family: var(--brand-font-family);
+  font-weight: var(--brand-font-weight);
+  font-size: calc(var(--brand-word-size) * var(--brand-logo-scale));
+  letter-spacing: calc(var(--brand-word-tracking) * var(--brand-logo-scale));
+  line-height: 1;
+}
+.brand-logo .brand-dot { color: var(--brand-green); }
+.brand-logo--icon-only { gap: 0; }

@@ -1,8 +1,11 @@
-# Focus Hub
+# Focus.
 
-Aplicación privada de tareas, proyectos y diario con una única fuente de datos persistente. Interfaz en español; código TypeScript. Consulta [el plan técnico](docs/ARCHITECTURE.md) y [la especificación](FOCUS_HUB_CODEX_MASTER_PROMPT.md).
+Aplicación privada de tareas, proyectos y diario con una única fuente de datos persistente. Interfaz en español e inglés; código TypeScript. Consulta [el plan técnico](docs/ARCHITECTURE.md) y [la especificación](FOCUS_HUB_CODEX_MASTER_PROMPT.md).
 
-Capturas con datos ficticios: [escritorio](docs/screenshots/v1.1/dashboard-desktop.png) · [móvil](docs/screenshots/v1.1/dashboard-mobile.png).
+Capturas reales de Focus. con datos ficticios: [escritorio](docs/screenshots/brand/app-desktop-light.png) · [móvil](docs/screenshots/brand/app-mobile-light.png).
+
+**Identidad oficial:** [Focus. y sus recursos compartidos](docs/BRAND_IDENTITY.md).
+Nombre visible independiente de los identificadores técnicos `focus-hub`.
 
 Versión **1.1**: [revisión UX y pruebas](docs/UX_REVIEW_V1_1.md),
 [preparación para uso cotidiano y recuperación](docs/DAILY_USE_READINESS.md).
@@ -15,7 +18,7 @@ la preferencia por usuario. [Detalles y actualización](docs/I18N.md).
 
 ## Probar en el navegador con Codespaces
 
-Abre la [rama de entrega](https://github.com/bitsummit/focus-hub/tree/dev/focus-hub-v1.1-ux-readiness) y elige **Code → Codespaces → Create codespace**. La configuración instala, compila, crea una demo SQLite aislada y arranca automáticamente. Confirma **Private** en el puerto **3000** y pulsa **Open in Browser**.
+Abre la [rama de entrega](https://github.com/bitsummit/focus-hub/tree/dev/focus-brand-identity) y elige **Code → Codespaces → Create codespace**. La configuración instala, compila, crea una demo SQLite aislada y arranca automáticamente. Confirma **Private** en el puerto **3000** y pulsa **Open in Browser**.
 
 En la terminal del Codespace ejecuta `code .data/demo-access.json` para consultar las credenciales aleatorias, que nunca se incluyen en Git. Sigue la [guía paso a paso de Codespaces](docs/CODESPACES.md) para acceso, reinicios y límites de verificación.
 
@@ -80,8 +83,8 @@ La primera auditoría interna y sus correcciones están en [docs/SECURITY_AUDIT.
 
 ## Navegación
 
-Al abrir la URL principal, Focus Hub muestra **Tareas en vista Tabla**. El orden es
-**Tareas → Dashboard → Diario → Avances → Proyectos → Archivo → Ajustes**.
+Al abrir la URL principal, Focus. muestra **Tareas en vista Tabla**. El orden es
+**Tareas → Mi espacio → Diario → Avances → Proyectos → Archivo → Ajustes**.
 El anterior Inicio está en `/dashboard`; el enlace directo `/tasks` se conserva
 con la preferencia de vista guardada. En móvil aparecen las cuatro primeras
 secciones y **Más**, que contiene Proyectos, Archivo y Ajustes. El logo vuelve a

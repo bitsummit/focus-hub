@@ -1,14 +1,14 @@
-# Probar Focus Hub en GitHub Codespaces
+# Probar Focus. en GitHub Codespaces
 
 Esta entrega conserva la v1: React/TypeScript, servidor Node, SQLite persistente y autenticación real. El entorno es de desarrollo con datos ficticios; no es un despliegue público ni de producción. No requiere instalar herramientas en tu ordenador.
 
 ## 1. Abrir el entorno desde el navegador
 
 1. Inicia sesión en GitHub con la cuenta que tiene acceso al [repositorio privado](https://github.com/bitsummit/focus-hub).
-2. Abre la [rama de entrega](https://github.com/bitsummit/focus-hub/tree/dev/focus-hub-v1.1-ux-readiness). Confirma que el selector de rama muestra **dev/focus-hub-v1.1-ux-readiness**; `main` ya contiene la v1 inicial, pero esta rama incorpora su configuración de Codespaces hasta revisar e integrar el nuevo PR.
-3. Pulsa **Code → Codespaces → Create codespace on dev/focus-hub-v1.1-ux-readiness**. Si GitHub muestra **New with options**, selecciona esa rama y `.devcontainer/devcontainer.json`. Bastan 2 CPU y 4 GB de RAM.
+2. Abre la [rama de entrega](https://github.com/bitsummit/focus-hub/tree/dev/focus-brand-identity). Confirma que el selector de rama muestra **dev/focus-brand-identity**; `main` conserva la versión inicial; esta rama incluye las mejoras funcionales aprobadas y el rebranding Focus. para revisión.
+3. Pulsa **Code → Codespaces → Create codespace on dev/focus-brand-identity**. Si GitHub muestra **New with options**, selecciona esa rama y `.devcontainer/devcontainer.json`. Bastan 2 CPU y 4 GB de RAM.
 4. Espera a que termine la creación. Automáticamente se ejecutan `npm ci`, una compilación de comprobación, la creación inicial de la demo y el arranque en modo desarrollo con Vite. El proceso termina comprobando login, datos persistentes y referencias del diario. No se imprimen contraseñas.
-5. Abre la pestaña **Ports / Puertos** del panel inferior. Debe aparecer **3000 · Focus Hub · privado**. Comprueba que **Port Visibility / Visibilidad del puerto** es **Private**. Es el valor predeterminado de GitHub para un puerto nuevo. No elijas `Public` ni `Private to Organization`.
+5. Abre la pestaña **Ports / Puertos** del panel inferior. Debe aparecer **3000** con visibilidad privada. Comprueba que **Port Visibility / Visibilidad del puerto** es **Private**. Es el valor predeterminado de GitHub para un puerto nuevo. No elijas `Public` ni `Private to Organization`.
 6. Pulsa el icono **Open in Browser / Abrir en el navegador** de la fila 3000. GitHub puede pedirte autenticarte para acceder al puerto privado. La dirección externa usa HTTPS aunque la conexión interna del contenedor sea HTTP.
 
 La configuración no solicita accesibilidad pública. La visibilidad pertenece a GitHub Codespaces y no tiene una propiedad estándar en el esquema devcontainer para fijarla: se usa el valor predeterminado privado y se verifica en **Ports**. Si reutilizas un Codespace en el que hubieras cambiado antes la visibilidad, restáurala a **Private** antes de abrirlo. Si dispones de GitHub CLI autenticado, también puedes ejecutar `gh codespace ports visibility 3000:private --codespace "$CODESPACE_NAME"`.
@@ -31,9 +31,9 @@ Desde la terminal, en la raíz del repositorio:
 
 ```sh
 git status
-git fetch origin dev/focus-hub-v1.1-ux-readiness:refs/remotes/origin/dev/focus-hub-v1.1-ux-readiness
-git switch dev/focus-hub-v1.1-ux-readiness
-git merge --ff-only origin/dev/focus-hub-v1.1-ux-readiness
+git fetch origin dev/focus-brand-identity:refs/remotes/origin/dev/focus-brand-identity
+git switch dev/focus-brand-identity
+git merge --ff-only origin/dev/focus-brand-identity
 node .devcontainer/service.mjs stop
 npm ci
 bash .devcontainer/start.sh
@@ -47,7 +47,7 @@ el contenedor, no reemplaza SQLite y no cambia tu contraseña. Recarga el navega
 al terminar y abre **Ports → 3000 → Open in Browser** manteniendo **Private**.
 
 Prueba primero captura sin proyecto, chip Bandeja, cambio directo de proyecto,
-estado y prioridad, lista/Kanban móvil y «Tu espacio». Consulta
+estado y prioridad, lista/Kanban móvil y «Mi espacio». Consulta
 [la revisión v1.1](UX_REVIEW_V1_1.md) y [recuperación y uso cotidiano](DAILY_USE_READINESS.md).
 
 ## 2. Obtener las credenciales de prueba
@@ -58,7 +58,7 @@ En la terminal **dentro de Codespaces**, ejecuta:
 code .data/demo-access.json
 ```
 
-Se abrirá un archivo privado en el editor. Copia `email` y `password` en el formulario de Focus Hub. No pegues la contraseña en el chat, en un issue o en el PR.
+Se abrirá un archivo privado en el editor. Copia `email` y `password` en el formulario de Focus. No pegues la contraseña en el chat, en un issue o en el PR.
 
 - El correo es ficticio. La contraseña se genera criptográficamente al crear la demo, nunca se fija en el código.
 - El archivo tiene permisos `0600`; la carpeta `.data` tiene `0700`. Credenciales, base SQLite, logs y PID están ignorados por Git.

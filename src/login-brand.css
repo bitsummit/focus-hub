@@ -1,0 +1,40 @@
+/* Login layout consumes the shared identity; it never restyles the logo. */
+:root .login-layout .login-story {
+  background: var(--brand-story-bg);
+  justify-content: flex-start;
+}
+.login-brand-lockup { position: relative; z-index: 1; }
+.login-story .brand-tagline {
+  margin: 14px 0 0;
+  color: var(--brand-tagline);
+  font-size: 1rem;
+  font-weight: 400;
+  font-style: normal;
+  line-height: 1.6;
+}
+:root .login-story > .login-story-copy { padding: 70px 0 80px; }
+.login-headline > span { display: block; }
+.login-headline > span:first-child { color: var(--brand-word-color); }
+.login-headline > span:nth-child(2) { color: var(--brand-headline-middle); }
+.login-headline > span:last-child { color: var(--brand-headline-end); }
+.login-story-copy > p { color: var(--brand-tagline); }
+.login-form h2 { white-space: normal; }
+.mobile-header-brand { display: none; }
+:root[data-theme='dark'] .login-form h2 { color: var(--brand-word-dark); }
+@media (prefers-color-scheme: dark) {
+  :root[data-theme='system'] .login-form h2 { color: var(--brand-word-dark); }
+}
+@media (max-width: 650px) {
+  :root .login-story > .login-story-copy { padding: 32px 0 10px; }
+  .login-story .brand-tagline { margin-top: 12px; font-size: .9375rem; }
+  :root .app-shell .mobile-header-brand { display: inline-flex; }
+  :root .app-shell .topbar { gap: 10px; }
+  :root .app-shell .quick-capture { flex: 1; width: auto; min-width: 0; }
+}
+
+.login-story::after {
+  border-color: var(--brand-orbit-line);
+  box-shadow: 0 0 0 50px var(--brand-orbit-near), 0 0 0 100px var(--brand-orbit-middle), 0 0 0 150px var(--brand-orbit-far);
+}
+
+.login-form form > label { color: var(--brand-tagline); }
