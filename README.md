@@ -44,11 +44,11 @@ Para desarrollar con recarga automática, ejecuta `npm run dev`. Vite, la API y 
 ## Flujo de uso
 
 - Captura una tarea con una línea y Enter. `!` indica prioridad alta, `!!` crítica y `#slug` enlaza un proyecto existente.
-- Diario: escribe encabezados `# NombreProyecto`, notas, viñetas o tareas explícitas `- [ ]`. Las tareas guardadas se convierten en referencias estables; editarlas desde cualquier vista actualiza el mismo registro.
+- Diario: consulta las entradas guardadas (15 por página) y pulsa **Nueva entrada** o elige una fecha para escribir encabezados `# NombreProyecto`, notas, viñetas o tareas explícitas `- [ ]`. Las tareas guardadas se convierten en referencias estables; editarlas desde cualquier vista actualiza el mismo registro.
 - Gestiona los siete estados en Kanban o tabla; las tareas en espera admiten persona y fecha de seguimiento. Completar conserva un historial; reabrir no borra logros anteriores.
 - Selecciona hasta tres tareas de Hoy y cinco del foco semanal. El orden y el periodo se conservan.
 - Crea proyectos, objetivos e hitos. El progreso estratégico se calcula únicamente con hitos logrados.
-- Consulta Archivo y Mis avances para buscar el historial y revisar periodos. Ajustes permite cambiar zona horaria, tema y descargar JSON íntegro o CSV.
+- Consulta Archivo y Avances para buscar el historial y revisar periodos. Ajustes permite cambiar zona horaria, tema y descargar JSON íntegro o CSV.
 
 ## Pruebas
 
@@ -81,8 +81,10 @@ La primera auditoría interna y sus correcciones están en [docs/SECURITY_AUDIT.
 ## Navegación
 
 Al abrir la URL principal, Focus Hub muestra **Tareas en vista Tabla**. El orden es
-**Tareas → Dashboard → Diario → Mis avances → Proyectos → Archivo → Ajustes**.
+**Tareas → Dashboard → Diario → Avances → Proyectos → Archivo → Ajustes**.
 El anterior Inicio está en `/dashboard`; el enlace directo `/tasks` se conserva
 con la preferencia de vista guardada. En móvil aparecen las cuatro primeras
 secciones y **Más**, que contiene Proyectos, Archivo y Ajustes. El logo vuelve a
 la tabla inicial. Kanban y el contenido del Dashboard siguen disponibles.
+
+Diario continuo y navegación temporal: [cambios y pruebas](docs/JOURNAL_PROGRESS_UPDATE.md).

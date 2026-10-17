@@ -31,7 +31,7 @@ test('real HTTPS browser works behind localhost Origin rewrite while a cross-sit
  try{
   await page.goto(origin);await page.getByLabel(/correo/i).fill(credentials.email);await page.getByLabel(/contraseña/i).fill(credentials.password);
   const loggedIn=page.waitForResponse(r=>r.url()===origin+'/api/session'&&r.request().method()==='POST');await page.getByRole('button',{name:/entrar en mi espacio/i}).click();expect((await loggedIn).status()).toBe(200);
-  await expect(page.getByRole('heading',{name:'Tus tareas',exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'Tabla',exact:true})).toHaveClass(/selected/);
+  await expect(page.getByRole('heading',{name:'Tareas',exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'Tabla',exact:true})).toHaveClass(/selected/);
   const capture=page.getByRole('textbox',{name:/captura rápida/i});await capture.fill('Captura browser proxy segura');await capture.press('Enter');await expect(capture).toHaveValue('');
   await page.goto(origin);await expect(page.getByRole('table')).toBeVisible();
   await page.goto(origin+'/tasks');await expect(page.getByRole('button',{name:'Captura browser proxy segura',exact:true})).toBeVisible();await page.reload();await expect(page.getByRole('button',{name:'Captura browser proxy segura',exact:true})).toBeVisible();

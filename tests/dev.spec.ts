@@ -32,7 +32,7 @@ async function exercise(page:Page,origin:string,cssURL:string,cssFile:string){
  await page.getByLabel(/correo/i).fill('dev-browser@example.test');
  await page.getByLabel(/contraseña/i).fill('Fictional-Dev-Browser-2026!');
  await page.getByRole('button',{name:/entrar en mi espacio/i}).click();
- await expect(page.getByRole('heading',{name:'Tus tareas',exact:true})).toBeVisible();
+ await expect(page.getByRole('heading',{name:'Tareas',exact:true})).toBeVisible();
  await expect(page.getByRole('button',{name:'Tabla',exact:true})).toHaveClass(/selected/);
  await page.goto(origin+'/dashboard');await expect(page.getByRole('heading',{name:'Tu espacio',exact:true})).toBeVisible();
  await page.reload();await expect(page.locator('.weekly-panel')).toBeVisible();

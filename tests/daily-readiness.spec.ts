@@ -16,7 +16,7 @@ const loader=fileURLToPath(new URL('../node_modules/tsx/dist/loader.mjs',import.
 const email='daily-recovery@example.test',password='Fictional-Daily-Recovery-2026!';
 async function freePort(){const server=createServer().listen(0,'127.0.0.1');await once(server,'listening');const address=server.address();if(!address||typeof address==='string')throw Error('Missing fixture port');await new Promise<void>((done,reject)=>server.close(error=>error?reject(error):done()));return address.port;}
 async function stop(child:ChildProcess|undefined){if(!child||child.exitCode!==null)return;const exited=once(child,'exit');child.kill('SIGTERM');const timeout=setTimeout(()=>child.kill('SIGKILL'),5000);try{await exited;}finally{clearTimeout(timeout);}}
-async function login(page:Page,origin:string){await page.goto(origin);await page.getByLabel(/correo/i).fill(email);await page.getByLabel(/contraseña/i).fill(password);await page.getByRole('button',{name:/entrar|iniciar sesión/i}).click();await expect(page.getByRole('heading',{name:'Tus tareas',exact:true})).toBeVisible();}
+async function login(page:Page,origin:string){await page.goto(origin);await page.getByLabel(/correo/i).fill(email);await page.getByLabel(/contraseña/i).fill(password);await page.getByRole('button',{name:/entrar|iniciar sesión/i}).click();await expect(page.getByRole('heading',{name:'Tareas',exact:true})).toBeVisible();}
 async function state(page:Page){return page.evaluate(async()=>{const response=await fetch('/api/state');if(!response.ok)throw Error('state '+response.status);return response.json();});}
 async function logout(page:Page){await page.evaluate(async()=>{const session=await(await fetch('/api/session')).json();const response=await fetch('/api/session',{method:'DELETE',headers:{'X-CSRF-Token':session.csrfToken}});if(!response.ok)throw Error('logout '+response.status);});await page.reload();await expect(page.getByLabel(/correo/i)).toBeVisible();}
 
@@ -45,7 +45,7 @@ test('daily use: actual process restart, logout and SQLite recovery preserve can
   await logout(page);await login(page,origin);expect((await state(page)).tasks.some((task:any)=>task.id===captured.id)).toBeTruthy();
   await stop(child);child=undefined;await start(source);await page.reload();
   // Durable sessions are read from the same SQLite file after a real process restart.
-  await expect(page.getByRole('heading',{name:'Tus tareas',exact:true})).toBeVisible();current=await state(page);expect(current.tasks.some((task:any)=>task.id===captured.id)).toBeTruthy();
+  await expect(page.getByRole('heading',{name:'Tareas',exact:true})).toBeVisible();current=await state(page);expect(current.tasks.some((task:any)=>task.id===captured.id)).toBeTruthy();
   const report=runCLI(['backup','--source',source,'--out',backup]);expect(report.counts.tasks).toBe(2);
   await stop(child);child=undefined;
   const recovered=runCLI(['restore','--source',backup,'--out',restored]);expect(recovered.counts.sessions).toBe(0);expect(recovered.sessionsRevoked).toBeGreaterThan(0);

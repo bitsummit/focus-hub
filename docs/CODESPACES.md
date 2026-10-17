@@ -69,10 +69,10 @@ Se abrirá un archivo privado en el editor. Copia `email` y `password` en el for
 ## 3. Qué probar
 
 1. Captura una tarea con el título y Enter; recarga y comprueba que sigue allí.
-2. Crea un proyecto `SRA`. En Diario añade `# SRA` y luego `- [ ] !! Preparar presentación #SRA`.
+2. Crea un proyecto `SRA`. En Diario pulsa **Nueva entrada** (o elige una fecha) y añade `# SRA` y luego `- [ ] !! Preparar presentación #SRA`.
 3. Cambia esa tarea en Kanban o tabla, vuelve al Diario y comprueba que tiene el mismo estado.
 4. Selecciona foco diario/semanal, cambia el orden y recarga.
-5. Completa y reabre una tarea; consulta el historial y Mis avances.
+5. Completa y reabre una tarea; consulta el historial y Avances.
 6. Crea un objetivo con hitos; logra uno y comprueba el progreso.
 7. En Ajustes descarga JSON/CSV y cambia tema o zona horaria.
 

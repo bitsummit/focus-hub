@@ -27,7 +27,7 @@ const server=createApp(db).listen(0,'127.0.0.1');await new Promise<void>(resolve
 const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',args:['--no-sandbox']});
 const output=resolve(process.argv[2]||'docs/screenshots/v1.1');mkdirSync(output,{recursive:true});
 try{
- const page=await browser.newPage({viewport:{width:1440,height:1050},baseURL:`http://127.0.0.1:${address.port}`});await page.goto('/');await page.getByLabel(/correo/i).fill(email);await page.getByLabel(/contraseña/i).fill(password);await page.getByRole('button',{name:/entrar|iniciar sesión/i}).click();await page.getByRole('heading',{name:'Tus tareas',exact:true}).waitFor();
+ const page=await browser.newPage({viewport:{width:1440,height:1050},baseURL:`http://127.0.0.1:${address.port}`});await page.goto('/');await page.getByLabel(/correo/i).fill(email);await page.getByLabel(/contraseña/i).fill(password);await page.getByRole('button',{name:/entrar|iniciar sesión/i}).click();await page.getByRole('heading',{name:'Tareas',exact:true}).waitFor();
  for(const [mode,width,height] of [['desktop',1440,1050],['mobile',390,844]] as const){await page.setViewportSize({width,height});
   for(const [name,path] of [['dashboard','/dashboard'],['tasks-list','/'],['progress','/progress']] as const){await page.goto(path);await page.locator('h1').waitFor();if(path==='/progress')await page.locator('.metrics-grid').waitFor();await page.screenshot({path:join(output,`${name}-${mode}.png`),fullPage:true});}
   await page.goto('/');await page.getByRole('button',{name:'Kanban',exact:true}).click();await page.screenshot({path:join(output,`tasks-kanban-${mode}.png`),fullPage:true});

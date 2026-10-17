@@ -5,7 +5,7 @@ async function login(page:Page){
  await page.getByLabel(/correo/i).fill('browser@example.test');
  await page.getByLabel(/contraseña/i).fill('Browser-QA-fictional-2026!');
  await page.getByRole('button',{name:/entrar|iniciar sesión/i}).click();
- await expect(page.getByRole('heading',{name:/Tus tareas/i})).toBeVisible();
+ await expect(page.getByRole('heading',{name:'Tareas',exact:true})).toBeVisible();
 }
 test('01,14,15: real browser keyboard capture survives refresh and appears in table and board',async({page})=>{
  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
@@ -29,19 +29,19 @@ test('tasks table is the landing page despite a legacy board preference and desk
  const saved=page.waitForResponse(r=>r.url().endsWith('/api/preferences')&&r.request().method()==='PATCH');
  await page.getByRole('button',{name:'Guardar preferencias',exact:true}).click();expect((await saved).ok()).toBeTruthy();
  await page.goto('/tasks');await expect(page.getByRole('button',{name:'Kanban',exact:true})).toHaveClass(/selected/);
- await page.goto('/');await expect(page.getByRole('heading',{name:'Tus tareas',exact:true})).toBeVisible();
+ await page.goto('/');await expect(page.getByRole('heading',{name:'Tareas',exact:true})).toBeVisible();
  await expect(page.getByRole('table')).toBeVisible();
  await expect(page.getByRole('button',{name:'Tabla',exact:true})).toHaveClass(/selected/);
  await page.reload();await expect(page.getByRole('table')).toBeVisible();
  const sidebar=page.locator('.sidebar nav');
- await expect(sidebar.getByRole('button')).toHaveText([/^Tareas\s*\d*$/,'Tu espacio','Diario','Mis avances','Proyectos','Archivo','Ajustes']);
+ await expect(sidebar.getByRole('button')).toHaveText([/^Tareas\s*\d*$/,'Tu espacio','Diario','Avances','Proyectos','Archivo','Ajustes']);
  await sidebar.getByRole('button',{name:'Tu espacio',exact:true}).click();
  await expect(page).toHaveURL(/\/dashboard$/);await expect(page.getByRole('heading',{name:'Tu espacio',exact:true})).toBeVisible();
  await page.reload();await expect(page.locator('.weekly-panel')).toBeVisible();
  await sidebar.getByRole('button',{name:/^Tareas/}).click();await expect(page).toHaveURL(/\/tasks$/);
- await expect(page.getByRole('heading',{name:'Tus tareas',exact:true})).toBeVisible();
+ await expect(page.getByRole('heading',{name:'Tareas',exact:true})).toBeVisible();
  await page.goBack();await expect(page.getByRole('heading',{name:'Tu espacio',exact:true})).toBeVisible();
- await page.goForward();await expect(page.getByRole('heading',{name:'Tus tareas',exact:true})).toBeVisible();
+ await page.goForward();await expect(page.getByRole('heading',{name:'Tareas',exact:true})).toBeVisible();
  await page.locator('.sidebar .brand').click();await expect(page).toHaveURL(/\/$/);
  await expect(page.getByRole('table')).toBeVisible();
 });
@@ -53,7 +53,7 @@ test('14: smartphone navigation, keyboard operation, readable sections and no pa
  }
  await page.goto('/');
  const mobile=page.locator('.mobile-nav');
- await expect(mobile.getByRole('button')).toHaveText(['Tareas','Tu espacio','Diario','Mis avances','Más']);
+ await expect(mobile.getByRole('button')).toHaveText(['Tareas','Tu espacio','Diario','Avances','Más']);
  await mobile.getByRole('button',{name:'Tu espacio',exact:true}).click();
  await expect(page).toHaveURL(/\/dashboard$/);await expect(page.getByRole('heading',{name:'Tu espacio',exact:true})).toBeVisible();
  await mobile.getByRole('button',{name:'Más',exact:true}).click();
@@ -61,7 +61,7 @@ test('14: smartphone navigation, keyboard operation, readable sections and no pa
  await page.locator('.mobile-more').getByRole('button',{name:'Proyectos',exact:true}).click();
  await expect(page).toHaveURL(/\/projects$/);await expect(page.locator('.mobile-more')).toHaveCount(0);
  await page.goBack();await expect(page.getByRole('heading',{name:'Tu espacio',exact:true})).toBeVisible();
- await page.goBack();await expect(page.getByRole('heading',{name:'Tus tareas',exact:true})).toBeVisible();
+ await page.goBack();await expect(page.getByRole('heading',{name:'Tareas',exact:true})).toBeVisible();
  await expect(page.getByRole('region',{name:'Lista de tareas'})).toBeVisible();
  await page.keyboard.press('Tab');
  expect(await page.evaluate(()=>document.activeElement?.tagName)).not.toBe('BODY');

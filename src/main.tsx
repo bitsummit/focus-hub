@@ -49,6 +49,7 @@ import { Board, TaskTable, StatusControl, Priority } from "./components/TaskView
 import { MobileQuickCapture } from "./components/QuickCapture";
 import { filterTask, matchesQuickFilter, type QuickFilter } from "./task-filters";
 import "./ux-v11.css";
+import "./journal-navigation.css";
 import {t as tr, locale, getLanguage, setLanguage, subscribeLanguage, translateError} from "./i18n";
 
 type Page =
@@ -63,7 +64,7 @@ const nav: { key: Page; path: string; label: string; icon: typeof Home }[] = [
   { key: "tasks", path: "/tasks", label: "Tareas", icon: Home },
   { key: "home", path: "/dashboard", label: "Tu espacio", icon: LayoutDashboard },
   { key: "journal", path: "/journal", label: "Diario", icon: BookOpen },
-  { key: "progress", path: "/progress", label: "Mis avances", icon: BarChart3 },
+  { key: "progress", path: "/progress", label: "Avances", icon: BarChart3 },
   { key: "projects", path: "/projects", label: "Proyectos", icon: FolderOpen },
   { key: "archive", path: "/archive", label: "Archivo", icon: Inbox },
   { key: "settings", path: "/settings", label: "Ajustes", icon: Settings },
@@ -105,9 +106,11 @@ function validDate(date: string) {
 }
 function pathState() {
   const path = location.pathname;
+  const page = Number(new URLSearchParams(location.search).get("page") ?? 1);
   const section = nav.find((n) => path === n.path || path.startsWith(n.path + "/"));
   return {
     page: section?.key ?? "tasks",
+    journalPage: Number.isSafeInteger(page) && page > 0 ? page : 1,
     projectId: path.startsWith("/projects/") ? path.split("/")[2] : null,
     journalDate:
       /^\/journal\/\d{4}-\d{2}-\d{2}$/.test(path) &&
@@ -123,6 +126,7 @@ function App() {
     [snapshot, setSnapshot] = useState<Snapshot | null>(null),
     [ready, setReady] = useState(false),
     [error, setError] = useState(""),
+    [connectionError, setConnectionError] = useState(""),
     [busy, setBusy] = useState(0),
     [showSaving, setShowSaving] = useState(false),
     [route, setRoute] = useState(pathState),
@@ -188,16 +192,20 @@ function App() {
       }
     })();
   }, [read]);
+  const reconnect = useCallback(async () => {
+    try { await refresh(); setConnectionError(""); }
+    catch (e) { setConnectionError((e as Error).message); }
+  }, [refresh]);
   useEffect(() => {
     if (!session) return;
-    const onFocus = () => refresh().catch((e) => setError(e.message));
+    const onFocus = () => { void reconnect(); };
     window.addEventListener("focus", onFocus);
     const id = setInterval(onFocus, 20000);
     return () => {
       window.removeEventListener("focus", onFocus);
       clearInterval(id);
     };
-  }, [session, refresh]);
+  }, [session, reconnect]);
   useEffect(() => {
     const fn = () => setRoute(pathState());
     window.addEventListener("popstate", fn);
@@ -431,10 +439,11 @@ function App() {
           <span className="private-badge">
             <span />{tr("Privado")}</span>
         </header>
-        {error && (
+        {(error || connectionError) && (
           <div role="alert" className="error-banner">
-            {translateError(error)}
-            <button onClick={() => setError("")} aria-label={tr("Cerrar error")}>
+            {translateError(error || connectionError)}
+            {!error && connectionError && <button className="connection-retry" onClick={() => void reconnect()}>{tr("Reintentar")}</button>}
+            <button onClick={() => { setError(""); setConnectionError(""); }} aria-label={tr("Cerrar error")}>
               <X size={16} />
             </button>
           </div>
@@ -448,7 +457,7 @@ function App() {
           {route.page === "tasks" && (
             <>
               <PageHeading
-                title={tr("Tus tareas")}
+                title={tr("Tareas")}
                 action={
                   <div className="segmented">
                     <button
@@ -507,13 +516,19 @@ function App() {
           {route.page === "projects" && (
             <ProjectsPage {...shared} selectedId={route.projectId} go={go} />
           )}
-          {route.page === "journal" && (
-            <JournalPage
-              {...shared}
-              date={route.journalDate ?? today}
-              onDate={(date) => go("journal", "/journal/" + date)}
-            />
-          )}
+          {route.page === "journal" && (route.journalDate ? (
+            <>
+              <button className="text-button back-link" onClick={() => go("journal")}>
+                <ChevronLeft size={15} />{tr("Entradas del diario")}
+              </button>
+              <JournalPage key={route.journalDate} {...shared} date={route.journalDate}
+                onDate={(date) => go("journal", "/journal/" + date)} />
+            </>
+          ) : (
+            <JournalFeed {...shared} page={route.journalPage}
+              onPage={(page) => go("journal", page === 1 ? "/journal" : "/journal?page=" + page)}
+              onDate={(date) => go("journal", "/journal/" + date)} />
+          ))}
           {route.page === "progress" && (
             <ProgressPage {...shared} read={read} />
           )}
@@ -900,9 +915,9 @@ function HomePage(props: Shared & { go: (p: Page, path?: string) => void }) {
       </div>
       <div className="section-heading">
         <div>
-          <h2>{tr("Mis avances")}</h2>
+          <h2>{tr("Avances")}</h2>
         </div>
-        <button className="text-button" onClick={() => go("progress")}>{tr("Ver mis avances")}<ArrowUpRight size={15} />
+        <button className="text-button" onClick={() => go("progress")}>{tr("Ver avances")}<ArrowUpRight size={15} />
         </button>
       </div>
       <div className="metrics-grid">
@@ -1603,6 +1618,70 @@ function eventValue(json: string, data: Snapshot) {
   }
 }
 
+function JournalFeed({ page, onPage, onDate, ...props }: Shared & {
+  page:number; onPage:(page:number)=>void; onDate:(date:string)=>void;
+}) {
+  const {data}=props;
+  const [search,setSearch]=useState("");
+  const tasks=new Map(data.tasks.map(task=>[task.id,task]));
+  const blocksByEntry=new Map<string,JournalBlock[]>();
+  for(const block of data.blocks){
+    const group=blocksByEntry.get(block.journal_entry_id) ?? [];
+    group.push(block);blocksByEntry.set(block.journal_entry_id,group);
+  }
+  for(const blocks of blocksByEntry.values())blocks.sort((a,b)=>a.sort_order-b.sort_order);
+  const needle=search.trim().toLocaleLowerCase(locale());
+  const entries=data.journals.filter(entry=>!needle ||
+    [entry.entry_date,entry.title,...(blocksByEntry.get(entry.id) ?? []).map(block=>
+      block.block_type==='task_reference' ? tasks.get(block.task_id ?? '')?.title ?? '' : block.text_content
+    )].join(' ').toLocaleLowerCase(locale()).includes(needle)
+  ).sort((a,b)=>b.entry_date.localeCompare(a.entry_date));
+  const pages=Math.max(1,Math.ceil(entries.length/15));
+  const current=Math.min(page,pages);
+  const visible=entries.slice((current-1)*15,current*15);
+  return <>
+    <PageHeading title={tr("Diario")} subtitle={tr("Tus entradas, de la más reciente a la más antigua.")}
+      action={<div className="journal-feed-actions">
+        <input type="date" aria-label={tr("Fecha del diario")} value=""
+          onChange={event=>event.target.value && onDate(event.target.value)} />
+        <button className="button primary" onClick={()=>onDate(props.today)}><Plus size={16}/>{tr("Nueva entrada")}</button>
+      </div>} />
+    <div className="journal-feed-toolbar">
+      <input type="search" aria-label={tr("Buscar entradas del diario")} placeholder={tr("Buscar en el diario…")}
+        value={search} onChange={event=>{setSearch(event.target.value);if(page!==1)onPage(1);}} />
+      <span className="muted">{tr("{0} entradas",entries.length)}</span>
+    </div>
+    <section className="journal-feed" aria-label={tr("Entradas del diario")}>
+      {visible.map(entry=>{
+        const blocks=blocksByEntry.get(entry.id) ?? [];
+        return <article className="journal-paper journal-feed-entry" key={entry.id}
+          data-entry-date={entry.entry_date} aria-labelledby={'journal-entry-'+entry.id}>
+          <header className="journal-feed-heading">
+            <div><h2 id={'journal-entry-'+entry.id}><time dateTime={entry.entry_date}>{niceDate(entry.entry_date)}</time></h2></div>
+            <div className="journal-feed-actions"><button className="text-button"
+              aria-label={tr("Abrir entrada {0}",entry.entry_date)} onClick={()=>onDate(entry.entry_date)}>
+              {tr("Abrir entrada")}<ChevronRight size={16}/></button></div>
+          </header>
+          <div className="journal-blocks">{blocks.map(block=><JournalBlockView key={block.id}
+            block={block} revision={entry.revision} {...props}/>)}
+            {!blocks.length && <p className="muted">{tr("Entrada sin contenido.")}</p>}
+          </div>
+        </article>;
+      })}
+      {!visible.length && <Empty title={tr(needle ? "Ninguna entrada coincide con la búsqueda" : "No hay entradas de diario")}
+        text={tr(needle ? "Prueba con otra búsqueda." : "Abre una fecha y guarda una nota o tarea para crear tu primera entrada.")}
+        icon={BookOpen}/>}
+    </section>
+    {pages>1 && <nav className="journal-pagination" aria-label={tr("Paginación del diario")}>
+      <button className="button" aria-label={tr("Página anterior")} disabled={current===1}
+        onClick={()=>onPage(current-1)}><ChevronLeft size={16}/>{tr("Anterior")}</button>
+      <span role="status" aria-live="polite">{tr("Página {0} de {1}",current,pages)}</span>
+      <button className="button" aria-label={tr("Página siguiente")} disabled={current===pages}
+        onClick={()=>onPage(current+1)}>{tr("Siguiente")}<ChevronRight size={16}/></button>
+    </nav>}
+  </>;
+}
+
 function JournalPage({
   date,
   onDate,
@@ -1655,7 +1734,7 @@ function JournalPage({
   return (
     <>
       <PageHeading
-        title={tr("Mi diario")}
+        title={tr("Diario")}
         subtitle={tr("Notas y tareas vinculadas por día.")}
         action={
           <div className="journal-date">
@@ -2568,6 +2647,8 @@ function ProgressPage({
     [mode, setMode] = useState<"weekly" | "monthly">("weekly"),
     [analytics, setAnalytics] = useState<Analytics | null>(null),
     [error, setError] = useState(""),
+    [loading,setLoading]=useState(true),
+    [retry,setRetry]=useState(0),
     [project, setProject] = useState("");
   const end =
     mode === "weekly"
@@ -2575,16 +2656,17 @@ function ProgressPage({
       : Temporal.PlainDate.from(start).add({ months: 1 }).toString();
   useEffect(() => {
     let active = true;
-    setAnalytics(null);
+    setAnalytics(null);setError("");setLoading(true);
     read(`/api/analytics?start=${start}&end=${end}`)
       .then((a) => {
-        if (active) setAnalytics(a);
+        if (active) { setAnalytics(a); setError(""); }
       })
-      .catch((e) => active && setError(e.message));
+      .catch((e) => { if(active)setError(e.message); })
+      .finally(()=>{if(active)setLoading(false);});
     return () => {
       active = false;
     };
-  }, [read, start, end, data]);
+  }, [read, start, end, data, retry]);
   const changeMode = (m: "weekly" | "monthly") => {
     setMode(m);
     setStart(
@@ -2596,7 +2678,7 @@ function ProgressPage({
   return (
     <>
       <PageHeading
-        title={tr("Mis avances")}
+        title={tr("Avances")}
         subtitle={tr("Resultados verificados del periodo.")}
         action={
           <div className="segmented">
@@ -2640,14 +2722,15 @@ function ProgressPage({
         <span>{data.user.timezone}</span>
       </div>
       {error && (
-        <p role="alert" className="error-text">
-          {translateError(error)}
-        </p>
-      )}
-      {!analytics ? (
         <div className="panel">
+          <p role="alert" className="error-text">{translateError(error)}</p>
+          <button className="button" onClick={()=>setRetry(value=>value+1)}>{tr("Reintentar")}</button>
+        </div>
+      )}
+      {loading ? (
+        <div className="panel" role="status">
           <LoaderCircle className="spin" />{tr(" Calculando avances…")}</div>
-      ) : (
+      ) : analytics ? (
         <>
           <div className="metrics-grid">
             <Metric
@@ -2693,7 +2776,7 @@ function ProgressPage({
                   <i className="dot slate" />{tr("Creadas")}</span>
               </div>
               <div
-                className="bar-chart"
+                className={"bar-chart" + (analytics.series.length > 14 ? " bar-chart-long" : "")}
                 role="img"
                 aria-label={tr("Tareas completadas y creadas por día")}
               >
@@ -2709,7 +2792,7 @@ function ProgressPage({
                     <div
                       key={s.date}
                       className="bar-group"
-                      title={`${s.date}: ${s.completed} completadas, ${s.created} creadas`}
+                      title={tr("{0}: {1} completadas, {2} creadas",s.date,s.completed,s.created)}
                     >
                       <div className="bars">
                         <span
@@ -2887,7 +2970,7 @@ function ProgressPage({
             )}
           </div>
         </>
-      )}
+      ) : null}
     </>
   );
 }
