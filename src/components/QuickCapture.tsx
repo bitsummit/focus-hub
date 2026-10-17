@@ -114,6 +114,7 @@ export function MobileQuickCapture({ open, onClose, projects, onCapture }: Mobil
       </header>
       <form onSubmit={submit} aria-busy={pending}>
         <label className="v11-capture-title-label" htmlFor="v11-capture-title">{t("Título de la tarea")}</label>
+        <div className="capture-title-halo">
         <input
           ref={titleRef}
           id="v11-capture-title"
@@ -126,6 +127,7 @@ export function MobileQuickCapture({ open, onClose, projects, onCapture }: Mobil
           enterKeyHint="done"
           onChange={(event) => { changed(); setTitle(event.target.value); }}
         />
+        </div>
         <div className="v11-capture-options">
           <label htmlFor="v11-capture-project">{t("Proyecto")}
             <select id="v11-capture-project" value={projectId} disabled={pending} onChange={(event) => { changed(); setProjectId(event.target.value); }}>

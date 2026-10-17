@@ -1,17 +1,17 @@
-/* One quiet lap on focus, then the existing steady focus border remains. */
+/* Idle reminder every ten seconds; a slightly stronger single lap on focus. */
 @property --capture-halo-angle {
   syntax: '<angle>';
   initial-value: 0deg;
   inherits: false;
 }
-:root .app-shell .quick-capture {
+:root .app-shell :is(.quick-capture, .capture-title-halo) {
   position: relative;
   isolation: isolate;
   transition: border-color 180ms ease, box-shadow 180ms ease;
 }
 @supports (background: conic-gradient(from 0deg, transparent, green)) and ((mask-composite: exclude) or (-webkit-mask-composite: xor)) {
-  :root .app-shell .quick-capture::before,
-  :root .app-shell .quick-capture::after {
+  :root .app-shell :is(.quick-capture, .capture-title-halo)::before,
+  :root .app-shell :is(.quick-capture, .capture-title-halo)::after {
     content: '';
     position: absolute;
     inset: -3px;
@@ -29,9 +29,14 @@
     mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     mask-composite: exclude;
   }
-  :root .app-shell .quick-capture::after { filter: blur(4px); }
-  :root .app-shell .quick-capture:focus-within::before,
-  :root .app-shell .quick-capture:focus-within::after {
+  :root .app-shell :is(.quick-capture, .capture-title-halo)::after { filter: blur(4px); }
+  :root .app-shell:not(:has(dialog[open], .task-dialog)) .quick-capture:not(:focus-within):has(input:placeholder-shown)::before,
+  :root .app-shell:not(:has(dialog[open], .task-dialog)) .quick-capture:not(:focus-within):has(input:placeholder-shown)::after {
+    animation: capture-halo-idle-travel 10s ease-in-out 10s infinite,
+      capture-halo-idle-reveal 10s ease-in-out 10s infinite;
+  }
+  :root .app-shell :is(.quick-capture, .capture-title-halo):focus-within::before,
+  :root .app-shell :is(.quick-capture, .capture-title-halo):focus-within::after {
     animation: capture-halo-travel 2.6s ease-in-out 1,
       capture-halo-reveal 2.6s ease-in-out 1;
   }
@@ -42,10 +47,20 @@
 }
 @keyframes capture-halo-reveal {
   0%, 100% { opacity: 0; }
-  15%, 65% { opacity: .85; }
+  15%, 65% { opacity: 1; }
 }
+@keyframes capture-halo-idle-travel {
+  0% { --capture-halo-angle: 0deg; }
+  26%, 100% { --capture-halo-angle: 360deg; }
+}
+@keyframes capture-halo-idle-reveal {
+  0%, 26%, 100% { opacity: 0; }
+  3.9%, 16.9% { opacity: .85; }
+}
+:root .app-shell .capture-title-halo { border-radius: 8px; }
+:root .app-shell .capture-title-halo input { display: block; }
 @media (prefers-reduced-motion: reduce) {
-  :root .app-shell .quick-capture { transition: none; }
-  :root .app-shell .quick-capture::before,
-  :root .app-shell .quick-capture::after { animation: none; opacity: 0; }
+  :root .app-shell :is(.quick-capture, .capture-title-halo) { transition: none; }
+  :root .app-shell :is(.quick-capture, .capture-title-halo)::before,
+  :root .app-shell :is(.quick-capture, .capture-title-halo)::after { animation: none; opacity: 0; }
 }
