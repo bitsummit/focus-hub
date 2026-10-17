@@ -11,7 +11,8 @@ import {createOwner} from '../server/auth.ts';
 import {createApp} from '../server/app.ts';
 
 test.use({ignoreHTTPSErrors:true});
-test('real HTTPS browser works behind localhost Origin rewrite while a cross-site login is rejected',async({page})=>{
+for(const rewrittenScheme of ['http','https']as const){
+test(`real HTTPS browser supports ${rewrittenScheme} localhost Origin rewrite, sign-out and rejection of cross-site login`,async({page})=>{
  const previous=Object.fromEntries(['CODESPACES','PORT','FOCUS_PUBLIC_ORIGIN','COOKIE_SECURE'].map(k=>[k,process.env[k]]));
  const dir=mkdtempSync(join(tmpdir(),'focus-proxy-browser-'));
  const key=join(dir,'key.pem'),cert=join(dir,'cert.pem');
@@ -23,7 +24,7 @@ test('real HTTPS browser works behind localhost Origin rewrite while a cross-sit
  const backendAddress=backend.address();if(!backendAddress||typeof backendAddress==='string')throw Error('Missing backend address');
  process.env.PORT=String(backendAddress.port);const internalHost=`localhost:${backendAddress.port}`;
  const proxy=createHTTPS({key:readFileSync(key),cert:readFileSync(cert)},(req,res)=>{
-  const headers={...req.headers,host:internalHost};if(headers.origin)headers.origin=`http://${internalHost}`;
+  const headers={...req.headers,host:internalHost};if(headers.origin)headers.origin=`${rewrittenScheme}://${internalHost}`;
   const upstream=requestHTTP({host:'127.0.0.1',port:backendAddress.port,path:req.url,method:req.method,headers},response=>{res.writeHead(response.statusCode!,response.headers);response.pipe(res);});upstream.on('error',()=>{res.statusCode=502;res.end();});req.pipe(upstream);
  }).listen(0,'127.0.0.1');await once(proxy,'listening');const proxyAddress=proxy.address();if(!proxyAddress||typeof proxyAddress==='string')throw Error('Missing proxy address');
  const origin=`https://127.0.0.1:${proxyAddress.port}`;process.env.FOCUS_PUBLIC_ORIGIN=origin;
@@ -62,3 +63,4 @@ test('real HTTPS browser works behind localhost Origin rewrite while a cross-sit
   db.close();rmSync(dir,{recursive:true,force:true});for(const [key,value] of Object.entries(previous)){if(value===undefined)delete process.env[key];else process.env[key]=value;}
  }
 });
+}

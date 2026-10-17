@@ -100,10 +100,12 @@ export function sameOrigin(req:Request,res:Response,next:NextFunction){
    const port=String(Number(process.env.PORT||3000));
    const publicUrl=configured?new URL(configured):null;
    const mode=req.headers['sec-fetch-mode'],destination=req.headers['sec-fetch-dest'];
-   // Codespaces was observed rewriting both Host and Origin to this exact internal endpoint.
+   // Codespaces rewrites Host to this exact internal endpoint; Origin may retain HTTPS.
    // This exception is not identity: login additionally requires a one-use challenge,
    // and every authenticated write still requires the server-issued session CSRF token.
-   const rewritten=process.env.CODESPACES==='true'&&publicUrl?.protocol==='https:'&&url.origin===`http://localhost:${port}`&&origin===url.origin&&req.headers.host===`localhost:${port}`&&req.headers['sec-fetch-site']==='same-origin'&&(mode===undefined||mode==='cors'||mode==='same-origin')&&(destination===undefined||destination==='empty');
+   const internalHost=`localhost:${port}`;
+   const internalOrigin=url.origin===`http://${internalHost}`||url.origin===`https://${internalHost}`;
+   const rewritten=process.env.CODESPACES==='true'&&publicUrl?.protocol==='https:'&&internalOrigin&&origin===url.origin&&req.headers.host===internalHost&&req.headers['sec-fetch-site']==='same-origin'&&(mode===undefined||mode==='cors'||mode==='same-origin')&&(destination===undefined||destination==='empty');
    if((!matches&&!rewritten)||!['http:','https:'].includes(url.protocol)){reject('origin_mismatch');return;}}catch{reject('invalid_origin');return;}}
  next();
 }

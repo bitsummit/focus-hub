@@ -141,9 +141,9 @@ Esas líneas contienen el origen/host y la procedencia de la solicitud; no regis
 
 ### Corrección del proxy observada en Codespaces
 
-Se confirmó un caso real: el navegador usa el origen HTTPS privado, pero el proxy entrega al servidor `Origin: http://localhost:3000` y `Host: localhost:3000`, con `Sec-Fetch-Site: same-origin`. La comprobación anterior rechazaba esa reescritura.
+Se confirmó un caso real: el navegador usa el origen HTTPS privado, pero el proxy entrega al servidor `Origin: http://localhost:3000` o `Origin: https://localhost:3000`, junto con `Host: localhost:3000`, con `Sec-Fetch-Site: same-origin`. La comprobación anterior rechazaba esa reescritura.
 
-Se permite únicamente ese endpoint interno exacto para el puerto configurado, con Codespaces activo, origen público HTTPS configurado y metadatos de misma procedencia. No se confía en dominios comodín ni en X-Forwarded-Host. El login requiere además un desafío previo de diez minutos y un solo uso: cookie __Host Secure/HttpOnly/SameSite Strict y token en cabecera, emitido por JSON sin caché. Todas las escrituras autenticadas mantienen el token CSRF de la sesión. Los clientes API deben obtener GET /api/session/challenge y enviar su loginToken como X-Login-CSRF junto con la cookie antes de POST /api/session.
+Se admiten únicamente esas dos variantes de origen del endpoint interno exacto para el puerto configurado, con Codespaces activo, origen público HTTPS configurado y metadatos de misma procedencia. No se confía en dominios comodín ni en X-Forwarded-Host. El login requiere además un desafío previo de diez minutos y un solo uso: cookie __Host Secure/HttpOnly/SameSite Strict y token en cabecera, emitido por JSON sin caché. Todas las escrituras autenticadas mantienen el token CSRF de la sesión. Los clientes API deben obtener GET /api/session/challenge y enviar su loginToken como X-Login-CSRF junto con la cookie antes de POST /api/session.
 
 ## Auditoría y actualización de seguridad
 
@@ -188,11 +188,35 @@ Si al cerrar sesión aparece «Origen no permitido / Origin not allowed», conse
 la sesión y consulta el diagnóstico de la solicitud rechazada tras intentarlo:
 
 ```sh
-rg FOCUS_ORIGIN_REJECTED .data/codespaces-server.log | tail -1
+grep FOCUS_ORIGIN_REJECTED .data/codespaces-server.log | tail -1
 ```
 
 La línea no contiene contraseñas ni cookies. La prueba de navegador
 `tests/proxy.spec.ts` verifica también cerrar sesión, cookie eliminada, sesión
 401 tras recargar y conservación de tareas al entrar de nuevo con el proxy
-HTTPS conocido. Un rechazo diferente requiere su motivo real para decidir la
-corrección; no se amplía la excepción de origen sin esa evidencia.
+HTTPS conocido, tanto con origen interno HTTP como HTTPS. También se comprueba
+el caso real en el que el login llega con origen HTTP y la salida con HTTPS.
+
+La variante `Origin: https://localhost:3000` fue observada al cerrar sesión y
+antes se rechazaba. La corrección conserva el host/puerto exactos, los metadatos
+de misma procedencia, el desafío de login y el token CSRF; no añade dominios
+comodín ni acepta orígenes de terceros. Para aplicarla en el Codespace:
+
+```sh
+git switch dev/focus-hub-v1.1-ux-readiness &&
+git pull --ff-only origin dev/focus-hub-v1.1-ux-readiness &&
+node .devcontainer/service.mjs stop &&
+bash .devcontainer/start.sh
+```
+
+Después recarga y pulsa «Cerrar sesión»: debe aparecer el login. No se modifican
+las tareas ni las credenciales. Vite recarga el frontend, pero este cambio del
+backend necesita reiniciar el proceso una vez.
+
+Validación de la variante HTTPS interna: el caso exacto devolvió 403 antes de
+la corrección y 200 después. Compilación correcta, 58/58 pruebas de integración
+y 2/2 recorridos Chromium (origen interno HTTP/HTTPS), incluyendo el botón real
+de salida, login visible, cookie eliminada, sesión 401 tras recargar y tareas
+conservadas al volver a entrar. Los casos de origen/host/puerto incorrectos,
+metadatos ajenos y CSRF ausente siguen rechazados. El subagente real `brand_qa`
+verificó los recorridos de navegador con fixtures ficticios temporales.

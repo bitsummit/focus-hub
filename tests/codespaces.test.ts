@@ -76,9 +76,9 @@ test('Local fallback without public Origin still permits localhost login and rej
  }finally{await f.close();}
 });
 
-test('Codespaces localhost proxy rewrite requires exact origin/host, Fetch metadata, challenge and session CSRF',async()=>{
+for(const scheme of ['http','https'])test(`Codespaces ${scheme} localhost proxy rewrite requires exact origin/host, Fetch metadata, challenge and session CSRF`,async()=>{
  const f=await fixture(publicOrigin,true);try{
-  const proxyHeaders={Origin:`http://${f.rewriteHost}`,Host:f.rewriteHost,'Sec-Fetch-Site':'same-origin'};
+  const proxyHeaders={Origin:`${scheme}://${f.rewriteHost}`,Host:f.rewriteHost,'Sec-Fetch-Site':'same-origin'};
   const challenge=await f.challenge({Host:f.rewriteHost,'Sec-Fetch-Site':'same-origin'});
   assert.match(challenge.Cookie,/^__Host-focus_login_csrf=/);
   const login=await f.request('POST','/api/session',credentials,{...proxyHeaders,...challenge});assert.equal(login.status,200,login.text);
@@ -92,6 +92,9 @@ test('Codespaces localhost proxy rewrite requires exact origin/host, Fetch metad
    {'Sec-Fetch-Site':'cross-site'},
    {'Sec-Fetch-Site':''},
    {Origin:'http://localhost:1'},
+   {Origin:'https://localhost:1'},
+   {Origin:`https://localhost.evil.example:${f.rewriteHost.split(':')[1]}`},
+   {Origin:`https://127.0.0.1:${f.rewriteHost.split(':')[1]}`},
    {Origin:`http://127.0.0.1:${f.rewriteHost.split(':')[1]}`},
    {Host:'localhost:1'},
    {'Sec-Fetch-Mode':'navigate'},
@@ -101,6 +104,7 @@ test('Codespaces localhost proxy rewrite requires exact origin/host, Fetch metad
   }
   for(const mode of ['cors','same-origin'])assert.equal((await f.request('PATCH',`/api/tasks/${id}`,{priority:'high'},{...authorized,'Sec-Fetch-Mode':mode,'Sec-Fetch-Dest':'empty'})).status,200);
   const {['Sec-Fetch-Site']:omitted,...withoutFetchSite}=authorized;assert.equal((await f.request('POST','/api/tasks',{text:'Sin metadata',request_id:randomUUID()},withoutFetchSite)).status,403);
+  const savedOrigin=process.env.FOCUS_PUBLIC_ORIGIN;process.env.FOCUS_PUBLIC_ORIGIN='http://fictional-focus-3000.app.github.dev';assert.equal((await f.request('POST','/api/tasks',{text:'Public origin must be HTTPS',request_id:randomUUID()},authorized)).status,403);process.env.FOCUS_PUBLIC_ORIGIN=savedOrigin;
   delete process.env.CODESPACES;assert.equal((await f.request('POST','/api/tasks',{text:'Excepción desactivada',request_id:randomUUID()},authorized)).status,403);process.env.CODESPACES='true';
   const noCsrf=await f.request('PATCH',`/api/tasks/${id}`,{title:'No autorizado'},{...authorized,'X-CSRF-Token':''});assert.equal(noCsrf.status,403);assert.equal(noCsrf.json.code,'CSRF');
   const logout=await f.request('DELETE','/api/session',undefined,authorized);assert.equal(logout.status,200);assert.equal((await f.request('GET','/api/state',undefined,{Cookie:authorized.Cookie})).status,401);
@@ -132,4 +136,27 @@ test('login challenge expires after ten minutes and rejects duplicate challenge 
   const conflictingCookie=await f.request('POST','/api/session',credentials,{...proxy,...duplicate,Cookie:`${duplicate.Cookie}; __Host-focus_login_csrf=${'f'.repeat(64)}`});assert.equal(conflictingCookie.status,403);
   const valid=await f.request('POST','/api/session',credentials,{...proxy,...duplicate});assert.equal(valid.status,200,valid.text);
  }finally{Date.now=originalNow;await f.close();}
+});
+
+
+test('HTTPS localhost logout after HTTP-rewritten login revokes the session without losing tasks',async()=>{
+ const f=await fixture(publicOrigin,true);try{
+  const proxy={Host:f.rewriteHost,'Sec-Fetch-Site':'same-origin','Sec-Fetch-Mode':'cors','Sec-Fetch-Dest':'empty'};
+  const login=await f.request('POST','/api/session',credentials,{...proxy,Origin:`http://${f.rewriteHost}`,...await f.challenge(proxy)});
+  assert.equal(login.status,200,login.text);
+  const Cookie=login.headers['set-cookie']![0].split(';')[0];
+  const authorized={...proxy,Origin:`http://${f.rewriteHost}`,Cookie,'X-CSRF-Token':login.json.csrfToken};
+  const captured=await f.request('POST','/api/tasks',{text:'Persistencia tras salida HTTPS ficticia',request_id:randomUUID()},authorized);
+  assert.equal(captured.status,201,captured.text);
+  const id=captured.json.tasks[0].id;
+  // Exact production observation: only the rewritten Origin switches to HTTPS.
+  const logout=await f.request('DELETE','/api/session',undefined,{...authorized,Origin:`https://${f.rewriteHost}`});
+  assert.equal(logout.status,200,logout.text);
+  assert.match(logout.headers['set-cookie']?.[0]||'',/^__Host-focus_session=/);
+  assert.equal((await f.request('GET','/api/state',undefined,{Cookie})).status,401);
+  const again=await f.request('POST','/api/session',credentials,{...proxy,Origin:`http://${f.rewriteHost}`,...await f.challenge(proxy)});
+  assert.equal(again.status,200,again.text);
+  const saved=await f.request('GET','/api/state',undefined,{Cookie:again.headers['set-cookie']![0].split(';')[0]});
+  assert.equal(saved.json.tasks.filter((task:{id:string})=>task.id===id).length,1);
+ }finally{await f.close();}
 });
