@@ -483,3 +483,6 @@ html:root .app-shell .task-inline-status[class*="status-"] {
 /* Keep translated settings help readable in both themes. */
 :root .app-shell :is(.settings-copy, .settings-grid label small, .import-preview p,
   .file-button) { color: var(--ux-muted); }
+
+:root .app-shell .page-title-line { display: flex; align-items: center; gap: 8px; min-width: 0; }
+:root .app-shell .task-count { margin-left: 0; min-width: 26px; height: 26px; padding: 0 8px; flex: 0 0 auto; color: var(--ux-accent); background: var(--ux-accent-soft); font-weight: 600; line-height: 1; }

@@ -458,6 +458,9 @@ function App() {
             <>
               <PageHeading
                 title={tr("Tareas")}
+                badge={<span className="count task-count" role="status"
+                  aria-label={tr("{0} tareas abiertas",open.length)}
+                  title={tr("{0} tareas abiertas",open.length)}>{open.length}</span>}
                 action={
                   <div className="segmented">
                     <button
@@ -714,18 +717,20 @@ function PageHeading({
   eyebrow,
   title,
   subtitle,
+  badge,
   action,
 }: {
   eyebrow?: string;
   title: string;
   subtitle?: string;
+  badge?: React.ReactNode;
   action?: React.ReactNode;
 }) {
   return (
     <div className="page-heading">
       <div>
         {eyebrow && <span className="eyebrow">{eyebrow}</span>}
-        <h1>{title}</h1>
+        {badge ? <div className="page-title-line"><h1>{title}</h1>{badge}</div> : <h1>{title}</h1>}
         {subtitle && <p>{subtitle}</p>}
       </div>
       {action}
