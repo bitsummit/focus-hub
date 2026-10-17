@@ -175,3 +175,24 @@ bash .devcontainer/start.sh
 Después recarga la pestaña. El servidor conserva la base y las credenciales;
 no hay que reconstruir el contenedor. Vite recarga cambios del frontend, pero
 este ajuste de acceso a recursos pertenece al backend y requiere ese reinicio.
+
+## Volver a la pantalla de acceso
+
+El botón «Cerrar sesión / Sign out» del perfil termina la sesión de Focus. y
+vuelve al formulario de acceso. Para ver el login conservando tu sesión actual,
+abre la misma URL del puerto 3000 en una ventana privada o de incógnito. GitHub
+puede pedir primero autorizar el acceso al puerto privado; después aparecerá
+el formulario de Focus. No requiere actualizar código ni reiniciar el servidor.
+
+Si al cerrar sesión aparece «Origen no permitido / Origin not allowed», conserva
+la sesión y consulta el diagnóstico de la solicitud rechazada tras intentarlo:
+
+```sh
+rg FOCUS_ORIGIN_REJECTED .data/codespaces-server.log | tail -1
+```
+
+La línea no contiene contraseñas ni cookies. La prueba de navegador
+`tests/proxy.spec.ts` verifica también cerrar sesión, cookie eliminada, sesión
+401 tras recargar y conservación de tareas al entrar de nuevo con el proxy
+HTTPS conocido. Un rechazo diferente requiere su motivo real para decidir la
+corrección; no se amplía la excepción de origen sin esa evidencia.
