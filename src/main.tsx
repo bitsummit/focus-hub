@@ -45,6 +45,8 @@ import {
   type CaptureInput,
 } from "../shared/contracts";
 import "./styles.css";
+import { BrandLogo } from "./components/BrandLogo";
+import { BRAND_TAGLINE } from "./brand";
 import { Board, TaskTable, StatusControl, Priority } from "./components/TaskViews";
 import { ProjectSelect } from "./components/ProjectSelect";
 import { MobileQuickCapture } from "./components/QuickCapture";
@@ -52,6 +54,7 @@ import { filterTask, matchesQuickFilter, type QuickFilter } from "./task-filters
 import "./ux-v11.css";
 import "./journal-navigation.css";
 import "./capture-halo.css";
+import "./login-brand.css";
 import {t as tr, locale, getLanguage, setLanguage, subscribeLanguage, translateError} from "./i18n";
 
 type Page =
@@ -64,7 +67,7 @@ type Page =
   | "settings";
 const nav: { key: Page; path: string; label: string; icon: typeof Home }[] = [
   { key: "tasks", path: "/tasks", label: "Tareas", icon: Home },
-  { key: "home", path: "/dashboard", label: "Tu espacio", icon: LayoutDashboard },
+  { key: "home", path: "/dashboard", label: "Mi espacio", icon: LayoutDashboard },
   { key: "journal", path: "/journal", label: "Diario", icon: BookOpen },
   { key: "progress", path: "/progress", label: "Avances", icon: BarChart3 },
   { key: "projects", path: "/projects", label: "Proyectos", icon: FolderOpen },
@@ -311,7 +314,7 @@ function App() {
   if (!ready)
     return (
       <div className="full-loading">
-        <Leaf size={34} />
+        <BrandLogo iconOnly />
         <p>{tr("Preparando tu espacio…")}</p>
         <LoaderCircle className="spin" />
       </div>
@@ -358,10 +361,7 @@ function App() {
             go("tasks", "/");
           }}
         >
-          <span className="brand-icon">
-            <Leaf size={21} />
-          </span>
-          Focus Hub<span className="brand-dot">.</span>
+          <BrandLogo size="compact" />
         </a>
         <div className="workspace-label">{tr("TU ESPACIO PERSONAL")}</div>
         <nav>
@@ -411,6 +411,7 @@ function App() {
       </aside>
       <div className="main-shell">
         <header className="topbar">
+          <BrandLogo size="compact" iconOnly className="mobile-header-brand" />
           <span className="breadcrumb">{tr("Mi espacio ")}<ChevronRight size={13} />{" "}
             <strong>{tr(nav.find((n) => n.key === route.page)?.label ?? "")}</strong>
           </span>
@@ -559,7 +560,7 @@ function App() {
           )}
         </main>
         <footer className="main-footer">
-          <Leaf size={13} /> Focus Hub
+          <div><BrandLogo size="compact" /></div>
           <span>
             {data.workspace.name} · {data.user.timezone}
           </span>
@@ -640,26 +641,18 @@ function Login({
   return (
     <div className="login-layout">
       <section className="login-story">
-        <div className="brand">
-          <span className="brand-icon">
-            <Leaf />
-          </span>
-          Focus Hub.
+        <div className="login-brand-lockup">
+          <BrandLogo size="large" />
+          <p className="brand-tagline" lang="en">{BRAND_TAGLINE}</p>
         </div>
-        <div>
-          <span className="eyebrow">FOCUS HUB</span>
-          <h1>{tr("Tareas,")}<br />{tr("proyectos y")}<br />
-            <em>{tr("diario.")}</em>
-          </h1>
+        <div className="login-story-copy">
+          <h1 className="login-headline"><span>{tr("Tareas,")}</span><span>{tr("proyectos y")}</span><span>{tr("progreso.")}</span></h1>
           <p>{tr("Captura, organiza y consulta tu trabajo.")}<br />{tr("Tus tareas y su historial, en un solo lugar.")}</p>
         </div>
-        <span className="story-footer">{tr("Acceso privado")}</span>
       </section>
       <section className="login-form">
         <div>
-          <span className="eyebrow">{tr("TU ESPACIO PERSONAL")}</span>
-          <h2>{tr("Acceder a Focus Hub")}</h2>
-          <p>{tr("Introduce tus credenciales.")}</p>
+          <h2>{tr("Bienvenido de nuevo")}</h2>
           <form
             onSubmit={async (e) => {
               e.preventDefault();
@@ -706,7 +699,6 @@ function Login({
               <ArrowUpRight size={17} />
             </button>
           </form>
-          <p className="login-help">{tr("Acceso privado. La cuenta se configura con el comando de administración del entorno.")}</p>
         </div>
       </section>
     </div>
@@ -844,7 +836,7 @@ function HomePage(props: Shared & { go: (p: Page, path?: string) => void }) {
         })
           .format(new Date(today + "T12:00:00Z"))
           .toUpperCase()}
-        title={tr("Tu espacio")}
+        title={tr("Mi espacio")}
         subtitle={tr("Todo lo importante, de un vistazo.")}
         action={
           <PeriodNav date={week} onChange={setWeek} step={7} label={tr("Semana")} />
@@ -3262,7 +3254,7 @@ function SettingsPage({
         <section className="panel">
           <PanelTitle
             icon={Settings}
-            title={tr("Tu espacio")}
+            title={tr("Mi espacio")}
             subtitle={tr("Preferencias personales y calendario.")}
           />
           <form

@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap");
 :root {
   font-family:
     "DM Sans",
@@ -171,28 +171,6 @@ p {
   position: fixed;
   inset: 0 auto 0 0;
   z-index: 20;
-}
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-family: Manrope, sans-serif;
-  font-weight: 800;
-  font-size: 23px;
-  letter-spacing: -0.9px;
-}
-.brand-icon {
-  display: grid;
-  place-items: center;
-  width: 35px;
-  height: 35px;
-  border-radius: 10px;
-  background: var(--accent);
-  color: #fff;
-}
-.brand-dot {
-  color: var(--accent);
-  margin-left: -10px;
 }
 .workspace-label {
   font-size: 0.8125rem;
@@ -2134,12 +2112,6 @@ td.muted {
   opacity: 0.65;
   pointer-events: none;
 }
-.login-story > .brand {
-  z-index: 1;
-}
-.login-story > .brand .brand-icon {
-  background: #5c8559;
-}
 .login-story > div:nth-child(2) {
   padding: 65px 0 80px;
   z-index: 1;
@@ -2298,9 +2270,6 @@ td.muted {
   .main-shell {
     margin-left: 205px;
   }
-  .brand {
-    font-size: 21px;
-  }
   .profile {
     margin-left: -14px;
     margin-right: -14px;
@@ -2405,14 +2374,6 @@ td.muted {
   }
   .main-shell {
     margin-left: 185px;
-  }
-  .brand {
-    font-size: 19px;
-    gap: 7px;
-  }
-  .brand-icon {
-    width: 30px;
-    height: 30px;
   }
   .nav-link {
     font-size: 1rem;
@@ -3343,9 +3304,6 @@ td.muted {
   .login-story {
     padding: 26px;
     min-height: 290px;
-  }
-  .login-story > .brand {
-    font-size: 20px;
   }
   .login-story > div:nth-child(2) {
     padding: 27px 0 10px;

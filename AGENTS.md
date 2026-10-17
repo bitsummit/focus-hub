@@ -1,7 +1,7 @@
-# Focus Hub — Codex repository instructions
+# Focus. — Codex repository instructions
 
 ## Source of truth
-- Read `FOCUS_HUB_CODEX_MASTER_PROMPT.md` completely before proposing architecture or implementation. It defines product scope, UX, security, data model, phases and 15 acceptance tests. It wins over a convenience plan if they conflict.
+- Read `FOCUS_HUB_CODEX_MASTER_PROMPT.md` completely before proposing architecture or implementation. It defines product scope, UX, security, data model, phases and 15 acceptance tests. It wins over a convenience plan if they conflict. Its historical product naming does not override the approved identity in `docs/BRAND_IDENTITY.md`.
 - Read `CODEX_START_HERE.md` for the initial brief. Keep Spanish as the default UI language and support the user-selected Spanish/English interface through src/i18n.ts and src/locales/en.json. Never translate user content or persisted identifiers; keep code identifiers in English/TypeScript.
 - Build a full-stack working personal productivity app with a single canonical task record across journal, board, table, focus, archive and analytics. This must be a functional v1, not a static mockup or a cut-down checklist app.
 
@@ -21,3 +21,13 @@
 - Persist data durably through a typed repository/service boundary; never make `localStorage` the source of truth. Enforce workspace/user isolation on the server, prepared queries, secret hygiene, and auditable task events.
 - Do not connect Notion, import private/professional records, publish publicly, push remotely or spend money without the owner's explicit approval.
 - Keep the implementation portable and use only fictional test data. Preserve the 15 acceptance tests and run nontrivial tests/builds with real evidence.
+
+## Brand consistency
+
+- `docs/BRAND_IDENTITY.md` is the authoritative reference for brand identity.
+- All product branding must use the shared brand component and centralized design tokens.
+- Do not recreate, approximate or independently style the logo in individual pages.
+- Any change affecting the visual identity must update the brand documentation in the same Pull Request.
+- Visible product naming must remain consistent across Spanish and English interfaces.
+- Historical specifications may preserve former product names, but current application documentation and UI must use the approved identity.
+- Keep technical identifiers (`focus-hub`, database paths, environment variables, API routes and authentication cookies) stable; rebranding does not authorize data or identifier migrations.

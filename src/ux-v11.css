@@ -397,9 +397,9 @@
 @media (min-width: 651px) and (max-width: 1100px) {
   :root .app-shell .sidebar { width: 76px; padding: 24px 10px 0; }
   :root .app-shell .main-shell { margin-left: 76px; }
-  :root .app-shell .brand { justify-content: center; font-size: 0; gap: 0; }
-  :root .app-shell .brand-icon { font-size: initial; }
-  :root .app-shell .brand-dot,
+  :root .app-shell .sidebar > .brand { display: flex; justify-content: center; }
+  :root .app-shell .sidebar > .brand .brand-logo { gap: 0; }
+  :root .app-shell .sidebar > .brand .brand-word { display: none; }
   :root .app-shell .workspace-label,
   :root .app-shell .sidebar-note,
   :root .app-shell .nav-count,
