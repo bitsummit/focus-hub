@@ -16,9 +16,16 @@ para actualizar tu entorno existente conservando datos y credenciales.
 La interfaz permite elegir **Español / English** en **Ajustes → Idioma** y guardar
 la preferencia por usuario. [Detalles y actualización](docs/I18N.md).
 
+## Desarrollo y versiones
+
+Solo se mantienen `main` (estable) y `dev/focus-hub-v1.1-ux-readiness` (nuestra
+única **dev**). Trabajamos directamente en dev; las integraciones en main se
+realizan de vez en cuando, con aprobación. No se crean ramas por tarea.
+[Flujo de Git y actualización sencilla](docs/GIT_WORKFLOW.md).
+
 ## Probar en el navegador con Codespaces
 
-Abre la [rama de entrega](https://github.com/bitsummit/focus-hub/tree/dev/focus-brand-identity) y elige **Code → Codespaces → Create codespace**. La configuración instala, compila, crea una demo SQLite aislada y arranca automáticamente. Confirma **Private** en el puerto **3000** y pulsa **Open in Browser**.
+Abre la [rama de entrega](https://github.com/bitsummit/focus-hub/tree/dev/focus-hub-v1.1-ux-readiness) y elige **Code → Codespaces → Create codespace**. La configuración instala, compila, crea una demo SQLite aislada y arranca automáticamente. Confirma **Private** en el puerto **3000** y pulsa **Open in Browser**.
 
 En la terminal del Codespace ejecuta `code .data/demo-access.json` para consultar las credenciales aleatorias, que nunca se incluyen en Git. Sigue la [guía paso a paso de Codespaces](docs/CODESPACES.md) para acceso, reinicios y límites de verificación.
 

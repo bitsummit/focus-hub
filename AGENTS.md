@@ -11,7 +11,7 @@
 - Prefer delegating independent, bounded work to actual Codex subagents. Use `frontend`, `backend` and `qa` when those defined custom agents are available, or built-in subagents as appropriate. Explicitly launch subagents, wait for results and summarize them; do not merely pretend to be multiple agents.
 - During Phase 0 spawn up to 3 read-only discovery subagents concurrently for platform/runtime feasibility, data/security architecture and UX/acceptance coverage. Merge findings before choosing architecture.
 - Before concurrent code edits, agree on DB schema, domain types, API contracts and file ownership. Assign each subagent nonoverlapping modules. No concurrent edits to migrations, shared types, package manifests, auth policy or project-wide configs; the coordinator owns these or serializes changes.
-- Every delegation should specify objective, files/modules owned, inputs/contracts, acceptance tests and expected report. Use separate worktrees/branches when appropriate for parallel writes, and merge after review.
+- Every delegation should specify objective, files/modules owned, inputs/contracts, acceptance tests and expected report. Use the existing development checkout with exclusive file ownership for parallel writes; do not create additional branches or worktrees.
 - If a task is dependent or tiny, do it sequentially. More agents are not an end in themselves. Subagents cost extra tokens.
 - At each phase gate the coordinator runs tests, reviews diffs, ensures single source of truth, documents changes and unresolved issues and checks relevant acceptance tests.
 - Report **actual** agents used, tests run and outcomes; never represent intended delegation as work performed.
@@ -27,7 +27,17 @@
 - `docs/BRAND_IDENTITY.md` is the authoritative reference for brand identity.
 - All product branding must use the shared brand component and centralized design tokens.
 - Do not recreate, approximate or independently style the logo in individual pages.
-- Any change affecting the visual identity must update the brand documentation in the same Pull Request.
+- Any change affecting the visual identity must update the brand documentation in the same change/commit; a later development-to-main Pull Request must include both.
 - Visible product naming must remain consistent across Spanish and English interfaces.
 - Historical specifications may preserve former product names, but current application documentation and UI must use the approved identity.
 - Keep technical identifiers (`focus-hub`, database paths, environment variables, API routes and authentication cookies) stable; rebranding does not authorize data or identifier migrations.
+
+## Git workflow — permanent owner policy
+
+- Keep only two remote branches: `main` and `dev/focus-hub-v1.1-ux-readiness`.
+- `dev/focus-hub-v1.1-ux-readiness` is the single permanent development branch ("dev"); reuse its existing name. Do not create a separate branch named `dev` or rename it without an explicit owner request.
+- Implement, commit and push normal work directly on that development branch when remote publication is authorized. Do not create feature, rebranding, task or agent branches, or a Pull Request for each task.
+- `main` is the stable integration branch. Propose an occasional development-to-main review only when useful, and merge into `main` only with the owner's explicit approval.
+- Never force push, rewrite published history, discard local edits or overwrite databases. Check that every old branch's commits are contained in the permanent development branch before removing an obsolete branch reference.
+- Parallel agents share the development checkout with nonoverlapping file ownership; serialize any conflicting changes.
+- Current workflow and Codespaces instructions are documented in `docs/GIT_WORKFLOW.md` and `docs/CODESPACES.md`. Historical task specifications requesting a dedicated branch do not override this newer owner policy.

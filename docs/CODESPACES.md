@@ -5,8 +5,8 @@ Esta entrega conserva la v1: React/TypeScript, servidor Node, SQLite persistente
 ## 1. Abrir el entorno desde el navegador
 
 1. Inicia sesión en GitHub con la cuenta que tiene acceso al [repositorio privado](https://github.com/bitsummit/focus-hub).
-2. Abre la [rama de entrega](https://github.com/bitsummit/focus-hub/tree/dev/focus-brand-identity). Confirma que el selector de rama muestra **dev/focus-brand-identity**; `main` conserva la versión inicial; esta rama incluye las mejoras funcionales aprobadas y el rebranding Focus. para revisión.
-3. Pulsa **Code → Codespaces → Create codespace on dev/focus-brand-identity**. Si GitHub muestra **New with options**, selecciona esa rama y `.devcontainer/devcontainer.json`. Bastan 2 CPU y 4 GB de RAM.
+2. Abre la [rama de entrega](https://github.com/bitsummit/focus-hub/tree/dev/focus-hub-v1.1-ux-readiness). Confirma que el selector de rama muestra **dev/focus-hub-v1.1-ux-readiness**; esta es nuestra única rama de desarrollo (**dev**). `main` se actualiza únicamente cuando se aprueba una integración. [Flujo de Git](GIT_WORKFLOW.md).
+3. Pulsa **Code → Codespaces → Create codespace on dev/focus-hub-v1.1-ux-readiness**. Si GitHub muestra **New with options**, selecciona esa rama y `.devcontainer/devcontainer.json`. Bastan 2 CPU y 4 GB de RAM.
 4. Espera a que termine la creación. Automáticamente se ejecutan `npm ci`, una compilación de comprobación, la creación inicial de la demo y el arranque en modo desarrollo con Vite. El proceso termina comprobando login, datos persistentes y referencias del diario. No se imprimen contraseñas.
 5. Abre la pestaña **Ports / Puertos** del panel inferior. Debe aparecer **3000** con visibilidad privada. Comprueba que **Port Visibility / Visibilidad del puerto** es **Private**. Es el valor predeterminado de GitHub para un puerto nuevo. No elijas `Public` ni `Private to Organization`.
 6. Pulsa el icono **Open in Browser / Abrir en el navegador** de la fila 3000. GitHub puede pedirte autenticarte para acceder al puerto privado. La dirección externa usa HTTPS aunque la conexión interna del contenedor sea HTTP.
@@ -21,7 +21,7 @@ bash .devcontainer/start.sh
 
 El comando es idempotente y no duplica el servidor. Puedes consultar `.data/codespaces-server.log` si falla. No se detienen procesos ajenos que ocupen el puerto.
 
-## Actualizar tu Codespace existente a v1.1
+## Actualizar tu Codespace existente
 
 Conserva el mismo Codespace para conservar su base y credenciales. Antes de
 actualizar, revisa `git status`: si hay cambios tuyos, guárdalos en un commit o
@@ -31,9 +31,9 @@ Desde la terminal, en la raíz del repositorio:
 
 ```sh
 git status
-git fetch origin dev/focus-brand-identity:refs/remotes/origin/dev/focus-brand-identity
-git switch dev/focus-brand-identity
-git merge --ff-only origin/dev/focus-brand-identity
+git fetch origin dev/focus-hub-v1.1-ux-readiness:refs/remotes/origin/dev/focus-hub-v1.1-ux-readiness
+git switch dev/focus-hub-v1.1-ux-readiness
+git merge --ff-only origin/dev/focus-hub-v1.1-ux-readiness
 node .devcontainer/service.mjs stop
 npm ci
 bash .devcontainer/start.sh
@@ -105,7 +105,7 @@ npm test
 
 `npm run test:e2e` usa Chromium. La imagen del entorno permite probar la app sin instalarlo; la suite de navegador necesita Chromium adicional. En este entorno de Codex se ha probado con `/usr/bin/chromium`; en Codespaces puedes instalarlo con `sudo apt-get update && sudo apt-get install -y chromium` y después ejecutar la suite. No reconstruyas `dist` durante las pruebas de navegador.
 
-No hay importación destructiva, conexiones a Notion ni un despliegue de producción. Antes de integrar el PR, continúa en la rama de desarrollo; después de integrarlo podrás crear Codespaces desde `main`.
+No hay importación destructiva, conexiones a Notion ni un despliegue de producción. Para seguir desarrollando y probando utiliza siempre nuestra única rama dev. Las integraciones ocasionales en `main` requieren aprobación.
 
 ## 5. Privacidad, costes y límites verificados
 

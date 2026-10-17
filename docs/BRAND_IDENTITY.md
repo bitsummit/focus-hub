@@ -106,7 +106,8 @@ su comportamiento.
 ## Mantenimiento y revisión
 
 Toda modificación de identidad debe actualizar este documento y, cuando proceda,
-el componente, los tokens y el recurso oficial en el **mismo Pull Request**.
+el componente, los tokens y el recurso oficial en el **mismo cambio/commit**.
+La revisión conjunta se conservará en las integraciones ocasionales de dev en main.
 No crear variantes en páginas o funcionalidades. Las traducciones cambian la
 interfaz; nunca el nombre, lema o contenido personal del usuario.
 
@@ -131,15 +132,16 @@ Las capturas se guardan en [`docs/screenshots/brand/`](screenshots/brand/).
 | Aplicación clara | [Captura](screenshots/brand/app-desktop-light.png) | [Captura](screenshots/brand/app-mobile-light.png) |
 | Aplicación oscura | [Captura](screenshots/brand/app-desktop-dark.png) | [Captura](screenshots/brand/app-mobile-dark.png) |
 
-Rama `dev/focus-brand-identity`, basada en `dev/focus-hub-v1.1-ux-readiness` en
-`73487bc`, que ya incluye filtros compactos, confirmaciones y subtareas visibles.
-Se conserva el checkout existente y no se reescribe la rama de desarrollo previa.
+La rama permanente de desarrollo es `dev/focus-hub-v1.1-ux-readiness` (**dev**).
+Ya contiene el rebranding y las mejoras funcionales anteriores. Se trabaja
+directamente en ella, con integraciones ocasionales en main cuando se aprueben;
+no se crean ramas por tarea. [Política de Git](GIT_WORKFLOW.md).
 Para probarla en un Codespace existente sin reemplazar su base de datos:
 
 ```sh
-git fetch origin dev/focus-brand-identity:refs/remotes/origin/dev/focus-brand-identity
-git switch dev/focus-brand-identity
-git merge --ff-only origin/dev/focus-brand-identity
+git fetch origin dev/focus-hub-v1.1-ux-readiness:refs/remotes/origin/dev/focus-hub-v1.1-ux-readiness
+git switch dev/focus-hub-v1.1-ux-readiness
+git merge --ff-only origin/dev/focus-hub-v1.1-ux-readiness
 ```
 
 Con Vite en marcha, recargar el navegador actualiza la marca y el favicon; no
