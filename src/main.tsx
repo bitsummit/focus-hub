@@ -1265,15 +1265,15 @@ function Filters(p: FilterProps) {
   const clear=()=>{p.setSearch?.("");p.setProjectFilter("");p.setStatusFilter("");p.setPriorityFilter("");p.onClear?.();};
   const controls = <>
         <select aria-label={tr("Filtrar por proyecto")} value={p.projectFilter} onChange={event=>p.setProjectFilter(event.target.value)}>
-          <option value="">{tr("Todos los proyectos")}</option><option value="inbox">{tr("Bandeja de entrada")}</option>
+          <option value="">{tr(p.activeOnly ? "Proyecto" : "Todos los proyectos")}</option><option value="inbox">{tr("Bandeja de entrada")}</option>
           {p.data.projects.map(project=><option key={project.id} value={project.id}>{project.name}</option>)}
         </select>
         <select aria-label={tr("Filtrar por estado")} value={p.statusFilter} onChange={event=>p.setStatusFilter(event.target.value)}>
-          <option value="">{p.activeOnly?tr("Estados activos"):tr("Todos los estados")}</option>
+          <option value="">{p.activeOnly?tr("Estado"):tr("Todos los estados")}</option>
           {STATUSES.filter(status=>!p.activeOnly||!["completed","cancelled"].includes(status)).map(status=><option key={status} value={status}>{tr(statusLabels[status])}</option>)}
         </select>
         <select aria-label={tr("Filtrar por prioridad")} value={p.priorityFilter} onChange={event=>p.setPriorityFilter(event.target.value)}>
-          <option value="">{tr("Toda prioridad")}</option>{PRIORITIES.map(priority=><option key={priority} value={priority}>{tr(priorityLabels[priority])}</option>)}
+          <option value="">{tr(p.activeOnly ? "Prioridad" : "Toda prioridad")}</option>{PRIORITIES.map(priority=><option key={priority} value={priority}>{tr(priorityLabels[priority])}</option>)}
         </select>
   </>;
   if (p.activeOnly) return <div className="filters task-visible-filters">

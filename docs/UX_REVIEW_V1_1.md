@@ -279,3 +279,14 @@ El subagente real `project_confirmation_qa` adaptó y ejecutó las pruebas afect
 `tests/subtasks.spec.ts tests/project-confirmation.spec.ts` 5/5. Verificados
 filtros visibles en 360–1920 px, claro/oscuro, búsqueda funcional en Archivo,
 limpieza de filtros, Kanban con 20/50/100 tareas, subtareas y confirmaciones.
+
+### Ajuste: filtros en una única fila
+
+En Tareas, los textos iniciales se reducen a «Proyecto», «Estado» y «Prioridad»;
+las opciones mantienen sus nombres completos. La fila no se divide en líneas:
+si falta espacio, se desplaza horizontalmente, incluida la acción de limpiar.
+Archivo mantiene sus etiquetas existentes. Verificación real en Chromium con
+fixture temporal: los controles comparten la misma coordenada vertical y no
+producen desbordamiento de página en 360, 390, 430, 768, 1024, 1440 y 1920 px,
+en español e inglés (14 combinaciones). Compilación y TypeScript correctos.
+Además, pasan 2/2 escenarios existentes de filtros/captura móvil de `ux-v11.spec.ts`.
