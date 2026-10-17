@@ -157,3 +157,21 @@ Español es el predeterminado. En **Ajustes → Idioma** selecciona **Español**
 y se recupera al acceder desde otro navegador. Los textos de tus tareas, proyectos
 y diario no se traducen ni modifican. Esta actualización requiere reiniciar el
 servidor una vez para aplicar la migración aditiva; ver [I18N.md](I18N.md).
+
+## Si el símbolo o la fuente de marca devuelve 403
+
+El servidor de desarrollo permite explícitamente `/brand-symbol.svg` y
+`/fonts/manrope-variable.woff2`; no expone el directorio `public` completo.
+Una versión anterior bloqueaba estos recursos junto con los archivos privados.
+La corrección necesita actualizar dev y reiniciar el proceso del servidor una vez:
+
+```sh
+git switch dev/focus-hub-v1.1-ux-readiness &&
+git pull --ff-only origin dev/focus-hub-v1.1-ux-readiness &&
+node .devcontainer/service.mjs stop &&
+bash .devcontainer/start.sh
+```
+
+Después recarga la pestaña. El servidor conserva la base y las credenciales;
+no hay que reconstruir el contenedor. Vite recarga cambios del frontend, pero
+este ajuste de acceso a recursos pertenece al backend y requiere ese reinicio.

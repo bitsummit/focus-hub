@@ -169,3 +169,20 @@ navegación, metadatos, traducciones, documentación y entrega Git.
   recuperación, HMR/proxy HTTPS y Kanban con 20/50/100 tareas.
 - Ocho capturas reales finales regeneradas con datos ficticios. No se cambian
   esquema, APIs, cookies, configuración de despliegue ni registros existentes.
+
+### Recursos de marca en desarrollo
+
+Los mismos recursos oficiales funcionan en compilado y en Vite. La lista
+explícita de `server/development.ts` sirve únicamente `/brand-symbol.svg` y
+`/fonts/manrope-variable.woff2` antes del límite de archivos privados. Se conserva
+`publicDir: false`; no se permite el directorio completo ni enlaces simbólicos
+que redirijan los recursos oficiales. Mantener estas URLs estables al actualizar
+el contenido del SVG o la fuente.
+
+Regresión de esta corrección: compilación correcta y 4/4 pruebas en Chromium
+(`brand.spec.ts` y `dev.spec.ts`). En desarrollo directo y tras proxy HTTPS se
+verifican respuestas 200, MIME y bytes reales, imagen decodificada, Manrope 800
+cargada y CSP local. Se mantienen autenticación, persistencia, HMR y bloqueo de
+archivos arbitrarios/enlaces privados. El subagente real `brand_qa` amplió y
+comprobó estos escenarios en fixtures ficticios aislados. Para una instancia
+Codespaces ya iniciada, aplicar el reinicio indicado en [CODESPACES.md](CODESPACES.md).

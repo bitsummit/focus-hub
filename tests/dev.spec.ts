@@ -25,9 +25,18 @@ async function stop(child:ChildProcess){
  try{await exited;}finally{clearTimeout(timer);}
 }
 async function exercise(page:Page,origin:string,cssURL:string,cssFile:string){
- const connected:string[]=[];
+ const connected:string[]=[],fontRequests:string[]=[];
+ page.on('request',request=>{if(request.resourceType()==='font')fontRequests.push(request.url());});
  page.on('websocket',socket=>socket.on('framereceived',frame=>connected.push(String(frame.payload))));
  await page.goto(origin);
+ const symbol=page.locator('.login-story .brand-symbol');await expect(symbol).toBeVisible();
+ await expect.poll(()=>symbol.evaluate(element=>(element as HTMLImageElement).naturalWidth),{message:'Shared logo SVG is decoded by the real development browser'}).toBeGreaterThan(0);
+ await page.evaluate(()=>document.fonts.ready);
+ await expect(page.locator('.login-story .brand-word')).toHaveCSS('font-weight','800');
+ expect(await page.evaluate(()=>Array.from(document.fonts).some(font=>font.family.replaceAll('"','')==='Manrope'&&font.status==='loaded')),'Manrope loads from the local development asset rather than falling back').toBeTruthy();
+ expect(await page.evaluate(()=>document.fonts.check('800 23px Manrope'))).toBeTruthy();
+ expect(fontRequests.some(url=>new URL(url).pathname==='/fonts/manrope-variable.woff2')).toBeTruthy();
+ expect(fontRequests.every(url=>new URL(url).origin===origin),'Font requests stay on the private application origin').toBeTruthy();
  await expect.poll(()=>connected.some(frame=>frame.includes('"type":"connected"')),{message:'Vite HMR WebSocket connects on the application origin',timeout:15000}).toBeTruthy();
  await page.getByLabel(/correo/i).fill('dev-browser@example.test');
  await page.getByLabel(/contraseña/i).fill('Fictional-Dev-Browser-2026!');
@@ -59,12 +68,17 @@ for(const proxyMode of [false,true]){
   const markerFile=join(root,'.data',name+'.txt'),marker='Fictional nonsecret dev fixture '+name;
   const privateFiles=[join(root,name+'.sqlite'),join(root,name+'.txt'),join(root,'src',name+'.sqlite'),join(root,'src','.env.'+name)];
   const linkedFile=join(root,'src',name+'_link.txt');
+  const publicFiles=[join(root,'public',name+'.txt'),join(root,'public',name+'.svg'),join(root,'public','fonts',name+'.woff2')];
+  const publicLinks=[join(root,'public',name+'_link.svg'),join(root,'public','fonts',name+'_link.woff2')];
   const dbFile=join(dir,'fixture.sqlite'),db=openDatabase(dbFile);
   createOwner(db,{email:'dev-browser@example.test',password:'Fictional-Dev-Browser-2026!',display_name:'Desarrollo ficticio QA'});db.close();
   mkdirSync(join(root,'.data'),{recursive:true,mode:0o700});writeFileSync(markerFile,marker,{mode:0o600});
   writeFileSync(cssFile,'body { --focus-dev-qa: before; }\n');
   for(const file of privateFiles)writeFileSync(file,marker,{mode:0o600});
   symlinkSync(markerFile,linkedFile);
+  mkdirSync(join(root,'public','fonts'),{recursive:true});
+  for(const file of publicFiles)writeFileSync(file,marker,{mode:0o600,flag:'wx'});
+  for(const file of publicLinks)symlinkSync(markerFile,file);
   const backendPort=await unusedPort(),proxyPort=proxyMode?await unusedPort():undefined;
   const origin=proxyMode?`https://127.0.0.1:${proxyPort}`:`http://127.0.0.1:${backendPort}`;
   const internalHost=`localhost:${backendPort}`;
@@ -97,11 +111,22 @@ for(const proxyMode of [false,true]){
    child=spawn(process.execPath,['--import','tsx',proxyMode?'server/index.ts':'server/dev.ts'],{cwd:root,env,stdio:['ignore','pipe','pipe']});
    child.stdout?.on('data',chunk=>{output+=String(chunk);});child.stderr?.on('data',chunk=>{output+=String(chunk);});
    await expect.poll(async()=>{try{return(await fetch(`http://127.0.0.1:${backendPort}/api/health`)).status;}catch{return 0;}},{message:'Isolated development backend starts',timeout:20000}).toBe(200);
+   // The two explicit brand assets must work before authentication, with real binary bodies.
+   for(const [path,type] of [['/brand-symbol.svg','image/svg+xml'],['/fonts/manrope-variable.woff2','font/woff2']]as const){
+    const response=await page.request.get(origin+path,{ignoreHTTPSErrors:proxyMode});
+    expect(response.status(),`Anonymous brand resource is available: ${path}`).toBe(200);
+    expect(response.headers()['content-type']).toContain(type);
+    expect(response.headers()['content-security-policy']).toContain("font-src 'self'");
+    const body=await response.body();expect(body.equals(readFileSync(join(root,'public',path)))).toBeTruthy();
+    if(path.endsWith('.woff2'))expect(body.subarray(0,4).toString('ascii')).toBe('wOF2');
+    else expect(body.toString('utf8')).toContain('<svg');
+   }
    // These requests are anonymous: Vite must enforce the filesystem boundary itself.
    const privatePaths=['/.data/demo-access.json','/.data/'+name+'.txt','/@fs/'+markerFile,
     '/src/'+name+'_link.txt','/@fs/'+linkedFile,'/.%64ata/'+name+'.txt','/src/..%2f.data/'+name+'.txt',
     '/.codex/config.toml','/.devcontainer/devcontainer.json','/server/auth.ts','/AGENTS.md',
-    ...privateFiles.flatMap(file=>['/'+file.slice(root.length+1),'/@fs/'+file])];
+    ...privateFiles.flatMap(file=>['/'+file.slice(root.length+1),'/@fs/'+file]),
+    ...[...publicFiles,...publicLinks].flatMap(file=>['/'+file.slice(join(root,'public').length+1),'/public/'+file.slice(join(root,'public').length+1),'/@fs/'+file])];
    for(const path of privatePaths.flatMap(path=>[path,path+'?raw',path+'?import'])){
     const result=await page.request.get(origin+path,{ignoreHTTPSErrors:proxyMode});
     expect([403,404],`private path is denied: ${path}`).toContain(result.status());
@@ -113,7 +138,7 @@ for(const proxyMode of [false,true]){
    await page.goto('about:blank');for(const socket of sockets)socket.destroy();
    if(child)await stop(child);
    if(proxy){proxy.closeAllConnections();await new Promise<void>(done=>proxy!.close(()=>done()));}
-   rmSync(cssFile,{force:true});rmSync(linkedFile,{force:true});rmSync(markerFile,{force:true});for(const file of privateFiles)rmSync(file,{force:true});rmSync(dir,{recursive:true,force:true});
+   rmSync(cssFile,{force:true});rmSync(linkedFile,{force:true});rmSync(markerFile,{force:true});for(const file of [...publicFiles,...publicLinks])rmSync(file,{force:true});for(const file of privateFiles)rmSync(file,{force:true});rmSync(dir,{recursive:true,force:true});
   }
  });
 }
