@@ -50,6 +50,7 @@ import { MobileQuickCapture } from "./components/QuickCapture";
 import { filterTask, matchesQuickFilter, type QuickFilter } from "./task-filters";
 import "./ux-v11.css";
 import "./journal-navigation.css";
+import "./capture-halo.css";
 import {t as tr, locale, getLanguage, setLanguage, subscribeLanguage, translateError} from "./i18n";
 
 type Page =

@@ -1,0 +1,51 @@
+/* One quiet lap on focus, then the existing steady focus border remains. */
+@property --capture-halo-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+:root .app-shell .quick-capture {
+  position: relative;
+  isolation: isolate;
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+@supports (background: conic-gradient(from 0deg, transparent, green)) and ((mask-composite: exclude) or (-webkit-mask-composite: xor)) {
+  :root .app-shell .quick-capture::before,
+  :root .app-shell .quick-capture::after {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    padding: 2px;
+    border-radius: 10px;
+    pointer-events: none;
+    opacity: 0;
+    background: conic-gradient(from var(--capture-halo-angle),
+      transparent 0deg 210deg,
+      color-mix(in srgb, var(--ux-focus) 45%, transparent) 265deg,
+      var(--ux-focus) 315deg,
+      transparent 360deg);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+  }
+  :root .app-shell .quick-capture::after { filter: blur(4px); }
+  :root .app-shell .quick-capture:focus-within::before,
+  :root .app-shell .quick-capture:focus-within::after {
+    animation: capture-halo-travel 2.6s ease-in-out 1,
+      capture-halo-reveal 2.6s ease-in-out 1;
+  }
+}
+@keyframes capture-halo-travel {
+  from { --capture-halo-angle: 0deg; }
+  to { --capture-halo-angle: 360deg; }
+}
+@keyframes capture-halo-reveal {
+  0%, 100% { opacity: 0; }
+  15%, 65% { opacity: .85; }
+}
+@media (prefers-reduced-motion: reduce) {
+  :root .app-shell .quick-capture { transition: none; }
+  :root .app-shell .quick-capture::before,
+  :root .app-shell .quick-capture::after { animation: none; opacity: 0; }
+}
