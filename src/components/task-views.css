@@ -61,3 +61,5 @@
 
 :root .app-shell .v11-subtask-row .check-task { color: var(--ux-muted); }
 :root .app-shell .v11-subtask-row.is-completed .check-task { color: var(--status-completed-fg); }
+
+.v11-task-table tr:has(.v11-subtasks) > td { vertical-align: top; }
