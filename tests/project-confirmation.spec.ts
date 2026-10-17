@@ -35,7 +35,6 @@ for (const width of [1440, 390]) {
     const projects = await mutate(page.request, '/api/projects', { name: projectName });
     const project = projects.projects.find(item => item.name === projectName)!;
     await page.reload();
-    await page.getByRole('textbox', { name: 'Buscar tareas', exact: true }).fill(title);
     const confirmation = page.getByRole('alertdialog', { name: 'Cambiar proyecto', exact: true });
     const selector = page.getByLabel(`Proyecto de ${title}`, { exact: true });
     const requests: string[] = [];

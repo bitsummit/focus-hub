@@ -181,7 +181,7 @@ function EmptyTasks({ emptyFiltered, onClearFilters }: Pick<SharedProps, "emptyF
   return <div className="v11-task-empty" role="status">
     <Inbox size={23} aria-hidden="true" />
     <h3>{t(emptyFiltered ? "Ninguna tarea coincide con los filtros" : "No hay tareas abiertas")}</h3>
-    <p>{t(emptyFiltered ? "Prueba otra búsqueda o limpia los filtros." : "Añade una tarea desde la captura rápida. Las completadas están en Archivo.")}</p>
+    <p>{t(emptyFiltered ? "Cambia los filtros o límpialos." : "Añade una tarea desde la captura rápida. Las completadas están en Archivo.")}</p>
     {emptyFiltered && onClearFilters && <button type="button" className="text-button" onClick={onClearFilters}>{t("Limpiar filtros")}</button>}
   </div>;
 }

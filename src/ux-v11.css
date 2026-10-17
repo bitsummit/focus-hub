@@ -486,3 +486,11 @@ html:root .app-shell .task-inline-status[class*="status-"] {
 
 :root .app-shell .page-title-line { display: flex; align-items: center; gap: 8px; min-width: 0; }
 :root .app-shell .task-count { margin-left: 0; min-width: 26px; height: 26px; padding: 0 8px; flex: 0 0 auto; color: var(--ux-accent); background: var(--ux-accent-soft); font-weight: 600; line-height: 1; }
+
+/* Tasks expose the existing filters directly, without a search/collapse step. */
+:root .app-shell .task-visible-filters { gap: 8px; margin-bottom: 16px; }
+:root .app-shell .task-visible-filters > select { flex: 1 1 150px; min-width: 0; max-width: 240px; min-height: 44px; text-overflow: ellipsis; }
+:root .app-shell .task-visible-filters > button { min-height: 44px; }
+@media (max-width: 767px) {
+  :root .app-shell .task-visible-filters > select { max-width: 100%; }
+}

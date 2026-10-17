@@ -442,5 +442,6 @@
   "Cambiar proyecto": "Change project",
   "¿Cambiar el proyecto de «{0}»?": "Change the project for “{0}”?",
   "Proyecto actual": "Current project",
-  "Confirmar": "Confirm"
+  "Confirmar": "Confirm",
+  "Cambia los filtros o límpialos.": "Change or clear the filters."
 }

@@ -37,11 +37,10 @@ for (const width of [1440, 390]) {
     const parent = await capture(page.request, `${prefix} entrega`);
     const child = await capture(page.request, `${prefix} preparar materiales con un título suficientemente largo para comprobar su ajuste en móvil`, parent.id);
     const done = await capture(page.request, `${prefix} revisar borrador`, parent.id);
-    await mutate(page.request, `/api/tasks/${child.id}`, { status: 'blocked' }, 'PATCH');
+    await mutate(page.request, `/api/tasks/${child.id}`, { status: 'blocked', priority: 'high' }, 'PATCH');
     await mutate(page.request, `/api/tasks/${done.id}`, { status: 'completed' }, 'PATCH');
     await page.reload();
-    const search = page.getByRole('textbox', { name: 'Buscar tareas', exact: true });
-    await search.fill(prefix);
+    const priorityFilter = page.getByLabel('Filtrar por prioridad', { exact: true });
 
     for (const view of ['Tabla', 'Kanban']) {
       await page.getByRole('button', { name: view, exact: true }).click();
@@ -79,13 +78,13 @@ for (const width of [1440, 390]) {
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBeTruthy();
       }
       await page.screenshot({ path: testInfo.outputPath(`subtasks-${width}-${view.toLowerCase()}.png`), fullPage: true });
-      // Searching only for a child must keep it discoverable when its parent is filtered out.
-      await search.fill(child.title);
+      // A matching child must remain discoverable when its normal-priority parent is filtered out.
+      await priorityFilter.selectOption('high');
       await expect(parentTitle).toHaveCount(0);
       const standalone = page.getByRole('button', { name: child.title, exact: false });
       await expect(standalone).toBeVisible();
       await expect(standalone).toHaveCount(1);
-      await search.fill(prefix);
+      await priorityFilter.selectOption('');
     }
     await page.reload();
     const final: Snapshot = await (await page.request.get('/api/state')).json();

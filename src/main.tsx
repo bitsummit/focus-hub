@@ -155,8 +155,7 @@ function App() {
     const timer = setTimeout(() => setFeedback(null), 4500);
     return () => clearTimeout(timer);
   }, [feedback]);
-  const [search, setSearch] = useState(""),
-    [projectFilter, setProjectFilter] = useState(""),
+  const [projectFilter, setProjectFilter] = useState(""),
     [statusFilter, setStatusFilter] = useState(""),
     [priorityFilter, setPriorityFilter] = useState(""),
     [taskView, setTaskView] = useState<"board" | "table">("table");
@@ -333,12 +332,12 @@ function App() {
     open = data.tasks.filter(
       (t) => !t.deleted_at && !["completed", "cancelled"].includes(t.status),
     );
-  const advancedFilters={search,project:projectFilter,status:statusFilter,priority:priorityFilter};
+  const advancedFilters={search:"",project:projectFilter,status:statusFilter,priority:priorityFilter};
   const filterTasks = (tasks:Task[]) => tasks.filter(task=>filterTask(task,archiveFilters));
   const todayIds=new Set(data.focus.filter(item=>item.period_type==="daily"&&item.period_start===today).map(item=>item.task_id));
   const taskResults=data.tasks.filter(task=>filterTask(task,advancedFilters)&&matchesQuickFilter(task,quickFilter,todayIds));
-  const taskFiltersActive=Boolean(search||projectFilter||statusFilter||priorityFilter||quickFilter!=="all");
-  const clearTaskFilters=()=>{setSearch("");setProjectFilter("");setStatusFilter("");setPriorityFilter("");setQuickFilter("all");};
+  const taskFiltersActive=Boolean(projectFilter||statusFilter||priorityFilter||quickFilter!=="all");
+  const clearTaskFilters=()=>{setProjectFilter("");setStatusFilter("");setPriorityFilter("");setQuickFilter("all");};
   const shared = {
     data,
     mutate,
@@ -490,8 +489,6 @@ function App() {
                 extraActive={quickFilter!=="all"}
                 data={data}
                 {...{
-                  search,
-                  setSearch,
                   projectFilter,
                   setProjectFilter,
                   statusFilter,
@@ -1253,8 +1250,8 @@ function ProjectCard({
 type FilterProps = {
   activeOnly?:boolean; onClear?:()=>void; extraActive?:boolean;
   data: Snapshot;
-  search: string;
-  setSearch: (s: string) => void;
+  search?: string;
+  setSearch?: (s: string) => void;
   projectFilter: string;
   setProjectFilter: (s: string) => void;
   statusFilter: string;
@@ -1265,15 +1262,8 @@ type FilterProps = {
 function Filters(p: FilterProps) {
   const active=Boolean(p.search||p.projectFilter||p.statusFilter||p.priorityFilter||p.extraActive);
   const advanced=Boolean(p.projectFilter||p.statusFilter||p.priorityFilter);
-  const clear=()=>{p.setSearch("");p.setProjectFilter("");p.setStatusFilter("");p.setPriorityFilter("");p.onClear?.();};
-  return <div className="task-filter-tools">
-    <div className="filters filter-search-row">
-      <div className="search-field"><Search size={16}/><input aria-label={tr("Buscar tareas")} placeholder={tr("Buscar tareas…")} value={p.search} onChange={event=>p.setSearch(event.target.value)}/></div>
-      {active&&<button type="button" className="text-button" onClick={clear}>{tr("Limpiar filtros")}</button>}
-    </div>
-    <details className="advanced-filters" open={advanced||undefined}>
-      <summary>{tr("Filtros avanzados")}{advanced?" · activos":""}</summary>
-      <div className="filters">
+  const clear=()=>{p.setSearch?.("");p.setProjectFilter("");p.setStatusFilter("");p.setPriorityFilter("");p.onClear?.();};
+  const controls = <>
         <select aria-label={tr("Filtrar por proyecto")} value={p.projectFilter} onChange={event=>p.setProjectFilter(event.target.value)}>
           <option value="">{tr("Todos los proyectos")}</option><option value="inbox">{tr("Bandeja de entrada")}</option>
           {p.data.projects.map(project=><option key={project.id} value={project.id}>{project.name}</option>)}
@@ -1285,7 +1275,19 @@ function Filters(p: FilterProps) {
         <select aria-label={tr("Filtrar por prioridad")} value={p.priorityFilter} onChange={event=>p.setPriorityFilter(event.target.value)}>
           <option value="">{tr("Toda prioridad")}</option>{PRIORITIES.map(priority=><option key={priority} value={priority}>{tr(priorityLabels[priority])}</option>)}
         </select>
-      </div>
+  </>;
+  if (p.activeOnly) return <div className="filters task-visible-filters">
+    {controls}
+    {active&&<button type="button" className="text-button" onClick={clear}>{tr("Limpiar filtros")}</button>}
+  </div>;
+  return <div className="task-filter-tools">
+    <div className="filters filter-search-row">
+      <div className="search-field"><Search size={16}/><input aria-label={tr("Buscar tareas")} placeholder={tr("Buscar tareas…")} value={p.search ?? ""} onChange={event=>p.setSearch?.(event.target.value)}/></div>
+      {active&&<button type="button" className="text-button" onClick={clear}>{tr("Limpiar filtros")}</button>}
+    </div>
+    <details className="advanced-filters" open={advanced||undefined}>
+      <summary>{tr("Filtros avanzados")}{advanced?" · activos":""}</summary>
+      <div className="filters">{controls}</div>
     </details>
   </div>;
 }

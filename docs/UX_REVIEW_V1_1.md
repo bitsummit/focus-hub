@@ -263,3 +263,19 @@ de la cuenta ficticia compartida: se repitieron los bloques con fixtures nuevos,
 sin modificar los límites de seguridad. No se usaron bases ni cuentas reales.
 El subagente real `project_confirmation_qa`, siguiendo `.codex/agents/qa.toml`,
 implementó y ejecutó las pruebas; el coordinador integró y validó la interfaz.
+
+## Simplificación de filtros en Tareas
+
+Se retira la búsqueda textual de Tareas y su estado de filtro asociado. Los
+selectores de proyecto, estado y prioridad quedan siempre visibles debajo de
+los chips rápidos, sin desplegable; «Limpiar filtros» restablece ambos grupos.
+En móvil los controles se ajustan al ancho disponible y mantienen 44 px de alto.
+Archivo conserva su búsqueda y sus filtros propios. No cambia el almacenamiento,
+las relaciones de subtareas ni la sincronización entre Tabla y Kanban.
+
+Validación: `npm run build`, TypeScript y `git diff --check` correctos.
+El subagente real `project_confirmation_qa` adaptó y ejecutó las pruebas afectadas:
+`tests/ux-v11.spec.ts` 5/5 y, con otro fixture aislado,
+`tests/subtasks.spec.ts tests/project-confirmation.spec.ts` 5/5. Verificados
+filtros visibles en 360–1920 px, claro/oscuro, búsqueda funcional en Archivo,
+limpieza de filtros, Kanban con 20/50/100 tareas, subtareas y confirmaciones.
