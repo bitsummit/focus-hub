@@ -841,6 +841,7 @@ function HomePage(props: Shared & { go: (p: Page, path?: string) => void }) {
           .format(new Date(today + "T12:00:00Z"))
           .toUpperCase()}
         title={tr("Tu espacio")}
+        subtitle={tr("Todo lo importante, de un vistazo.")}
         action={
           <PeriodNav date={week} onChange={setWeek} step={7} label={tr("Semana")} />
         }

@@ -436,5 +436,6 @@
   "Siguiente": "Next",
   "Página {0} de {1}": "Page {0} of {1}",
   "Reintentar": "Retry",
-  "{0}: {1} completadas, {2} creadas": "{0}: {1} completed, {2} created"
+  "{0}: {1} completadas, {2} creadas": "{0}: {1} completed, {2} created",
+  "Todo lo importante, de un vistazo.": "Everything that matters, at a glance."
 }
