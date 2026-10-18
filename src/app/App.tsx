@@ -229,12 +229,8 @@ export function App() {
     open = data.tasks.filter(
       (t) => !t.deleted_at && !["completed", "cancelled"].includes(t.status),
     );
-  
+
   const filterTasks = (tasks:Task[]) => tasks.filter(task=>filterTask(task,archiveFilters));
-  
-  
-  
-  
   const shared = {
     data,
     mutate,

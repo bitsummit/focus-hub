@@ -1,0 +1,230 @@
+/* Archive filters, settings/export controls and login layout. */
+.archive-tools {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 22px;
+  flex-wrap: wrap;
+}
+.archive-tools .segmented {
+  margin-right: auto;
+}
+.archive-tools > label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+  color: #9aa98d;
+}
+.archive-tools input {
+  font-size: 0.875rem;
+  padding: 8px;
+}
+.archive-list {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+.archive-item {
+  border-bottom: 1px solid var(--line);
+  padding: 4px 0 16px;
+}
+.archive-item:last-child {
+  border: 0;
+}
+.archive-state {
+  font-size: 0.75rem;
+  color: #9eac93;
+  white-space: nowrap;
+}
+.archive-timestamp {
+  font-size: 0.8125rem;
+  color: #a3af99;
+  line-height: 1.6;
+  padding-left: 29px;
+}
+.archive-timestamp .text-button {
+  font-size: 0.8125rem;
+}
+.settings-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 25px;
+  align-items: start;
+}
+.settings-grid .panel-title {
+  margin-bottom: 25px;
+}
+.settings-grid label small {
+  font-size: 0.8125rem;
+  color: #a4b197;
+}
+.settings-grid .form-grid {
+  margin-top: 23px;
+}
+.settings-copy {
+  font-size: 0.9375rem;
+  color: #9aa88c;
+  margin-bottom: 23px;
+}
+.export-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: stretch;
+}
+.export-options button {
+  justify-content: flex-start;
+  padding: 12px 15px;
+  font-size: 0.9375rem;
+}
+.import-preview {
+  border-top: 1px solid var(--line);
+  margin-top: 25px;
+  padding-top: 22px;
+}
+.import-preview h3 {
+  font-size: 1rem;
+}
+.import-preview p {
+  font-size: 0.875rem;
+  color: #9caa90;
+  margin: 9px 0 15px;
+}
+.file-button {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  justify-content: center;
+  margin-bottom: 0 !important;
+  cursor: pointer;
+  font-size: 0.875rem !important;
+  color: #8c9e7d !important;
+}
+.file-button input {
+  position: absolute;
+  width: 1px !important;
+  height: 1px;
+  opacity: 0;
+}
+.privacy-panel {
+  margin-top: 23px;
+  background: #f0f5ec;
+  color: #8ba17d;
+}
+.privacy-panel h3 {
+  font-size: 1.0625rem;
+  margin: 12px 0;
+}
+.privacy-panel p {
+  font-size: 0.875rem;
+  color: #9aab8b;
+  margin-top: 10px;
+}
+.login-layout {
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  min-height: 100vh;
+}
+.login-story {
+  background: #eef3e9;
+  padding: 50px 65px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  color: #466e49;
+  position: relative;
+  overflow: hidden;
+}
+.login-story:after {
+  content: "";
+  position: absolute;
+  width: 540px;
+  height: 540px;
+  right: -300px;
+  bottom: -180px;
+  border: 1px solid #d6e2ca;
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 50px #e5eddf,
+    0 0 0 100px #e8efe3,
+    0 0 0 150px #eaf1e6;
+  opacity: 0.65;
+  pointer-events: none;
+}
+.login-story > div:nth-child(2) {
+  padding: 65px 0 80px;
+  z-index: 1;
+}
+.login-story h1 {
+  font-size: 70px;
+  letter-spacing: -3px;
+  line-height: 1.13;
+  color: #476c45;
+  font-weight: 600;
+}
+.login-story h1 em {
+  font-style: normal;
+  color: #89a178;
+}
+.login-story .eyebrow {
+  margin-bottom: 25px;
+  font-size: 0.8125rem;
+  letter-spacing: 2px;
+  color: #8aa079;
+}
+.login-story p {
+  color: #8b9e7e;
+  font-size: 1.0625rem;
+  line-height: 1.9;
+  margin-top: 30px;
+}
+.story-footer {
+  font-size: 0.875rem;
+  color: #9aac8c;
+  z-index: 1;
+}
+.login-form {
+  background: var(--surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 50px 45px;
+}
+.login-form > div {
+  width: 340px;
+  max-width: 100%;
+}
+.login-form h2 {
+  font-size: 30px;
+  letter-spacing: -1px;
+  color: #436344;
+  margin: 12px 0;
+}
+.login-form > div > p {
+  font-size: 1rem;
+  color: #9baa90;
+}
+.login-form form {
+  margin-top: 35px;
+}
+.login-form form > label {
+  font-size: 0.9375rem;
+  gap: 9px;
+  margin-bottom: 22px;
+}
+.login-form input {
+  min-height: 43px;
+  font-size: 1.0625rem;
+}
+.login-form .button {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 7px;
+  justify-content: space-between;
+}
+.login-help {
+  font-size: 0.875rem !important;
+  line-height: 1.9;
+  margin-top: 23px;
+  max-width: 320px;
+  color: #abb7a0 !important;
+}

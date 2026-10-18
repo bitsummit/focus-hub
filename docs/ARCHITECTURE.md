@@ -64,6 +64,38 @@ Los componentes conservan sus imports CSS para uso autónomo; Vite deduplica eso
 módulos ya registrados. No cambiar este orden sin comparar el resultado visual y
 los estilos calculados en temas y resoluciones representativos.
 
+## Propiedad de la cascada CSS
+
+[`src/styles/index.ts`](../src/styles/index.ts) es el registro de carga. La fachada
+[`src/styles.css`](../src/styles.css) importa, en orden, los fundamentos, shell,
+dashboard, controles/tareas, editor/diario, proyectos/avances, ajustes/login,
+responsive y consumidores de temas. Los estilos autónomos de componentes se cargan
+a continuación. [`styles/refinements.css`](../src/styles/refinements.css) fija la
+segunda frontera: tokens, interfaz canónica, feed del diario, captura y login.
+
+| Responsabilidad | Fuente |
+|---|---|
+| Identidad oficial | [`brand.css`](../src/brand.css); única autoridad de tokens de marca |
+| Paleta neutra, estados, claro/oscuro/system y aliases del workspace | [`styles/tokens.css`](../src/styles/tokens.css) |
+| Reset, tipografía base y accesibilidad global | [`styles/foundations.css`](../src/styles/foundations.css) |
+| Layout de secciones y controles | Archivos de ámbito en [`styles/`](../src/styles/), con orden en la fachada base |
+| Contraste, estados y controles compartidos vigentes | [`styles/interface.css`](../src/styles/interface.css) |
+| Feed/navegación temporal, halo de captura y composición de login | `styles/journal-feed.css`, `styles/capture.css`, `styles/login.css` |
+| Tabla/Kanban, captura inferior y confirmación de proyecto | CSS junto al componente en [`components/`](../src/components/) |
+
+Los valores base y los aliases del workspace no son intercambiables sin verificar
+sus consumidores y la herencia. Los breakpoints también tienen funciones distintas:
+navegación móvil hasta 650 px, tabla/lista y Kanban hasta 767 px y rail intermedio
+en su rango propio. No unificar esos límites como si fueran duplicados.
+
+La organización conserva especificidad y secuencia del CSS necesario; aún existen
+selectores de alta especificidad y `!important` para consumidores heredados,
+controles táctiles y movimiento reducido. No retirarlos por una búsqueda estática.
+Editar el ámbito propietario y las reglas canónicas, sin añadir otra hoja temporal
+de overrides. Cualquier consolidación adicional exige revisar estados condicionales,
+responsive y ambos temas, comparando estilos calculados y capturas con fixtures
+idénticos. El procedimiento reproducible está en [Operaciones](OPERATIONS.md#capturas-reproducibles).
+
 ## Persistencia y consistencia
 
 Las filas canónicas incluyen usuarios, workspaces y miembros; tareas, proyectos,
@@ -149,6 +181,17 @@ frontera léxica/realpath y lista explícita de dos recursos oficiales de marca.
 backend requieren reiniciar; las instrucciones completas están en [Operaciones](OPERATIONS.md).
 
 ## Límites que deben preservarse al evolucionar
+
+`App` todavía reúne el shell y coordinación de estado/peticiones; mantener allí
+la propiedad canónica evita efectos duplicados y cambios de contexto inesperados.
+`ProjectsPage` agrupa vistas relacionadas y el CSS responsive base conserva una
+secuencia extensa. Son ámbitos de mantenimiento, no módulos de infraestructura nuevos.
+En backend, `Domain` mantiene validación, consultas y transacciones bajo el mismo
+contexto autorizado; `app.ts` conserva el orden explícito de middleware y rutas.
+Extraerlos exige preservar esas fronteras, no solo repartir métodos. Los tipos
+internos `Row`/formularios siguen siendo flexibles y no sustituyen la validación
+servidor; mejorar ese tipado es trabajo separado de la organización del frontend.
+
 
 SQLite síncrono y `Snapshot` completo son adecuados para la versión personal,
 pero no garantizan escalado multiinstancia ni grandes historiales. No hay

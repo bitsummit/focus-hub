@@ -1,140 +1,4 @@
-/* v1.1 shared visual contract. Component layout lives with its component. */
-:root {
-  --ux-bg: #f5f6f6;
-  --ux-surface: #ffffff;
-  --ux-soft: #f6f7f7;
-  --ux-text: #252a2e;
-  --ux-muted: #596168;
-  --ux-line: #dfe3e6;
-  --ux-accent: #356f61;
-  --ux-accent-soft: #edf4f0;
-  --ux-focus: #356f61;
-  --status-pending-fg: #505964;
-  --status-pending-bg: #f1f3f5;
-  --status-pending-border: #c5cbd1;
-  --status-pending-indicator: #757e88;
-  --status-in_progress-fg: #245da0;
-  --status-in_progress-bg: #edf4ff;
-  --status-in_progress-border: #b6cce9;
-  --status-in_progress-indicator: #3978bc;
-  --status-pending_review-fg: #7244a1;
-  --status-pending_review-bg: #f5effb;
-  --status-pending_review-border: #d7c3e9;
-  --status-pending_review-indicator: #8b5fb6;
-  --status-waiting_external-fg: #805919;
-  --status-waiting_external-bg: #fff5e5;
-  --status-waiting_external-border: #e7ce9c;
-  --status-waiting_external-indicator: #af7a25;
-  --status-blocked-fg: #a1403c;
-  --status-blocked-bg: #fff0ee;
-  --status-blocked-border: #e9bdb7;
-  --status-blocked-indicator: #c25f56;
-  --status-completed-fg: #286d4c;
-  --status-completed-bg: #edf7f0;
-  --status-completed-border: #b5d7c1;
-  --status-completed-indicator: #438960;
-  --status-cancelled-fg: #60676d;
-  --status-cancelled-bg: #f0f1f2;
-  --status-cancelled-border: #cbd0d4;
-  --status-cancelled-indicator: #858c92;
-}
-:root[data-theme="dark"] {
-  --ux-bg: #181c20;
-  --ux-surface: #22272c;
-  --ux-soft: #2a3036;
-  --ux-text: #edf0f2;
-  --ux-muted: #bbc3cb;
-  --ux-line: #48515a;
-  --ux-accent: #a1cebd;
-  --ux-accent-soft: #2c4039;
-  --ux-focus: #a1cebd;
-  color-scheme: dark;
-  --status-pending-fg: #d0d5da;
-  --status-pending-bg: #2c3138;
-  --status-pending-border: #515b67;
-  --status-pending-indicator: #a2acb7;
-  --status-in_progress-fg: #9fc9ff;
-  --status-in_progress-bg: #20334c;
-  --status-in_progress-border: #3d5b7d;
-  --status-in_progress-indicator: #75a9ea;
-  --status-pending_review-fg: #d6b5f5;
-  --status-pending_review-bg: #352843;
-  --status-pending_review-border: #66517b;
-  --status-pending_review-indicator: #ba8de1;
-  --status-waiting_external-fg: #f0ca87;
-  --status-waiting_external-bg: #3d3220;
-  --status-waiting_external-border: #78603b;
-  --status-waiting_external-indicator: #d7aa60;
-  --status-blocked-fg: #ffb7af;
-  --status-blocked-bg: #432a2a;
-  --status-blocked-border: #80504c;
-  --status-blocked-indicator: #e79185;
-  --status-completed-fg: #a4dbb9;
-  --status-completed-bg: #223b2d;
-  --status-completed-border: #426a50;
-  --status-completed-indicator: #7cb990;
-  --status-cancelled-fg: #bdc4ca;
-  --status-cancelled-bg: #2d3135;
-  --status-cancelled-border: #515a62;
-  --status-cancelled-indicator: #929ca5;
-}
-@media (prefers-color-scheme: dark) {
-  :root[data-theme="system"] {
-  --ux-bg: #181c20;
-  --ux-surface: #22272c;
-  --ux-soft: #2a3036;
-  --ux-text: #edf0f2;
-  --ux-muted: #bbc3cb;
-  --ux-line: #48515a;
-  --ux-accent: #a1cebd;
-  --ux-accent-soft: #2c4039;
-  --ux-focus: #a1cebd;
-  color-scheme: dark;
-  --status-pending-fg: #d0d5da;
-  --status-pending-bg: #2c3138;
-  --status-pending-border: #515b67;
-  --status-pending-indicator: #a2acb7;
-  --status-in_progress-fg: #9fc9ff;
-  --status-in_progress-bg: #20334c;
-  --status-in_progress-border: #3d5b7d;
-  --status-in_progress-indicator: #75a9ea;
-  --status-pending_review-fg: #d6b5f5;
-  --status-pending_review-bg: #352843;
-  --status-pending_review-border: #66517b;
-  --status-pending_review-indicator: #ba8de1;
-  --status-waiting_external-fg: #f0ca87;
-  --status-waiting_external-bg: #3d3220;
-  --status-waiting_external-border: #78603b;
-  --status-waiting_external-indicator: #d7aa60;
-  --status-blocked-fg: #ffb7af;
-  --status-blocked-bg: #432a2a;
-  --status-blocked-border: #80504c;
-  --status-blocked-indicator: #e79185;
-  --status-completed-fg: #a4dbb9;
-  --status-completed-bg: #223b2d;
-  --status-completed-border: #426a50;
-  --status-completed-indicator: #7cb990;
-  --status-cancelled-fg: #bdc4ca;
-  --status-cancelled-bg: #2d3135;
-  --status-cancelled-border: #515a62;
-  --status-cancelled-indicator: #929ca5;
-  }
-}
-
-:root, :root .app-shell,
-:root .app-shell :is(.panel, .project-card, .metric, .goal-card, .achievement,
-  .status-summary, .period-nav, .board-column, .task-card, .table-wrap,
-  .archive-list, .journal-paper, .task-dialog, .mobile-more) {
-  --bg: var(--ux-bg);
-  --surface: var(--ux-surface);
-  --surface-soft: var(--ux-soft);
-  --text: var(--ux-text);
-  --muted: var(--ux-muted);
-  --line: var(--ux-line);
-  --accent: var(--ux-accent);
-  --accent-soft: var(--ux-accent-soft);
-  color: var(--text);
-}
+/* Canonical interface rules. Baseline layouts and the component sheets load first. */
 :root { color: var(--ux-text); background: var(--ux-bg); }
 :root .app-shell { background: var(--bg); }
 :root .app-shell :is(.panel, .project-card, .metric, .goal-card, .achievement,
@@ -161,8 +25,7 @@
   .journal-paper-header > span:last-child, .mobile-more button) {
   color: var(--ux-muted);
 }
-:root .app-shell .nav-link.active,
-:root .app-shell .mobile-nav .active { color: var(--ux-accent); }
+:root .app-shell .nav-link.active { color: var(--ux-accent); }
 :root .app-shell .mobile-nav button { color: var(--ux-muted); }
 :root .app-shell .mobile-nav .active { color: var(--ux-accent); }
 :root .app-shell :is(.panel-tag, .period-nav small, .metric > small,
@@ -310,7 +173,6 @@
 :root .app-shell .metric[data-tone="created"] > strong { color: var(--status-in_progress-fg); }
 :root .app-shell .metric[data-tone="negative"] > strong { color: var(--status-waiting_external-fg); }
 :root .app-shell .metric[data-tone="neutral"] > strong { color: var(--ux-text); }
-
 :root .app-shell .status-pending {
   --status-fg: var(--status-pending-fg);
   --status-bg: var(--status-pending-bg);
@@ -318,7 +180,6 @@
   --status-indicator: var(--status-pending-indicator);
 }
 :root .app-shell .state-dot.pending { background: var(--status-pending-indicator); }
-
 :root .app-shell .status-in_progress {
   --status-fg: var(--status-in_progress-fg);
   --status-bg: var(--status-in_progress-bg);
@@ -326,7 +187,6 @@
   --status-indicator: var(--status-in_progress-indicator);
 }
 :root .app-shell .state-dot.in_progress { background: var(--status-in_progress-indicator); }
-
 :root .app-shell .status-pending_review {
   --status-fg: var(--status-pending_review-fg);
   --status-bg: var(--status-pending_review-bg);
@@ -334,7 +194,6 @@
   --status-indicator: var(--status-pending_review-indicator);
 }
 :root .app-shell .state-dot.pending_review { background: var(--status-pending_review-indicator); }
-
 :root .app-shell .status-waiting_external {
   --status-fg: var(--status-waiting_external-fg);
   --status-bg: var(--status-waiting_external-bg);
@@ -342,7 +201,6 @@
   --status-indicator: var(--status-waiting_external-indicator);
 }
 :root .app-shell .state-dot.waiting_external { background: var(--status-waiting_external-indicator); }
-
 :root .app-shell .status-blocked {
   --status-fg: var(--status-blocked-fg);
   --status-bg: var(--status-blocked-bg);
@@ -350,7 +208,6 @@
   --status-indicator: var(--status-blocked-indicator);
 }
 :root .app-shell .state-dot.blocked { background: var(--status-blocked-indicator); }
-
 :root .app-shell .status-completed {
   --status-fg: var(--status-completed-fg);
   --status-bg: var(--status-completed-bg);
@@ -358,7 +215,6 @@
   --status-indicator: var(--status-completed-indicator);
 }
 :root .app-shell .state-dot.completed { background: var(--status-completed-indicator); }
-
 :root .app-shell .status-cancelled {
   --status-fg: var(--status-cancelled-fg);
   --status-bg: var(--status-cancelled-bg);
@@ -366,7 +222,6 @@
   --status-indicator: var(--status-cancelled-indicator);
 }
 :root .app-shell .state-dot.cancelled { background: var(--status-cancelled-indicator); }
-
 :root .app-shell :is(.status-select, .task-inline-status, .status-label)[class*="status-"] {
   color: var(--status-fg, var(--ux-muted));
   background: var(--status-bg, var(--ux-soft));
@@ -428,7 +283,6 @@
 @media (max-width: 650px) {
   :root .app-shell main { padding: 20px 14px; }
   :root .app-shell .topbar { height: auto; min-height: 58px; padding: 10px 14px; }
-  :root .app-shell .quick-capture { width: 100%; }
   :root .app-shell .page-heading > div:first-child { min-width: 0; }
   :root .app-shell .page-heading { gap: 12px; }
   :root .app-shell .panel-title { gap: 8px; }
@@ -441,8 +295,7 @@
   :root .app-shell .saving { bottom: calc(86px + env(safe-area-inset-bottom)); }
   :root .app-shell .mobile-nav button { min-height: 46px; padding: 5px 3px; font-size: .75rem; }
   :root .app-shell .task-dialog { padding: 20px 16px; }
-  :root .app-shell .analytics-period { flex-wrap: wrap; gap: 6px; }
-  :root .app-shell .analytics-period > strong { font-size: .875rem; }
+  :root .app-shell .analytics-period { flex-wrap: wrap; }
   :root .app-shell .analytics-period > span { width: 100%; text-align: center; font-size: .8125rem; }
   :root .app-shell .chart-data { overflow-x: auto; }
   :root .app-shell .bar-chart { gap: 3px; }
@@ -458,20 +311,11 @@
   :root .app-shell .reorder { position: static; opacity: 1; background: transparent; flex-direction: column; }
   :root .app-shell :is(input, select, textarea) { min-height: 44px; font-size: 1rem; }
 }
-@media (prefers-reduced-motion: reduce) {
-  :root .app-shell *, :root .app-shell *::before, :root .app-shell *::after {
-    animation: none !important;
-    transition: none !important;
-    scroll-behavior: auto !important;
-  }
-}
-
 /* Legacy supporting-copy selectors include a span type selector in :is().
    Match that specificity so canonical status foregrounds win in every view. */
 html:root .app-shell .task-inline-status[class*="status-"] {
   color: var(--status-fg, var(--ux-muted));
 }
-
 /* Supporting copy and actions must not retain the legacy pale sage foreground. */
 :root .app-shell :is(.analytics-notes, .analytics-notes strong, .analytics-period,
   .goal-bottom, .goal-bottom strong, .main-footer, .private-badge,
@@ -483,10 +327,8 @@ html:root .app-shell .task-inline-status[class*="status-"] {
 /* Keep translated settings help readable in both themes. */
 :root .app-shell :is(.settings-copy, .settings-grid label small, .import-preview p,
   .file-button) { color: var(--ux-muted); }
-
 :root .app-shell .page-title-line { display: flex; align-items: center; gap: 8px; min-width: 0; }
 :root .app-shell .task-count { margin-left: 0; min-width: 26px; height: 26px; padding: 0 8px; flex: 0 0 auto; color: var(--ux-accent); background: var(--ux-accent-soft); font-weight: 600; line-height: 1; }
-
 /* Compact filters stay on one line; only this row scrolls when space is tight. */
 :root .app-shell .task-visible-filters { flex-wrap: nowrap; gap: 8px; margin-bottom: 16px; max-width: 100%; overflow-x: auto; overscroll-behavior-x: contain; padding: 3px 2px 5px; scrollbar-width: thin; }
 :root .app-shell .task-visible-filters > select { flex: 0 0 112px; width: 112px; min-width: 0; max-width: 112px; min-height: 44px; text-overflow: ellipsis; }
