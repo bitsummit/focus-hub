@@ -52,9 +52,10 @@ reemplaza recursos ajenos. El puerto PostgreSQL es dinámico y solo loopback.
 
 | Recurso | Función |
 |---|---|
-| Volumen Docker propio / base `focus_demo` | Datos ficticios de desarrollo; separados de los tests. |
-| Base `focus_test` | Fixtures en esquemas aleatorios; cada prueba elimina únicamente su esquema. |
-| `.data/postgres-local.json` | Contraseña aleatoria y datos privados para conectar al PostgreSQL local. |
+| Base `focus_dev` / rol `focus_dev_runtime` | Desarrollo ficticio independiente; migración y alta de propietario explícitas. |
+| Base `focus_demo` / rol `focus_demo_runtime` | Demo ficticia; nuevas configuraciones usan credenciales propias. |
+| Base `focus_test` / rol `focus_test_runtime` | Fixtures en esquemas aleatorios; cada prueba elimina únicamente su esquema. |
+| `.data/postgres-local.json` | Secretos distintos por rol y secreto administrativo privado para preparar recursos locales. |
 | `.data/demo-access.json` | Correo, contraseña e identidad del destino de la demo. |
 | `.data/codespaces-server.pid` / `.log` | Identidad del proceso gestionado y diagnóstico local. |
 | Archivos SQLite anteriores | Orígenes heredados conservados; ya no son la persistencia del servidor. |
@@ -72,19 +73,38 @@ Para preparar/reutilizar únicamente el servicio PostgreSQL, sin semillas ni mig
 npm run pg:setup
 ```
 
-Para ejecutar acciones explícitas contra su base demo sin copiar secretos al terminal:
+Para preparar un desarrollo ficticio separado de demo y pruebas, sin imprimir secretos:
 
 ```sh
-node scripts/dev-postgres.mjs run npm run db:migrate
-node scripts/dev-postgres.mjs run npm run dev
+node scripts/dev-postgres.mjs run --database dev npm run db:migrate
+node scripts/dev-postgres.mjs run --database dev npm run owner
+node scripts/dev-postgres.mjs run --database dev npm run dev
 ```
 
-El segundo comando es manual: detén antes el servidor gestionado y termina con Ctrl+C.
-El helper `run` selecciona `focus_demo` o respeta una `DATABASE_URL` ya configurada;
+El alta de propietario se realiza una sola vez y rechaza cuentas existentes. El último
+comando arranca manualmente: detén antes el servidor gestionado y termina con Ctrl+C.
+El helper `run --database dev|demo|test` selecciona el rol/base dedicados; sin selector
+usa `focus_demo`. Una `DATABASE_URL` explícita siempre tiene prioridad;
 no modifica archivos de acceso, no siembra y usa `FOCUS_DEMO=false`. Para acciones
 habituales de una demo gestionada, también existe:
 `node --import tsx .devcontainer/postgres.mjs run npm run COMMAND`.
 Este último conserva las comprobaciones que bloquean metadatos SQLite anteriores.
+
+Las contraseñas son aleatorias e independientes; los tres roles no son administradores
+y no pueden conectar a las otras dos bases. El rol administrativo `focus` se conserva
+para preparar recursos. En demos PostgreSQL preexistentes se conserva la URL gestionada
+antigua y su identidad para no romper sesiones/metadatos: **esa demo legacy todavía
+utiliza sus credenciales administrativas anteriores**. `run --database demo` permite
+seleccionar conscientemente el rol limitado, pero no modifica el archivo de acceso ni
+lo adopta como demo gestionada. Su adopción definitiva sigue pendiente de una operación
+explícita y revisión de ownership/permisos; no borrar archivos para forzarla.
+
+`npm run dev` y `npm start` no eligen una base por sí mismos: usan `DATABASE_URL`.
+Vite/compilado describen cómo se sirve la UI, no qué entorno de datos se selecciona.
+`NODE_ENV=production` requiere URL explícita incluso en helpers y rechaza
+`FOCUS_DEMO=true`; no prepara Docker ni selecciona una demo como alternativa.
+La separación de credenciales de producción debe configurarse en su proveedor;
+no existe un entorno productivo provisionado ni verificado.
 
 Un destino diferente se configura mediante `DATABASE_URL` y, opcionalmente,
 `DATABASE_SCHEMA` (por defecto `public`, ya existente). Usa secretos del entorno o
@@ -106,8 +126,49 @@ que aplica migraciones versionadas; el arranque normal solo verifica su compatib
 automáticamente. `FOCUS_DB` identifica SQLite y se rechaza en el servidor PostgreSQL;
 no lo uses para seleccionar una nueva base. Las conexiones remotas requieren TLS con
 certificado verificado; el pool admite `PG_POOL_MAX` entre 1 y 20 (predeterminado 4).
-No se ha aprovisionado Neon ni configurado producción. No utilices una URL personal
+La conexión real con Neon no está verificada aquí ni hay producción configurada. No utilices una URL personal
 como destino de pruebas.
+
+## Validación real de Neon `focus-db-dev`
+
+La compatibilidad PostgreSQL local no valida Neon. Sin URL privada disponible y
+acceso a la consola del proyecto no puede darse esta comprobación por realizada.
+No se han creado servicios de pago ni un entorno productivo. Una URL no demuestra
+por sí sola el nombre del proyecto/branch Neon: comprobarlo en la consola.
+
+1. En Neon identifica el recurso de **desarrollo** `focus-db-dev` y confirma su
+   proyecto, branch, base y rol. Configura `DATABASE_URL` como secreto privado del entorno que ejecuta
+   Focus., sin pegarla en chats, comandos, capturas o Git. No reutilices el rol/base de
+   producción ni apuntes las pruebas automatizadas a este destino. TLS requiere
+   certificado válido; compatibilidad y límites de parámetros en [Seguridad](SECURITY.md).
+2. Con ese destino confirmado, `npm run db:migrate` aplica las migraciones explícitas.
+   Si hay datos/tablas incompatibles, detente; no borres ni resetees. En una base nueva
+   `npm run owner` crea una cuenta ficticia con entrada oculta; si existe una cuenta,
+   no ejecutes demo ni otro bootstrap sobre sus datos.
+3. Ejecuta `npm run dev` con la misma URL privada, abre el puerto 3000 **Private**,
+   accede con la cuenta ficticia y crea un proyecto y una tarea con título
+   `Focus — validación ficticia PostgreSQL`. No se necesita importar datos reales.
+4. En el SQL Editor de Neon, sobre la misma branch/base y esquema de `DATABASE_SCHEMA`
+   (`public` si no se configuró), ejecuta:
+
+   ```sql
+   SELECT current_database(), current_user;
+   SELECT version, name FROM schema_migrations ORDER BY version;
+   SELECT id, title, project_id, created_at
+   FROM tasks WHERE title = 'Focus — validación ficticia PostgreSQL';
+   ```
+
+   Comprueba que los registros aparecen y conserva el ID de la tarea ficticia.
+   No consultes/publicites hashes de contraseña, sesiones o tablas completas.
+5. Detén únicamente ese servidor con Ctrl+C, vuelve a ejecutar `npm run dev` sin
+   cambiar URL/esquema y recarga Focus. Comprueba el mismo ID/relación tanto en la UI
+   como en Neon. Para modo compilado, detén el anterior y usa `npm run build` y
+   `npm start` con la misma configuración; esto no configura producción.
+
+Hasta completar conexión TLS real, migraciones, escritura, consola y reinicio,
+**Neon permanece pendiente de validación**. Si aquí solo está disponible el acceso
+SQL del backend, reportarlo por separado: no equivale a comprobar la consola de Neon.
+No elimines los registros de validación ni aprovisiones recursos sin autorización.
 
 ## Acceso y cuentas
 
@@ -208,6 +269,10 @@ Los wrappers preparan/reutilizan PostgreSQL local y pasan solo `TEST_DATABASE_UR
 fixtures aislados, sin heredar `DATABASE_URL`, `DATABASE_SCHEMA` ni `FOCUS_DB` de la app.
 Una `TEST_DATABASE_URL` explícita debe ser local; un destino remoto dedicado y ficticio
 requiere además `TEST_ALLOW_REMOTE_POSTGRES=true`. Nunca apuntar a una base real.
+Las pruebas del importador/recuperación heredada crean SQLite ficticio exclusivamente
+para comprobar esas herramientas; las pruebas de la aplicación usan PostgreSQL.
+`tests/postgres-only.test.ts` además ejecuta servidor, demo y backup/restore con
+`node:sqlite` deshabilitado y comprueba fallos sin URL/conexión.
 Playwright necesita Chromium (`/usr/bin/chromium`, configurable con `CHROMIUM_PATH`);
 en Debian se instala con `sudo apt-get update` y `sudo apt-get install -y chromium`.
 No ejecutar dos suites de navegador a la vez ni reconstruir `dist` mientras lo usan

@@ -3,7 +3,8 @@ import {createHash,randomUUID} from 'node:crypto';
 import {readFileSync,lstatSync,existsSync,realpathSync,mkdirSync,openSync,closeSync,readSync,chmodSync,linkSync,unlinkSync,rmSync,fsyncSync} from 'node:fs';
 import {resolve,dirname,join} from 'node:path';
 
-export const RECOVERY_TABLES=['users','workspaces','workspace_members','sessions','strategic_goals','projects','milestones','tasks','task_events','journal_entries','journal_blocks','focus_items','idempotency_keys'] as const;
+import {RECOVERY_TABLES} from './data-tables.ts';
+export {RECOVERY_TABLES} from './data-tables.ts';
 export interface RecoveryReport {path:string;integrity:'ok';schemaVersion:1|2;foreignKeys:'ok';counts:Record<string,number>;mainFileSha256:string;sessionsRevoked?:number}
 const migration=readFileSync(new URL('../migrations/001_initial.sql',import.meta.url),'utf8');
 function schema(db:DatabaseSync){return db.prepare("SELECT type,name,tbl_name,sql FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' ORDER BY type,name").all().map(row=>({...row,sql:String(row.sql).replace(/\s+/g,' ').trim()}));}

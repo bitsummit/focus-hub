@@ -21,7 +21,9 @@ bash .devcontainer/start.sh
 
 El acceso se genera localmente en `.data/demo-access.json`; ábrelo en tu editor,
 no lo compartas ni lo añadas a Git. La demo usa datos ficticios y una base
-separada (`focus_demo`); los tests usan `focus_test` y esquemas temporales.
+separada (`focus_demo`); desarrollo independiente usa `focus_dev` y los tests
+`focus_test` con esquemas temporales. Nuevos entornos tienen roles y contraseñas
+diferentes; demos anteriores conservan su identidad hasta una adopción explícita.
 PostgreSQL local escucha solo en loopback, con contraseña aleatoria guardada en
 `.data/postgres-local.json`. No hay credenciales compartidas ni servicios de pago.
 Si hay datos SQLite anteriores, la preparación se detiene sin sustituirlos: sigue

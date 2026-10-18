@@ -51,11 +51,21 @@ URL de producción sin evaluar el proveedor: la conexión Neon real y channel bi
 estricto están pendientes de validación. Los parámetros de certificados de cliente
 no se utilizan; no se ha implementado autenticación mTLS personalizada.
 
-El rol `focus` creado por la imagen PostgreSQL local es superusuario y sirve solo
-para datos ficticios/desarrollo en loopback. Una instalación duradera requiere
-roles separados con privilegios mínimos para runtime y migraciones, red restringida,
-secretos administrados y backups externos. No hay proveedor Neon ni Cloud Run
-configurados; el pool pequeño no certifica el comportamiento de su proxy/pooling.
+El rol administrativo `focus` de la imagen PostgreSQL local solo prepara recursos
+ficticios en loopback. Nuevas configuraciones usan roles/contraseñas diferentes para
+`focus_dev`, `focus_demo` y `focus_test`, sin superuser/createdb/createrole/replication/
+bypassrls. Se revoca CONNECT público en esas bases; cada rol conecta únicamente a su
+base entre las tres. Docker y el administrador conservan acceso privilegiado.
+
+Una demo preexistente conserva deliberadamente su antigua identidad administrativa
+y `demo-access.json`: no se adopta ni se rota silenciosamente. Su aislamiento de
+credenciales queda pendiente de adopción explícita y revisión de permisos. Los roles
+nuevos reciben CRUD sobre tablas existentes sin transferir ownership; futuras
+migraciones que alteren esos objetos pueden necesitar administración explícita.
+Una instalación duradera requiere separación runtime/migraciones, red restringida,
+secretos administrados y backups externos. Producción exige URL explícita y rechaza
+modo demo. No hay producción Neon ni Cloud Run verificados; el pool pequeño no
+certifica el comportamiento de su proxy/pooling.
 
 La importación SQLite abre la fuente de solo lectura, valida esquema/integridad y
 compara celdas del destino en una transacción. Solo admite un destino vacío y revoca
@@ -170,6 +180,7 @@ se comunican en la revisión de ese cambio, sin conservar diarios de pruebas.
 
 | Referencia | Qué comprueba |
 |---|---|
+| [tests/postgres-only.test.ts](../tests/postgres-only.test.ts) | Arranque sin URL/servidor disponible falla; desarrollo, compilado, demo y backup/restore funcionan con `node:sqlite` deshabilitado; guardas de producción. |
 | [tests/api.test.ts](../tests/api.test.ts) | Autenticación/logout, CSRF/origen, IDs/relaciones entre espacios, eventos y exportaciones. |
 | [tests/security-hardening.test.ts](../tests/security-hardening.test.ts) | Cookies, Secure, origen/Host/proxy negativo, caducidad, límites, hashes y carreras de rotación, errores sin datos privados. |
 | [tests/password-cli.test.ts](../tests/password-cli.test.ts) | Rotación, revocación, ausencia de credenciales en salida, no creación de base, metadatos/symlinks/concurrencia. |

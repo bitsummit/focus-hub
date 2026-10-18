@@ -1,7 +1,7 @@
 import {createHash,randomUUID} from 'node:crypto';
 import {readFileSync,lstatSync,realpathSync,mkdirSync,openSync,closeSync,writeFileSync,fsyncSync,linkSync,unlinkSync,rmSync} from 'node:fs';
 import {resolve,dirname,join} from 'node:path';
-import {RECOVERY_TABLES} from './recovery.ts';
+import {RECOVERY_TABLES} from './data-tables.ts';
 import {transaction,type Database} from './db.ts';
 
 export const POSTGRES_DATA_LOCK=1699605851;

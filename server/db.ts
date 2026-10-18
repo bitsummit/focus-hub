@@ -100,6 +100,7 @@ export async function verifyMigrations(db:Database){
  return applied;
 }
 export async function openDatabase(value?:string,options:DatabaseOptions={}){
+ if(process.env.NODE_ENV==='production'&&process.env.FOCUS_DEMO==='true')throw Error('Producción no admite FOCUS_DEMO=true. Configura un destino PostgreSQL independiente.');
  if(process.env.FOCUS_DB)throw Error("FOCUS_DB identifica SQLite heredado. Conserva su copia y configura PostgreSQL explícitamente antes de iniciar.");
  const db=new Database(value,options);
  try{

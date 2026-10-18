@@ -11,7 +11,9 @@ el desarrollo. Express 5 sobre Node.js 24 ofrece la API y el frontend desde un
 único servidor HTTP en loopback. PostgreSQL usa `pg` con un pool pequeño y consultas
 asíncronas. Neon es el futuro proveedor previsto; no se ha provisionado ni validado
 un despliegue allí. SQLite/`node:sqlite` permanece solo para importación y recuperación
-heredada. No hay servicios Sites/D1 ni proveedor OAuth implementados.
+heredada. Ni el servidor web ni el backup/restore PostgreSQL importan `node:sqlite`;
+la lista compartida de tablas pertenece a `server/data-tables.ts`, sin driver.
+No hay servicios Sites/D1 ni proveedor OAuth implementados.
 No se necesita un segundo puerto para frontend o WebSocket.
 
 ```text
@@ -112,6 +114,10 @@ Las subtareas son tareas con `parent_task_id`, no otra entidad de checklist.
 `openDatabase` exige `DATABASE_URL` PostgreSQL y un esquema existente
 (`DATABASE_SCHEMA`, por defecto `public`). El arranque comprueba versiones/checksums;
 no crea bases ni aplica migraciones implícitamente y rechaza `FOCUS_DB` heredado.
+Sin URL, con conexión rechazada o esquema incompatible, el arranque termina con
+error; una caída posterior devuelve health 503 y errores API, sin otro backend.
+`NODE_ENV=production` rechaza `FOCUS_DEMO=true`; los helpers tampoco seleccionan
+una conexión local de demo si producción carece de URL explícita.
 `npm run db:migrate` aplica SQL de `migrations/postgres/` transaccionalmente bajo
 advisory lock por base/esquema. `schema_migrations` conserva versión, nombre,
 SHA-256 y fecha. Repetir no cambia datos; versiones desconocidas o SQL modificado

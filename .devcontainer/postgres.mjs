@@ -5,7 +5,9 @@ import {getLocalPostgres} from '../scripts/dev-postgres.mjs';
 // Child environments carry secrets in memory, never shell arguments or logs.
 export async function environment(){
  if(process.env.FOCUS_DB)throw Error('FOCUS_DB corresponde a SQLite. Conserva la base y sigue la migración explícita en docs/OPERATIONS.md.');
+ if(process.env.NODE_ENV==='production'&&process.env.FOCUS_DEMO==='true')throw Error('Producción no admite FOCUS_DEMO=true.');
  if(process.env.DATABASE_URL)return {...process.env,FOCUS_DEMO:'false'};
+ if(process.env.NODE_ENV==='production')throw Error('Producción requiere DATABASE_URL explícita; no se selecciona demo local.');
  const accessPath='.data/demo-access.json';
  if(existsSync(accessPath)){
   let access;try{access=JSON.parse(readFileSync(accessPath,'utf8'));}catch{throw Error('Archivo de acceso ilegible. Se conserva sin sobrescribir.');}

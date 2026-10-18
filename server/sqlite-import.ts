@@ -3,7 +3,7 @@ import {createHash} from 'node:crypto';
 import {lstatSync,readFileSync,realpathSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
-import {RECOVERY_TABLES} from './recovery.ts';
+import {RECOVERY_TABLES} from './data-tables.ts';
 import {transaction,type Database} from './db.ts';
 import {assertEmptyPostgres,resequencePostgres} from './postgres-recovery.ts';
 
