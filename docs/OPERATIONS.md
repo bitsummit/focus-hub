@@ -184,6 +184,26 @@ en `docs/screenshots/brand` son referencias seleccionadas, no snapshots de todos
 los tests: reemplazarlas deliberadamente desde la salida si cambia la interfaz.
 Las capturas diagnósticas de idioma y diario también permanecen fuera de Git.
 
+Para comparar una modificación visual o estructural, genera la base **antes**
+del cambio y compila de nuevo antes de compararla:
+
+```sh
+npm run build
+npx tsx scripts/refactor-visual.ts baseline
+# Aplicar los cambios; después:
+npm run build
+npx tsx scripts/refactor-visual.ts compare
+```
+
+El script fija fecha, fixtures y movimiento reducido; compara PNG y estilos
+calculados, pseudoelementos y geometría en escenarios de las siete secciones.
+No sustituye las pruebas de interacción ni un dispositivo real. Su salida también
+está en `test-results`, ignorada. **Playwright limpia esa carpeta por defecto**:
+si necesitas conservar la base mientras ejecutas E2E, usa otra salida, por ejemplo
+`npm run test:e2e -- --output=/tmp/focus-e2e`, o pasa al script una carpeta privada
+fuera de la salida de Playwright. No regeneres la base después de cambiar código
+para ocultar diferencias; revisa cada discrepancia antes de aceptar el cambio.
+
 ## Diagnóstico sin perder datos
 
 - **No aparece el puerto o no responde:** reabre el Codespace existente, ejecuta

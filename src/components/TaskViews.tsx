@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { CalendarDays, CheckCircle2, ChevronDown, Circle, Flag, Inbox } from "lucide-react";
 import { PRIORITIES, STATUSES, priorityLabels, statusLabels, type Project, type Snapshot, type Status, type Task } from "../../shared/contracts";
 import { locale, t } from "../i18n";

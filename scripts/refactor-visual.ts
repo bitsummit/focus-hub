@@ -45,6 +45,8 @@ for(const table of ['users','workspaces','workspace_members','strategic_goals','
  const columns=db.prepare(`PRAGMA table_info(${table})`).all()as {name:string}[];
  for(const column of ['created_at','updated_at','completed_at','cancelled_at','achieved_at'])if(columns.some(c=>c.name===column))db.prepare(`UPDATE ${table} SET ${column}=? WHERE ${column} IS NOT NULL`).run(fixed);
 }
+// All entity lists need explicit order too: equal creation dates can expose UUID index ties.
+for(const table of ['projects','strategic_goals','milestones'])db.prepare(`UPDATE ${table} SET sort_order=rowid`).run();
 db.prepare('UPDATE task_events SET occurred_at=?').run(fixed);
 const server=createApp(db).listen(0,'127.0.0.1');await new Promise<void>(resolve=>server.once('listening',resolve));
 const address=server.address();if(!address||typeof address==='string')throw Error('No isolated port');

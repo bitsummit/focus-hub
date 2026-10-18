@@ -28,11 +28,15 @@ y verificar transacciones, identidad, persistencia y despliegue del nuevo destin
 
 | Ubicación | Responsabilidad |
 |---|---|
-| [`src/main.tsx`](../src/main.tsx) | Sesión, navegación SPA, estado canónico, formularios, siete secciones y métricas |
-| [`src/components/`](../src/components/) | Tabla/Kanban, captura móvil, confirmación de proyecto y `BrandLogo` |
+| [`src/main.tsx`](../src/main.tsx) | Bootstrap React y entrada explícita de estilos |
+| [`src/app/App.tsx`](../src/app/App.tsx) | Sesión, peticiones, snapshot canónico, sincronización, filtros persistentes durante navegación y shell |
+| [`src/app/navigation.ts`](../src/app/navigation.ts), [`src/app/types.ts`](../src/app/types.ts) | Rutas/History API y contrato `WorkspaceProps` compartido por páginas/componentes |
+| [`src/pages/`](../src/pages/) | Login y las siete secciones; diario agrupa feed/editor, proyectos agrupa objetivos y detalle |
+| [`src/lib/dates.ts`](../src/lib/dates.ts), [`src/lib/tasks.ts`](../src/lib/tasks.ts) | Calendario/formato localizado, IDs de captura y presentación del historial |
+| [`src/components/`](../src/components/) | Tabla/Kanban, captura móvil, confirmación de proyecto, `BrandLogo`, editor `TaskDialog`, formularios estratégicos, filtros y UI compartida |
 | [`src/task-filters.ts`](../src/task-filters.ts) | Predicados de chips y filtros combinados |
 | [`src/i18n.ts`](../src/i18n.ts), [`src/locales/en.json`](../src/locales/en.json) | Traducción de interfaz y formato localizado |
-| [`src/styles.css`](../src/styles.css), [`src/ux-v11.css`](../src/ux-v11.css) y CSS de componentes | Temas, tokens semánticos, controles y adaptación responsive |
+| [`src/styles/index.ts`](../src/styles/index.ts) | Orden explícito de la cascada: base, marca, componentes y refinamientos |
 | [`src/brand.ts`](../src/brand.ts), [`src/brand.css`](../src/brand.css) | Identidad compartida; valores en [Marca](BRAND_IDENTITY.md) |
 | [`shared/contracts.ts`](../shared/contracts.ts) | Tipos de filas, `Snapshot`, `Session`, captura, diario y analytics |
 | [`server/app.ts`](../server/app.ts) | Rutas Express, headers, validación HTTP, errores y frontend |
@@ -47,8 +51,18 @@ y verificar transacciones, identidad, persistencia y despliegue del nuevo destin
 | [`tests/`](../tests/), [`playwright.config.ts`](../playwright.config.ts) | Fixtures aislados y comprobaciones unitarias, HTTP y Chromium |
 
 No hay router ni gestor global de estado externo: la SPA usa History API y estado
-React. `src/main.tsx` y la cascada CSS siguen siendo grandes; esta descripción no
-implica una separación en módulos que aún no existe.
+React. `App` conserva la propiedad de sesión, snapshot, mutaciones, captura global,
+filtros y vista seleccionada para no reiniciarlos al desmontar una página. Las
+páginas reciben el mismo `WorkspaceProps` canónico; no guardan otra copia de tareas.
+Ninguna página importa `App`; los tipos compartidos no dependen del runtime React.
+Los componentes de presentación reutilizados son `WorkspaceUI` y `WorkspaceCards`;
+el editor de entidades estratégicas permanece separado del editor de tareas.
+
+La entrada de estilos se importa antes de `App` y fija el orden independientemente
+del grafo de páginas: base → marca → tabla/confirmación/captura → refinamientos.
+Los componentes conservan sus imports CSS para uso autónomo; Vite deduplica esos
+módulos ya registrados. No cambiar este orden sin comparar el resultado visual y
+los estilos calculados en temas y resoluciones representativos.
 
 ## Persistencia y consistencia
 
