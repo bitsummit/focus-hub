@@ -1,9 +1,0 @@
-# Preparar la revisión privada de Focus Hub en Codespaces
-
-La v1 de Focus Hub ya está integrada en main mediante el PR #1, pero todavía requiere preparar Node y arrancar un servidor para probarla. Esta entrega añade Codespaces para abrirla desde el navegador: instalación desde el lockfile, compilación, demo SQLite ficticia, credenciales aleatorias fuera de Git y arranque automático en el puerto 3000, privado por defecto en Codespaces.
-
-Se conserva la arquitectura y todas las funcionalidades de `ed9f9ab`. El único ajuste de aplicación permite validar un origen HTTPS exacto detrás del proxy de Codespaces, manteniendo CSRF y las sesiones reales. Se añaden lifecycle/configuración de desarrollo y exclusiones de archivos locales. La rama incorpora con un merge normal el main actual, incluida su eliminación de README_INICIO.md. AGENTS.md, CODEX_START_HERE.md y el documento maestro se conservan; `.codex/agents/` no está disponible.
-
-Validación desde un clon nuevo de GitHub sin dependencias, compilación ni `.data`: instalación y build correctos, **11 pruebas API/calendario/seguridad y 4 recorridos Chromium aprobados**. Arranque idempotente y reinicio probados en el puerto 3000; simulación de proxy HTTPS, cookies Secure y CSRF; repetir setup conserva datos y credenciales. Un puerto ocupado o una configuración distinta del servicio se rechazan sin detener procesos ajenos ni enviarles credenciales. Véanse `docs/DELIVERY.md`, `docs/ACCEPTANCE.md` y `docs/CODESPACES.md`.
-
-Límites: no se ha aprovisionado un Codespace real. La descarga de la imagen oficial desde Codex fue bloqueada por el proxy de salida; la comprobación de imagen/forwarding privado/login en GitHub queda para la primera apertura. No hay publicación pública, producción, Notion, datos reales ni credenciales operativas de la demo versionadas. No se integra automáticamente en main ni se usa force push.

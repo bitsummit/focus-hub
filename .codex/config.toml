@@ -1,10 +1,10 @@
 # Project roles. Inherit the user's model, permissions and approval settings.
 [agents.frontend]
-description = "Implement Focus Hub UI, accessibility and responsive interactions within an assigned frontend scope."
+description = "Implement Focus. UI, accessibility and responsive interactions within an assigned frontend scope."
 config_file = "agents/frontend.toml"
 
 [agents.backend]
-description = "Implement Focus Hub domain services, persistence and API behavior within agreed contracts."
+description = "Implement Focus. domain services, persistence and API behavior within agreed contracts."
 config_file = "agents/backend.toml"
 
 [agents.qa]
@@ -12,5 +12,5 @@ description = "Verify acceptance criteria and security regressions with isolated
 config_file = "agents/qa.toml"
 
 [agents.security]
-description = "Review Focus Hub security without modifying application files; report evidenced findings and remediation."
+description = "Review Focus. security without modifying application files; report evidenced findings and remediation."
 config_file = "agents/security.toml"

@@ -1,7 +1,6 @@
 # Focus. — Identidad visual oficial
 
-Esta es la referencia vigente de marca. Las especificaciones históricas pueden
-conservar el nombre anterior; las nuevas interfaces utilizan esta identidad.
+Esta es la única referencia vigente de identidad visual de Focus.
 
 ## Identidad
 
@@ -103,86 +102,18 @@ vertical móvil. El titular mantiene tres líneas y tres tonos: «Tareas,» /
 existentes. Los formularios, mensajes de error, carga y autenticación conservan
 su comportamiento.
 
-## Mantenimiento y revisión
+## Mantenimiento
 
-Toda modificación de identidad debe actualizar este documento y, cuando proceda,
-el componente, los tokens y el recurso oficial en el **mismo cambio/commit**.
-La revisión conjunta se conservará en las integraciones ocasionales de dev en main.
-No crear variantes en páginas o funcionalidades. Las traducciones cambian la
-interfaz; nunca el nombre, lema o contenido personal del usuario.
+Toda modificación de identidad actualiza esta referencia y los recursos afectados
+en el mismo cambio. No crear variantes por página; traducir la interfaz nunca
+cambia el nombre, lema o contenido personal. Los identificadores técnicos siguen
+estables. La publicación e integración siguen [AGENTS.md](../AGENTS.md).
 
-Validar la marca en login, barra lateral normal/plegada, cabecera móvil, pie,
-favicon y pestaña; ambos idiomas y claro/oscuro. Usar datos ficticios y capturas
-reales del navegador. Regenerar la evidencia con:
+Revisar login, barra lateral normal/plegada, cabecera móvil, pie, favicon y pestaña
+en ambos idiomas y temas. Las cuatro referencias visuales vigentes están enlazadas
+en [README](../README.md). La reproducción de capturas y las comprobaciones se
+describen en [Operaciones](OPERATIONS.md); no acumular aquí resultados por entrega.
 
-```sh
-npm run build
-npx tsx scripts/brand-screenshots.ts
-```
-
-El script utiliza una base temporal y elimina únicamente sus propios fixtures.
-Las capturas se guardan en [`docs/screenshots/brand/`](screenshots/brand/).
-
-## Evidencia y acceso a esta entrega
-
-| Pantalla | Escritorio | Móvil |
-|---|---|---|
-| Login claro | [Captura](screenshots/brand/login-desktop-light.png) | [Captura](screenshots/brand/login-mobile-light.png) |
-| Login oscuro | [Captura](screenshots/brand/login-desktop-dark.png) | [Captura](screenshots/brand/login-mobile-dark.png) |
-| Aplicación clara | [Captura](screenshots/brand/app-desktop-light.png) | [Captura](screenshots/brand/app-mobile-light.png) |
-| Aplicación oscura | [Captura](screenshots/brand/app-desktop-dark.png) | [Captura](screenshots/brand/app-mobile-dark.png) |
-
-La rama permanente de desarrollo es `dev/focus-hub-v1.1-ux-readiness` (**dev**).
-Ya contiene el rebranding y las mejoras funcionales anteriores. Se trabaja
-directamente en ella, con integraciones ocasionales en main cuando se aprueben;
-no se crean ramas por tarea. [Política de Git](GIT_WORKFLOW.md).
-Para probarla en un Codespace existente sin reemplazar su base de datos:
-
-```sh
-git remote set-branches origin '*'
-git fetch --prune origin
-git switch dev/focus-hub-v1.1-ux-readiness
-git merge --ff-only origin/dev/focus-hub-v1.1-ux-readiness
-```
-
-Con Vite en marcha, recargar el navegador actualiza la marca y el favicon; no
-cambia la contraseña ni hay que regenerar la demo. En modo compilado se requieren
-`npm run build` y reiniciar el servidor, como antes. El puerto sigue siendo
-privado. Instrucciones generales en [CODESPACES.md](CODESPACES.md).
-
-Trabajo delegado real: `brand_frontend`, componente, SVG, tipografía y tokens;
-`brand_qa`, pruebas de identidad, regresión y capturas. Sus perfiles de
-`.codex/agents/` se leyeron y se asignaron a subagentes nativos; no se afirma que
-el entorno cargue automáticamente esos perfiles. El coordinador integró login,
-navegación, metadatos, traducciones, documentación y entrega Git.
-
-### Resultado de validación
-
-- `npm run build` y TypeScript: correctos.
-- `npm test`: 56/56 pruebas unitarias y de integración aprobadas.
-- Playwright: 24 casos distintos aprobados en tandas con fixtures aislados;
-  las dos pruebas de marca se repitieron después del ajuste visual final.
-- Manrope 800 local comprobada con solicitudes externas bloqueadas; SVG,
-  favicon, colores y ausencia de nombres anteriores verificados.
-- Contraste mínimo medido de etiquetas del login: 5,77:1 en claro/oscuro.
-- Verificadas captura, subtareas, confirmaciones, diario, idioma, persistencia,
-  recuperación, HMR/proxy HTTPS y Kanban con 20/50/100 tareas.
-- Ocho capturas reales finales regeneradas con datos ficticios. No se cambian
-  esquema, APIs, cookies, configuración de despliegue ni registros existentes.
-
-### Recursos de marca en desarrollo
-
-Los mismos recursos oficiales funcionan en compilado y en Vite. La lista
-explícita de `server/development.ts` sirve únicamente `/brand-symbol.svg` y
-`/fonts/manrope-variable.woff2` antes del límite de archivos privados. Se conserva
-`publicDir: false`; no se permite el directorio completo ni enlaces simbólicos
-que redirijan los recursos oficiales. Mantener estas URLs estables al actualizar
-el contenido del SVG o la fuente.
-
-Regresión de esta corrección: compilación correcta y 4/4 pruebas en Chromium
-(`brand.spec.ts` y `dev.spec.ts`). En desarrollo directo y tras proxy HTTPS se
-verifican respuestas 200, MIME y bytes reales, imagen decodificada, Manrope 800
-cargada y CSP local. Se mantienen autenticación, persistencia, HMR y bloqueo de
-archivos arbitrarios/enlaces privados. El subagente real `brand_qa` amplió y
-comprobó estos escenarios en fixtures ficticios aislados. Para una instancia
-Codespaces ya iniciada, aplicar el reinicio indicado en [CODESPACES.md](CODESPACES.md).
+En desarrollo, las URLs oficiales del SVG y Manrope son las mismas que en el
+compilado. Conservarlas y su lista explícita en `server/development.ts`; no abrir
+el directorio público completo para facilitar recursos de marca.

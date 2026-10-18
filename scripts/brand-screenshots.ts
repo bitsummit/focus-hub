@@ -20,7 +20,7 @@ domain.updateTask(tasks[0].id,{status:'in_progress'});
 const today=localDate(user.timezone);domain.setFocus('weekly',periodStart(today,'weekly',user.week_start_day),tasks.map(task=>task.id));domain.setFocus('daily',today,tasks.slice(0,2).map(task=>task.id));
 const server=createApp(db).listen(0,'127.0.0.1');await new Promise<void>(resolve=>server.once('listening',resolve));const address=server.address();if(!address||typeof address==='string')throw Error('Missing isolated fixture port');
 const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',args:['--no-sandbox']});
-const output=resolve(process.argv[2]||'docs/screenshots/brand');mkdirSync(output,{recursive:true});
+const output=resolve(process.argv[2]||'test-results/brand');mkdirSync(output,{recursive:true});
 let minimumLabelContrast=Infinity;
 try{
  for(const theme of ['light','dark']as const)for(const [mode,width,height]of [['desktop',1440,1050],['mobile',390,844]]as const){

@@ -10,7 +10,7 @@
   },
   "otherPortsAttributes": {"onAutoForward": "ignore"},
   "customizations": {
-    "codespaces": {"openFiles": ["docs/CODESPACES.md"]},
+    "codespaces": {"openFiles": ["docs/OPERATIONS.md"]},
     "vscode": {"settings": {"remote.autoForwardPorts": false}}
   },
   "postCreateCommand": "bash .devcontainer/setup.sh",

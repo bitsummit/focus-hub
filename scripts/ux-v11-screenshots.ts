@@ -25,7 +25,7 @@ const completed=domain.capture({text:'Compartir el primer boceto ficticio',reque
 const today=localDate(user.timezone);domain.setFocus('weekly',periodStart(today,'weekly',user.week_start_day),tasks.slice(0,3).map(t=>t.id));domain.setFocus('daily',today,tasks.slice(0,2).map(t=>t.id));
 const server=createApp(db).listen(0,'127.0.0.1');await new Promise<void>(resolve=>server.once('listening',resolve));const address=server.address();if(!address||typeof address==='string')throw Error('No loopback fixture');
 const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',args:['--no-sandbox']});
-const output=resolve(process.argv[2]||'docs/screenshots/v1.1');mkdirSync(output,{recursive:true});
+const output=resolve(process.argv[2]||'test-results/ux-v11');mkdirSync(output,{recursive:true});
 try{
  const page=await browser.newPage({viewport:{width:1440,height:1050},baseURL:`http://127.0.0.1:${address.port}`});await page.goto('/');await page.getByLabel(/correo/i).fill(email);await page.getByLabel(/contraseña/i).fill(password);await page.getByRole('button',{name:/entrar|iniciar sesión/i}).click();await page.getByRole('heading',{name:'Tareas',exact:true}).waitFor();
  for(const [mode,width,height] of [['desktop',1440,1050],['mobile',390,844]] as const){await page.setViewportSize({width,height});

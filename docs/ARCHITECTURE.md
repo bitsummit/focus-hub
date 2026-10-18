@@ -1,40 +1,148 @@
-# Focus Hub — implementation plan
+# Focus. — Arquitectura
 
-## Platform evidence and decision
+Referencia técnica del sistema actual. Las reglas funcionales están en
+[Producto](PRODUCT.md); las garantías y riesgos de seguridad, en
+[Seguridad](SECURITY.md); ejecución y recuperación, en [Operaciones](OPERATIONS.md).
 
-Phase 0 used three actual native subagents: platform_discovery, data_discovery and ux_discovery. The repository has no `.codex/agents/` profiles. The available runtime has no Sites/D1/deployment/auth tools or bindings. Official documentation attempts to OpenAI Sites and Cloudflare D1 were rejected by the outbound proxy (CONNECT 403); this does not establish that Sites itself is unavailable globally. No verified Sites starter/auth contract can be chosen here.
+## Stack y límites de proceso
 
-Compatible private alternative: React/TypeScript/Vite, Node 24, SQLite file storage and real password/session authentication. No external account, paid integration, Notion or publication. Listen on loopback. SQL uses a portable relational schema; a future D1 adapter must implement transaction/batch semantics and a verified identity provider before deployment. Local SQLite is not claimed to be hosted D1.
+React 19/TypeScript renderiza una SPA, Vite 7 compila y sirve el frontend durante
+el desarrollo. Express 5 sobre Node.js 24 ofrece la API y el frontend desde un
+único servidor HTTP en loopback. SQLite usa `node:sqlite` y un archivo local.
+No hay servicios Sites/D1, proveedor OAuth ni adaptador remoto implementados.
+No se necesita un segundo puerto para frontend o WebSocket.
 
-## Contracts and ownership
+```text
+Navegador (React, preferencias de presentación)
+    │ HTTP /api + frontend; WebSocket HMR solo en desarrollo
+    │ Codespaces: HTTPS + control de acceso de GitHub → loopback
+Express → autenticación / CSRF / autorización → Domain → SQLite + WAL
+    └─ producción compilada: dist/ | desarrollo: Vite middleware
+```
 
-Coordinator owns migrations, shared/contracts.ts, package/configuration, auth, HTTP routes and integration. Backend agent owns server/domain.ts and server/calendar.ts. Frontend agent owns src/. QA agent owns tests/ and playwright.config.ts. No overlapping writes.
+El lenguaje, tipos y esquema SQL facilitan una migración futura, pero no existe
+un backend intercambiable ya validado para D1. Una migración exige autorización
+y verificar transacciones, identidad, persistencia y despliegue del nuevo destino.
 
-Authenticated GET /api/state returns Snapshot (snake_case domain rows). Every mutation is server scoped to the session workspace; no caller supplied user/workspace establishes authority. UI refetches canonical state after writes, on focus and periodically. Errors: {message,code}. POST /api/session {email,password}; GET returns Session with csrfToken; DELETE revokes. All authenticated mutations require X-CSRF-Token and same-origin requests.
+## Módulos y responsabilidades
 
-Tasks POST {text,request_id,project_id?,parent_task_id?,journal_date?,indent_level?}; PATCH /:id accepts editable fields; DELETE soft-deletes. CRUD /api/projects, /api/goals, /api/milestones. POST /api/journals/:date/blocks {text,request_id,revision,indent_level?,task_id?}; PATCH/DELETE /api/blocks/:id includes revision; entries and references retain stable IDs. PUT /api/focus/:type/:date {task_ids:string[]} preserves ordered period selections. PATCH /api/preferences. GET /api/analytics?start=YYYY-MM-DD&end=YYYY-MM-DD (exclusive local end). GET /api/export?format=json|csv.
+| Ubicación | Responsabilidad |
+|---|---|
+| [`src/main.tsx`](../src/main.tsx) | Sesión, navegación SPA, estado canónico, formularios, siete secciones y métricas |
+| [`src/components/`](../src/components/) | Tabla/Kanban, captura móvil, confirmación de proyecto y `BrandLogo` |
+| [`src/task-filters.ts`](../src/task-filters.ts) | Predicados de chips y filtros combinados |
+| [`src/i18n.ts`](../src/i18n.ts), [`src/locales/en.json`](../src/locales/en.json) | Traducción de interfaz y formato localizado |
+| [`src/styles.css`](../src/styles.css), [`src/ux-v11.css`](../src/ux-v11.css) y CSS de componentes | Temas, tokens semánticos, controles y adaptación responsive |
+| [`src/brand.ts`](../src/brand.ts), [`src/brand.css`](../src/brand.css) | Identidad compartida; valores en [Marca](BRAND_IDENTITY.md) |
+| [`shared/contracts.ts`](../shared/contracts.ts) | Tipos de filas, `Snapshot`, `Session`, captura, diario y analytics |
+| [`server/app.ts`](../server/app.ts) | Rutas Express, headers, validación HTTP, errores y frontend |
+| [`server/auth.ts`](../server/auth.ts), [`server/login-challenge.ts`](../server/login-challenge.ts), [`server/login-limiter.ts`](../server/login-limiter.ts) | Credenciales, sesiones, autorización, CSRF, origen y presupuestos de login |
+| [`server/domain.ts`](../server/domain.ts) | Validación del dominio, SQL preparado, eventos, idempotencia, diario, foco, métricas y exportación |
+| [`server/db.ts`](../server/db.ts), [`migrations/`](../migrations/) | Apertura SQLite, transacciones y migraciones aditivas |
+| [`server/calendar.ts`](../server/calendar.ts) | Fechas locales, zona IANA y límites UTC mediante Temporal |
+| [`server/runtime.ts`](../server/runtime.ts), [`server/index.ts`](../server/index.ts), [`server/development.ts`](../server/development.ts) | Configuración de origen, servidor y frontera de archivos de Vite |
+| [`server/owner.ts`](../server/owner.ts), [`server/password.ts`](../server/password.ts), [`server/demo.ts`](../server/demo.ts) | Administración local y demo ficticia |
+| [`server/recovery.ts`](../server/recovery.ts), [`scripts/database.ts`](../scripts/database.ts) | Snapshot SQLite, verificación y recuperación sin sobrescribir destinos |
+| [`.devcontainer/`](../.devcontainer/) | Instalación y ciclo de vida del proceso administrado en Codespaces |
+| [`tests/`](../tests/), [`playwright.config.ts`](../playwright.config.ts) | Fixtures aislados y comprobaciones unitarias, HTTP y Chromium |
 
-All mutations respond with refreshed Snapshot (except login/logout). Task events are append-only; capture+event+journal reference and focus replacement are transactions. Request IDs deduplicate retries. Journal revisions reject stale changes. Real UTC events; local dates and DST boundaries via Temporal. Completed metrics count distinct task IDs within the period, including historical events after reopening. The same task can count in separate periods if re-completed. Strategic progress comes only from achieved milestones. CSV formula characters are neutralized.
+No hay router ni gestor global de estado externo: la SPA usa History API y estado
+React. `src/main.tsx` y la cascada CSS siguen siendo grandes; esta descripción no
+implica una separación en módulos que aún no existe.
 
-## Phases and gates
+## Persistencia y consistencia
 
-0. Discovery and contracts (complete).
-1. Auth, migration and durable task/project API: build/type check, persistent-file restart and tenant isolation tests.
-2. Transactional journal: parser/idempotency/revisions, two-way task references and subtasks tests.
-3. Board/table/projects/goals/focus: API validation and browser workflows.
-4. Dashboard/archive/analytics/export: timezone/DST/history/export assertions.
-5. Integration: all tests/build, real browser desktop/mobile/keyboard checks and 15-criterion release matrix.
+Las filas canónicas incluyen usuarios, workspaces y miembros; tareas, proyectos,
+objetivos e hitos; eventos de tarea; entradas y bloques de diario; selecciones de
+foco; sesiones y registros de idempotencia. Las relaciones usan IDs estables y
+`workspace_id`; una referencia del diario apunta a la tarea, no a una copia.
+Las subtareas son tareas con `parent_task_id`, no otra entidad de checklist.
 
-Backend and frontend implementation proceed independently against these contracts; QA creates tests concurrently. Each gate is verified after integration before claiming completion.
+`openDatabase` habilita WAL, claves foráneas y `busy_timeout=5000`. Serializa la
+comprobación de migraciones con `BEGIN IMMEDIATE`: aplica el esquema inicial
+idempotente y añade `users.language` cuando falta. No hay un runner general de
+versiones ni downgrades. Nuevas migraciones deben conservar datos e integrarse
+explícitamente en esta apertura; no editar retroactivamente el esquema publicado
+para simular una migración. Permisos de archivos y recuperación: [Seguridad](SECURITY.md).
 
-## Risks
+Captura, eventos y referencia de diario se escriben atómicamente. Los IDs de
+petición deduplican reintentos de creación; las revisiones de diario rechazan
+ediciones obsoletas con 409. La UI conserva el borrador ante error. Las mutaciones
+devuelven un `Snapshot` completo. El cliente bloquea envíos duplicados de captura
+y cambios simultáneos sobre la misma tarea dentro de esa pestaña; no existe una
+serialización global de peticiones ni protección general contra snapshots obsoletos.
+Refresca al recuperar foco y cada 20 segundos.
+No hay sincronización push entre dispositivos ni cola offline. Otros cambios
+concurrentes usan la última escritura aceptada; no hay bloqueo optimista general.
 
-- Hosted Sites/D1/private URL cannot be delivered or verified in this runtime; only local private execution is validated.
-- Password authentication requires an explicit local owner bootstrap; no default password or public registration.
-- SQLite adapter is synchronous and intended for a personal v1; D1 and multi-node hosting need a separately validated adapter.
-- Multi-tab edits: journal revision conflicts protect content; other edits are server-serialized, last accepted write wins.
-- Processes do not survive environment snapshots; saved startup instructions must restart the server.
+Eventos y timestamps se almacenan en UTC; fechas de diario y foco son fechas de
+calendario local. Vencimiento/seguimiento admiten fecha local o instante explícito
+en el contrato; los controles habituales capturan una fecha local. Temporal calcula límites según la zona IANA y
+el inicio de semana del usuario, incluyendo DST. No convertir fechas locales a
+medianoche UTC por conveniencia. Analytics agrupa eventos una vez por día local
+antes de construir la serie, evitando un barrido completo por cada día.
+Definiciones de métricas: [Producto](PRODUCT.md).
 
-## Integration review
+## Contratos HTTP
 
-Backend/auth foundation passed real HTTP and file persistence checks. A follow-up review corrected journal nesting across headings/deleted parents and added two regressions (9 API/calendar tests passed). Owner CLI bootstrap was tested both interactively with masked input and by stdin using temporary fictional databases. Frozen-lockfile installation repeated successfully with `npm ci --cache /workspace/.npm-cache`. No credentials were committed or printed. Frontend concurrency findings were corrected and verified with two-tab Chromium regressions. Final gates: 9 API/calendar tests and 4 browser cases passed; production build passed. The retained fictional demo was stopped, restarted and verified again with real authentication. See ACCEPTANCE.md for the complete evidence and limits.
+`/api` valida Host/origen antes de leer JSON (límite 512 KB). Login emite una
+sesión; el middleware posterior deriva usuario/workspace de la membresía confiable,
+no de parámetros del cliente. Las escrituras autenticadas necesitan `X-CSRF-Token`.
+El despliegue HTTPS determina cookies seguras; detalles y excepción acotada del
+proxy Codespaces en [Seguridad](SECURITY.md).
+
+| Endpoint | Contrato |
+|---|---|
+| `GET /api/health` | Estado básico; no prueba login ni persistencia |
+| `GET /api/session/challenge`, `POST /api/session` | Desafío de login; credenciales JSON y desafío de un uso |
+| `GET /api/session`, `DELETE /api/session` | Sesión + `csrfToken`; revocación y borrado de cookie |
+| `GET /api/state` | `Snapshot` autorizado completo |
+| `POST /api/tasks`, `PATCH/DELETE /api/tasks/:id` | Captura con `request_id`, edición o borrado lógico |
+| `GET /api/tasks/:id/events` | Eventos de una tarea accesible |
+| `POST /api/<tipo>`, `PATCH /api/<tipo>/:id` (`projects`, `goals`, `milestones`) | Creación/edición de entidades estratégicas |
+| `GET /api/journals/:date`, `POST /api/journals/:date/blocks` | Diario local; captura con `revision` y `request_id` |
+| `PATCH/DELETE /api/blocks/:id` | Edición/eliminación de bloque con revisión |
+| `PUT /api/focus/:type/:date` | Reemplaza selección ordenada `{task_ids}` diaria/semanal |
+| `PATCH /api/preferences` | Preferencias del usuario autenticado |
+| `GET /api/analytics?start=...&end=...` | Fechas locales; fin exclusivo |
+| `GET /api/export?format=json\|csv` | Portabilidad del workspace; no copia de autenticación recuperable |
+
+Los mutadores de dominio responden con `Snapshot` (201 en creación), salvo login
+y logout. Errores JSON `{code,message}` y, para rechazos de origen, `reason`;
+400 validación, 401 sesión, 403 autorización/CSRF/origen, 404 inexistente,
+409 conflicto, 429 presupuesto de login, 503 verificación ocupada y 500 genérico.
+No confiar en mensajes traducidos como contrato: conservar códigos y tipos.
+
+## Frontend, idioma y runtime
+
+`/` abre Tareas en tabla; `/tasks` respeta la preferencia guardada. Las demás
+rutas son `/dashboard`, `/journal`, `/journal/YYYY-MM-DD`, `/progress`,
+`/projects`, `/projects/:id`, `/archive` y `/settings`. La navegación móvil
+conserva cuatro destinos y «Más»; el rail intermedio y las listas/grupos móviles
+se adaptan al viewport sin detección por user-agent.
+
+El usuario guarda `es`/`en` en SQLite; la migración usa español por defecto.
+`t()` toma textos fuente españoles y consulta el catálogo inglés, con fallback
+al original. `translateError` localiza errores en presentación. El idioma local
+solo es una pista para el login; ni tareas ni credenciales viven en localStorage.
+Los IDs, enums y contenido personal no se traducen.
+
+`npm run dev` activa Vite middleware en el mismo proceso que Express y HMR en
+el mismo puerto. Vite no sirve libremente el repositorio: `publicDir:false`,
+frontera léxica/realpath y lista explícita de dos recursos oficiales de marca.
+`npm run build` produce `dist`; `npm start` lo sirve sin Vite por defecto.
+`FOCUS_DEV=true` permite activarlo desde el arranque administrado. Cambios del
+backend requieren reiniciar; las instrucciones completas están en [Operaciones](OPERATIONS.md).
+
+## Límites que deben preservarse al evolucionar
+
+SQLite síncrono y `Snapshot` completo son adecuados para la versión personal,
+pero no garantizan escalado multiinstancia ni grandes historiales. No hay
+paginación del backend para tareas/eventos ni virtualización general; el diario
+pagina en cliente. Hay aislamiento de workspace comprobado, pero no gestión
+multiusuario, invitaciones, roles colaborativos ni recuperación remota de cuenta.
+La previsualización JSON es de solo lectura y comprueba colecciones, no integridad
+completa. No hay importación JSON/Notion; restaurar requiere la copia SQLite y su procedimiento.
+Codespaces y la excepción de su proxy son un entorno privado de desarrollo,
+no una arquitectura de producción aprobada. Disponibilidad, almacenamiento externo,
+backups automatizados y despliegue duradero siguen pendientes.
