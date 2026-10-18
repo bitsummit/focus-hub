@@ -20,7 +20,7 @@ code or prose is correct. Do not claim future capabilities as implemented.
 
 ## Engineering and data safety
 
-- Preserve the current React/TypeScript/Vite + Node/Express/SQLite architecture
+- Preserve the current React/TypeScript/Vite + Node/Express/PostgreSQL architecture
   unless a migration is explicitly authorized. Avoid broad refactors unrelated
   to the request; preserve working features, relationships, dates and history.
 - One canonical task record across journal, table, Kanban, focus, archive and

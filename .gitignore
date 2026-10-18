@@ -15,3 +15,7 @@ playwright-report/
 *.db-*
 *.pem
 *.key
+
+# Native PostgreSQL backups are private too; JSON snapshots belong in .data/backups.
+*.pgdump
+*.dump

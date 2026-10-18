@@ -1,7 +1,9 @@
 import {readFileSync} from 'node:fs';
 import assert from 'node:assert/strict';
+import {databaseIdentity} from '../server/db.ts';
 // Local readiness check: credentials stay inside the process and never enter logs.
 const access=JSON.parse(readFileSync('.data/demo-access.json','utf8'));
+assert.equal(access.database,databaseIdentity(),'El acceso debe corresponder al destino PostgreSQL elegido');
 const port=Number(process.env.PORT||3000);
 const base=`http://127.0.0.1:${port}`;
 const origin=process.env.FOCUS_PUBLIC_ORIGIN || (process.env.CODESPACES==='true' && process.env.CODESPACE_NAME && process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN ? `https://${process.env.CODESPACE_NAME}-${port}.${process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}` : base);

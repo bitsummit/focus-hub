@@ -4,6 +4,7 @@
   "remoteUser": "node",
   "hostRequirements": {"cpus": 2, "memory": "4gb", "storage": "8gb"},
   "containerEnv": {"PORT": "3000"},
+  "features": {"ghcr.io/devcontainers/features/docker-in-docker:2": {}},
   "forwardPorts": [3000],
   "portsAttributes": {
     "3000": {"label": "Focus Hub · privado", "onAutoForward": "openBrowser", "protocol": "http"}

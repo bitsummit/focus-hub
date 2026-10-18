@@ -6,7 +6,7 @@ import {once} from 'node:events';
 import {mkdtempSync,readFileSync,rmSync} from 'node:fs';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
-import {openDatabase} from '../server/db.ts';
+import {createTestDatabase} from './postgres-fixture.ts';
 import {createOwner} from '../server/auth.ts';
 import {createApp} from '../server/app.ts';
 
@@ -18,8 +18,8 @@ test(`real HTTPS browser supports ${rewrittenScheme} localhost Origin rewrite, s
  const key=join(dir,'key.pem'),cert=join(dir,'cert.pem');
  execFileSync('openssl',['req','-x509','-newkey','rsa:2048','-nodes','-keyout',key,'-out',cert,'-days','1','-subj','/CN=localhost','-addext','subjectAltName=DNS:localhost,IP:127.0.0.1'],{stdio:'ignore'});
  process.env.CODESPACES='true';process.env.COOKIE_SECURE='true';process.env.FOCUS_PUBLIC_ORIGIN='https://127.0.0.1';
- const db=openDatabase(join(dir,'fixture.sqlite'));
- const credentials={email:'proxy-browser@example.test',password:'Fictional-Proxy-Browser-2026!'};createOwner(db,credentials);
+ const fixture=await createTestDatabase(),db=fixture.db;
+ const credentials={email:'proxy-browser@example.test',password:'Fictional-Proxy-Browser-2026!'};await createOwner(db,credentials);
  const backend=createApp(db).listen(0,'127.0.0.1');await once(backend,'listening');
  const backendAddress=backend.address();if(!backendAddress||typeof backendAddress==='string')throw Error('Missing backend address');
  process.env.PORT=String(backendAddress.port);const internalHost=`localhost:${backendAddress.port}`;
@@ -60,7 +60,7 @@ test(`real HTTPS browser supports ${rewrittenScheme} localhost Origin rewrite, s
  }finally{
   await page.goto('about:blank');
   for(const server of [attacker,proxy,backend]){server.closeAllConnections();await new Promise<void>((resolve,reject)=>server.close(e=>e?reject(e):resolve()));}
-  db.close();rmSync(dir,{recursive:true,force:true});for(const [key,value] of Object.entries(previous)){if(value===undefined)delete process.env[key];else process.env[key]=value;}
+  await fixture.close();rmSync(dir,{recursive:true,force:true});for(const [key,value] of Object.entries(previous)){if(value===undefined)delete process.env[key];else process.env[key]=value;}
  }
 });
 }

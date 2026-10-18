@@ -8,7 +8,7 @@ import {mkdtempSync,readFileSync,writeFileSync,rmSync,mkdirSync,symlinkSync} fro
 import {join,resolve} from 'node:path';
 import {tmpdir} from 'node:os';
 import {randomUUID} from 'node:crypto';
-import {openDatabase} from '../server/db.ts';
+import {createTestDatabase} from './postgres-fixture.ts';
 import {createOwner} from '../server/auth.ts';
 
 test.use({ignoreHTTPSErrors:true});
@@ -70,8 +70,8 @@ for(const proxyMode of [false,true]){
   const linkedFile=join(root,'src',name+'_link.txt');
   const publicFiles=[join(root,'public',name+'.txt'),join(root,'public',name+'.svg'),join(root,'public','fonts',name+'.woff2')];
   const publicLinks=[join(root,'public',name+'_link.svg'),join(root,'public','fonts',name+'_link.woff2')];
-  const dbFile=join(dir,'fixture.sqlite'),db=openDatabase(dbFile);
-  createOwner(db,{email:'dev-browser@example.test',password:'Fictional-Dev-Browser-2026!',display_name:'Desarrollo ficticio QA'});db.close();
+  const fixture=await createTestDatabase();
+  await createOwner(fixture.db,{email:'dev-browser@example.test',password:'Fictional-Dev-Browser-2026!',display_name:'Desarrollo ficticio QA'});
   mkdirSync(join(root,'.data'),{recursive:true,mode:0o700});writeFileSync(markerFile,marker,{mode:0o600});
   writeFileSync(cssFile,'body { --focus-dev-qa: before; }\n');
   for(const file of privateFiles)writeFileSync(file,marker,{mode:0o600});
@@ -105,7 +105,8 @@ for(const proxyMode of [false,true]){
     });
     proxy.listen(proxyPort,'127.0.0.1');await once(proxy,'listening');
    }
-   const env:NodeJS.ProcessEnv={...process.env,FOCUS_DB:dbFile,PORT:String(backendPort),CODESPACES:String(proxyMode),COOKIE_SECURE:String(proxyMode)};
+   const env:NodeJS.ProcessEnv={...process.env,DATABASE_URL:fixture.url,DATABASE_SCHEMA:fixture.schema,PORT:String(backendPort),CODESPACES:String(proxyMode),COOKIE_SECURE:String(proxyMode)};
+   delete env.FOCUS_DB;
    if(proxyMode){env.FOCUS_DEV='true';env.FOCUS_PUBLIC_ORIGIN=origin;}
    else{delete env.FOCUS_DEV;delete env.FOCUS_PUBLIC_ORIGIN;}
    child=spawn(process.execPath,['--import','tsx',proxyMode?'server/index.ts':'server/dev.ts'],{cwd:root,env,stdio:['ignore','pipe','pipe']});
@@ -138,7 +139,7 @@ for(const proxyMode of [false,true]){
    await page.goto('about:blank');for(const socket of sockets)socket.destroy();
    if(child)await stop(child);
    if(proxy){proxy.closeAllConnections();await new Promise<void>(done=>proxy!.close(()=>done()));}
-   rmSync(cssFile,{force:true});rmSync(linkedFile,{force:true});rmSync(markerFile,{force:true});for(const file of [...publicFiles,...publicLinks])rmSync(file,{force:true});for(const file of privateFiles)rmSync(file,{force:true});rmSync(dir,{recursive:true,force:true});
+   rmSync(cssFile,{force:true});rmSync(linkedFile,{force:true});rmSync(markerFile,{force:true});for(const file of [...publicFiles,...publicLinks])rmSync(file,{force:true});for(const file of privateFiles)rmSync(file,{force:true});rmSync(dir,{recursive:true,force:true});await fixture.close();
   }
  });
 }

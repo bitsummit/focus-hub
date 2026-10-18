@@ -192,13 +192,13 @@ canonical codes and neutralizes spreadsheet formula prefixes. Credentials and
 sessions are not part of the domain JSON export.
 
 JSON preview checks that principal collections are arrays; it is **not** a full
-schema/relationship validator or importer. A recoverable full SQLite backup is a
+schema/relationship validator or importer. A recoverable full PostgreSQL backup is a
 separate operational mechanism; see [OPERATIONS.md](OPERATIONS.md).
 
 The following are not implemented promises: bulk task actions, destructive JSON
 import, Notion integration, Google/ChatGPT sign-in, shared-workspace collaboration
 UI, offline writes or production hosting.
-The current runtime is Node/SQLite, not Sites/D1. Snapshot loading is not server
+The current runtime is Node/PostgreSQL, not Sites/D1. Snapshot loading is not server
 paginated; the journal's 15-day pagination limits rendering, not downloaded data.
 Task field updates follow last-write-wins; journal revision checking does not
 provide general collaborative conflict resolution. Cross-view state refreshes

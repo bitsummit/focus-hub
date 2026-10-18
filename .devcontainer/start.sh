@@ -2,7 +2,6 @@
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 umask 077
-export FOCUS_DB=.data/demo.sqlite
 export FOCUS_DEV="${FOCUS_DEV:-true}"
 export PORT="${PORT:-3000}"
 if [[ "${CODESPACES:-false}" == true ]]; then
@@ -13,4 +12,4 @@ if [[ "${CODESPACES:-false}" == true ]]; then
   export FOCUS_PUBLIC_ORIGIN="https://${CODESPACE_NAME}-${PORT}.${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}"
   export COOKIE_SECURE=true
 fi
-node .devcontainer/service.mjs start
+node --import tsx .devcontainer/postgres.mjs start

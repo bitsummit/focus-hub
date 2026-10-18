@@ -14,8 +14,9 @@ que intentan cruzar espacios o agotar recursos. No se presupone que GitHub susti
 la autorización del backend.
 
 Quien controla la terminal, el sistema o la cuenta GitHub puede leer/modificar
-SQLite y el código. El login web no protege un equipo comprometido. SQLite y sus
-copias **no están cifradas por la app**. Los controles de archivos de Vite reducen
+los secretos de conexión, PostgreSQL y el código. El login web no protege un equipo
+comprometido. Bases y copias **no están cifradas por la app**; la protección del
+almacenamiento del servidor corresponde al proveedor y debe configurarse. Los controles de archivos de Vite reducen
 exposición; no convierten desarrollo en un servidor de producción.
 
 ## Controles implementados
@@ -24,7 +25,7 @@ exposición; no convierten desarrollo en un servidor de producción.
 |---|---|
 | Alta y administración | Sin registro público ni recuperación por correo. Creación inicial/rotación local por CLI; correo normalizado, contraseña nueva de 12–256 caracteres. No se envían correos. |
 | Contraseñas | Nuevos hashes versionados scrypt N=32768, r=8, p=3, sal aleatoria y comparación de tiempo constante. Derivación online asíncrona, máximo dos verificaciones concurrentes; saturación devuelve 503 y `Retry-After`. El hash no se exporta al snapshot web. |
-| Sesión | Token aleatorio de 256 bits, almacenado como SHA-256 en SQLite. Cookie HttpOnly/SameSite Strict, Path=/; en HTTPS `__Host-focus_session`, Secure y sin Domain. Rechazo de cookies duplicadas y limpieza de la cookie antigua. Caducidad fija de siete días, sin renovación deslizante. Logout revoca la sesión; contraseña nueva revoca todas las de la cuenta. |
+| Sesión | Token aleatorio de 256 bits, almacenado como SHA-256 en PostgreSQL. Cookie HttpOnly/SameSite Strict, Path=/; en HTTPS `__Host-focus_session`, Secure y sin Domain. Rechazo de cookies duplicadas y limpieza de la cookie antigua. Caducidad fija de siete días, sin renovación deslizante. Logout revoca la sesión; contraseña nueva revoca todas las de la cuenta. |
 | Carrera login/rotación | Antes de emitir sesión se comprueba transaccionalmente que sigue vigente el hash verificado; un login pendiente no restaura sesiones de una contraseña revocada. |
 | Login CSRF | `GET /api/session/challenge` emite desafío de un uso, diez minutos, cookie HttpOnly/SameSite Strict y token para `X-Login-CSRF`. Cookie prefijada `__Host-` y Secure en HTTPS; login solo JSON, con desafío válido y respuesta sin caché. |
 | CSRF autenticado | Escrituras, incluido logout, requieren cookie de sesión válida y `X-CSRF-Token` emitido por el servidor. Validación adicional de origen/Host; no se sustituye CSRF por metadatos del navegador. |
@@ -32,10 +33,43 @@ exposición; no convierten desarrollo en un servidor de producción.
 | Autorización | El servidor deriva usuario/espacio de la sesión y membresía owner; consultas y relaciones se limitan al espacio. IDs enviados por el cliente no conceden acceso. El modelo actual no ofrece colaboración ni administración multiusuario. |
 | Validación y persistencia | Validación explícita de tipos, longitudes, enums y campos permitidos, consultas preparadas, claves foráneas y transacciones. Tareas y eventos se guardan atómicamente. Captura y diario disponen de idempotencia; el diario además controla revisión y rechaza conflictos 409. |
 | Salidas | React representa texto de usuario sin interpretar HTML almacenado. CSV neutraliza fórmulas. JSON inválido no devuelve fragmentos del cuerpo; los fallos internos no imprimen objetos con datos ni detalles al cliente. Cuerpo API máximo 512 KB. |
-| Archivos | `.data`, bases/sidecars, credenciales, claves y configuración local ignorados por Git. SQLite/WAL/SHM privados 0600, nuevos directorios 0700. Ignorar archivos no limpia secretos que ya hubieran sido versionados. |
+| Archivos | `.data`, bases/sidecars, credenciales, claves, dumps y configuración local ignorados por Git. Configuración PostgreSQL local y backups generados 0600, nuevos directorios 0700. Mantener exportaciones JSON privadas dentro de `.data`. Ignorar archivos no limpia secretos ya versionados. |
+| PostgreSQL | URL explícita, pool acotado, consultas parametrizadas, schema validado y migraciones con checksum/advisory lock. TLS remoto verifica certificados; no hay fallback SQLite ni creación de una base vacía por error. Locks por workspace coordinan validación/mutación entre procesos. |
 | Navegador | CSP con scripts/conexiones/fuentes del propio origen; estilos permiten `unsafe-inline` por la UI actual. `nosniff`, `no-referrer`, DENY de frames, `frame-ancestors 'none'`, `base-uri 'none'`, `form-action 'self'`, Permissions-Policy y HSTS en HTTPS. No se afirma una CSP sin excepciones. |
 
 Parámetros scrypt: [OWASP Password Storage](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#scrypt).
+
+### Conexión, privilegios y traslado de datos
+
+`DATABASE_URL` se configura fuera de Git. No registrar URLs, passwords ni errores
+crudos del driver. El servidor remoto exige TLS con `rejectUnauthorized:true`,
+incluso cuando la URL usa `sslmode=require`; no acepta `sslmode=disable` remoto.
+El almacén de confianza es el del runtime. Se admiten `sslmode` y
+`application_name`; parámetros adicionales se rechazan, incluido
+`channel_binding=require` de algunas URLs Neon. No eliminar esa garantía de una
+URL de producción sin evaluar el proveedor: la conexión Neon real y channel binding
+estricto están pendientes de validación. Los parámetros de certificados de cliente
+no se utilizan; no se ha implementado autenticación mTLS personalizada.
+
+El rol `focus` creado por la imagen PostgreSQL local es superusuario y sirve solo
+para datos ficticios/desarrollo en loopback. Una instalación duradera requiere
+roles separados con privilegios mínimos para runtime y migraciones, red restringida,
+secretos administrados y backups externos. No hay proveedor Neon ni Cloud Run
+configurados; el pool pequeño no certifica el comportamiento de su proxy/pooling.
+
+La importación SQLite abre la fuente de solo lectura, valida esquema/integridad y
+compara celdas del destino en una transacción. Solo admite un destino vacío y revoca
+sesiones. Detener todos los escritores y usar una copia consistente cerrada; no es
+replicación. Las huellas del archivo principal y WAL detectan cambios observados,
+pero no bloquean un escritor ni garantizan un cambio en caliente sin carreras.
+El SHA del archivo principal por sí solo no incluye el WAL. Un dato incompatible
+con PostgreSQL, como NUL en TEXT, causa rollback sin reescribirlo silenciosamente.
+El original y sus herramientas de recuperación permanecen disponibles.
+
+Better Auth queda fuera de esta fase. Antes de incorporarlo: verificar mapeo de
+IDs/membresías/propiedad y hashes heredados, plan de revocación/migración de sesiones,
+CSRF/origen/cookies y recuperación de cuentas. No cambiar FKs de dominio para
+adaptarlas a un proveedor sin un plan de compatibilidad y recuperación probado.
 
 ### Origen HTTPS y excepción acotada de Codespaces
 
@@ -94,17 +128,24 @@ el fallback HTML. No ampliar esta superficie para arreglar un 403.
 5. **Demo y secreto local.** `demo-access.json` contiene la contraseña en claro para
    facilitar pruebas ficticias. En la rotación demo, staging/rename y rollback cubren
    errores ordinarios y concurrencia, pero un corte entre rename y COMMIT puede
-   desincronizar JSON y SQLite. No interrumpir; no usar esta herramienta como backup.
-   La cuenta personal sin ese JSON rota hash/revocaciones en una transacción SQLite.
+   desincronizar JSON y PostgreSQL. No interrumpir; no usar esta herramienta como backup.
+   La cuenta personal sin ese JSON rota hash/revocaciones en una transacción PostgreSQL.
 6. **Protección y recuperación.** No hay cifrado, backup programado ni envío externo
    automático. Las copias contienen hashes y sesiones; una copia dentro del mismo
    Codespace no protege contra su borrado. Restore conserva la contraseña del
-   respaldo y revoca sus sesiones. JSON/CSV no sustituyen una restauración ensayada.
+   respaldo y revoca sus sesiones. JSON/CSV de dominio no sustituyen una restauración
+   ensayada. El backup JSON PostgreSQL completo incluye secretos; su SHA-256 detecta
+   corrupción accidental, no autenticidad frente a quien pueda reescribir archivo y
+   checksum. Offline verify no comprueba relaciones; restore sí valida FKs/tipos.
+   No ofrece cifrado, firma, `pg_dump` completo del clúster ni PITR.
 7. **Concurrencia y escala.** Mismo campo de tarea entre pestañas: última escritura.
    Diario: conflicto explícito por revisión; sin colaboración en tiempo real. Los
    snapshots/históricos completos no están paginados y consumen memoria con volumen.
    Reabrir/relograr hitos sustituye su fecha, sin historial de hitos equivalente a
    eventos de tareas. Evaluar estas limitaciones antes de una importación amplia.
+   Si se pierde la conexión al confirmar COMMIT, el cliente puede desconocer si se
+   aplicó. Inspeccionar el destino antes de reintentar importaciones/restauraciones;
+   el rechazo de destinos ocupados evita una segunda copia sobre registros existentes.
 8. **Cobertura y mantenimiento.** Revisión interna acotada, no pentest del alojamiento,
    auditoría completa de todo el historial Git ni certificación. `npm audit` solo
    detecta advisories conocidos al ejecutarlo; no hay mantenimiento automático de
@@ -134,7 +175,8 @@ se comunican en la revisión de ese cambio, sin conservar diarios de pruebas.
 | [tests/password-cli.test.ts](../tests/password-cli.test.ts) | Rotación, revocación, ausencia de credenciales en salida, no creación de base, metadatos/symlinks/concurrencia. |
 | [tests/dev.spec.ts](../tests/dev.spec.ts) | Archivos protegidos, symlinks/rutas codificadas, HMR y recursos de marca permitidos. |
 | [tests/proxy.spec.ts](../tests/proxy.spec.ts) | Navegador HTTPS con Origin reescrito HTTP/HTTPS, sesión/logout y rechazo cross-site. |
-| [tests/recovery.test.ts](../tests/recovery.test.ts) | WAL confirmado, integridad/esquema/FK, no sobrescritura, procesos activos y restauración con sesiones revocadas. |
+| [tests/recovery.test.ts](../tests/recovery.test.ts) | Recuperación SQLite heredada: WAL confirmado, integridad/esquema/FK, no sobrescritura y sesiones revocadas. |
+| [tests/postgres-migration.test.ts](../tests/postgres-migration.test.ts) | Importación SQLite 001/002, fidelidad, rollback, backup completo y recuperación PostgreSQL a destino vacío. |
 | [tests/daily-readiness.spec.ts](../tests/daily-readiness.spec.ts) | Persistencia tras recarga/login/reinicio real y backup/restore aislado. |
 | [tests/language.test.ts](../tests/language.test.ts) | Migración aditiva, aislamiento de preferencia y compatibilidad de copias 001/002. |
 

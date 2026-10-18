@@ -1,10 +1,13 @@
 import {randomBytes,randomUUID,scryptSync,scrypt,timingSafeEqual,createHash} from 'node:crypto';
-import type {DatabaseSync} from 'node:sqlite';
+import type {Database} from './db.ts';
 import type {Request,Response,NextFunction} from 'express';
 import type {AuthContext,User} from '../shared/contracts.ts';
 import {transaction} from './db.ts';
 export interface AuthRequest extends Request {auth?:AuthContext; session?:{id_hash:string;csrf_token:string;user_id:string}}
-export function publicUser(row:Record<string,unknown>):User {const {password_hash,...safe}=row; return safe as unknown as User;}
+export function publicUser(row:Record<string,unknown>):User {
+ const {id,email,display_name,timezone,theme,preferred_task_view,week_start_day,created_at,language}=row;
+ return {id,email,display_name,timezone,theme,preferred_task_view,week_start_day,created_at,language} as User;
+}
 // OWASP scrypt configuration N=2^15, r=8, p=3 (~32 MiB). Versioned for future upgrades.
 const passwordCost={N:32768,r:8,p:3,maxmem:64*1024*1024};
 function hashPassword(password:string){const salt=randomBytes(16).toString('hex');return `scrypt-v2:32768:8:3:${salt}:${scryptSync(password,salt,64,passwordCost).toString('hex')}`;}
@@ -27,30 +30,29 @@ export async function verifyPasswordAsync(password:string,stored:string):Promise
   return timingSafeEqual(actual,parts.expected);
  }finally{activePasswordChecks--;}
 }
-export function createOwner(db:DatabaseSync,input:{email:string;password:string;display_name?:string}) {
+export async function createOwner(db:Database,input:{email:string;password:string;display_name?:string}) {
  const email=input.email.trim().toLowerCase();
  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||email.length>254)throw new Error('Correo no válido');
  validatePassword(input.password);
  const id=randomUUID(), now=new Date().toISOString(), workspace=randomUUID();
- transaction(db,()=>{
- db.prepare('INSERT INTO users(id,email,password_hash,display_name,created_at) VALUES(?,?,?,?,?)').run(id,email,hashPassword(input.password),(input.display_name||'Mi espacio').slice(0,120),now);
- db.prepare('INSERT INTO workspaces(id,name,owner_user_id,created_at) VALUES(?,?,?,?)').run(workspace,'Mi espacio de trabajo',id,now);
- db.prepare('INSERT INTO workspace_members(workspace_id,user_id,role,created_at) VALUES(?,?,?,?)').run(workspace,id,'owner',now);
- });
- return publicUser(db.prepare('SELECT * FROM users WHERE id=?').get(id)!);
-}
-/** Local administration only. Revocation and rotation commit together, including inside a CLI transaction. */
-export function changePassword(db:DatabaseSync,input:{email:string;password:string}){
- validatePassword(input.password);
- const row=db.prepare('SELECT id FROM users WHERE email=? COLLATE NOCASE').get(input.email.trim()) as {id:string}|undefined;
- if(!row)throw new Error('No se encontró la cuenta indicada');
  const hash=hashPassword(input.password);
- db.exec('SAVEPOINT password_rotation');
- try {
-  db.prepare('UPDATE users SET password_hash=? WHERE id=?').run(hash,row.id);
-  db.prepare('DELETE FROM sessions WHERE user_id=?').run(row.id);
-  db.exec('RELEASE password_rotation');
- }catch(error){db.exec('ROLLBACK TO password_rotation; RELEASE password_rotation');throw error;}
+ return transaction(db,async()=>{
+  await db.run('INSERT INTO users(id,email,password_hash,display_name,created_at) VALUES($1,$2,$3,$4,$5)',[id,email,hash,(input.display_name||'Mi espacio').slice(0,120),now]);
+  await db.run('INSERT INTO workspaces(id,name,owner_user_id,created_at) VALUES($1,$2,$3,$4)',[workspace,'Mi espacio de trabajo',id,now]);
+  await db.run('INSERT INTO workspace_members(workspace_id,user_id,role,created_at) VALUES($1,$2,$3,$4)',[workspace,id,'owner',now]);
+  return publicUser((await db.one('SELECT * FROM users WHERE id=$1',[id]))!);
+ });
+}
+/** Local administration only. The user lock serializes rotation with session issuance. */
+export async function changePassword(db:Database,input:{email:string;password:string}){
+ validatePassword(input.password);
+ const hash=hashPassword(input.password);
+ await transaction(db,async()=>{
+  const row=await db.one('SELECT id FROM users WHERE focus_ascii_fold(email)=focus_ascii_fold($1) FOR UPDATE',[input.email.trim()]);
+  if(!row)throw new Error('No se encontró la cuenta indicada');
+  await db.run('UPDATE users SET password_hash=$1 WHERE id=$2',[hash,row.id]);
+  await db.run('DELETE FROM sessions WHERE user_id=$1',[row.id]);
+ });
 }
 const digest=(value:string)=>createHash('sha256').update(value).digest('hex');
 export function sessionCookieName(){return process.env.CODESPACES==='true'||process.env.COOKIE_SECURE==='true'?'__Host-focus_session':'focus_session';}
@@ -64,19 +66,22 @@ export function cookieToken(req:Request){
  const matches=(req.headers.cookie||'').split(';').map(x=>x.trim()).filter(x=>x.startsWith(name+'='));
  return matches.length===1?matches[0].slice(name.length+1):undefined;
 }
-export function readSession(db:DatabaseSync,req:Request){const token=cookieToken(req);if(!token||!/^[a-f0-9]{64}$/.test(token))return null;return db.prepare('SELECT * FROM sessions WHERE id_hash=? AND expires_at>?').get(digest(token),new Date().toISOString()) as {id_hash:string;user_id:string;csrf_token:string}|undefined;}
-export function setSession(db:DatabaseSync,res:Response,user_id:string){const token=randomBytes(32).toString('hex'),csrfToken=randomBytes(32).toString('hex'),now=Date.now();
- db.prepare('DELETE FROM sessions WHERE expires_at<?').run(new Date(now).toISOString());
- db.prepare('INSERT INTO sessions(id_hash,user_id,csrf_token,expires_at,created_at) VALUES(?,?,?,?,?)').run(digest(token),user_id,csrfToken,new Date(now+7*86400000).toISOString(),new Date(now).toISOString());
+export async function readSession(db:Database,req:Request){
+ const token=cookieToken(req);if(!token||!/^[a-f0-9]{64}$/.test(token))return null;
+ return await db.one('SELECT * FROM sessions WHERE id_hash=$1 AND expires_at>$2',[digest(token),new Date().toISOString()]) as {id_hash:string;user_id:string;csrf_token:string}|undefined;
+}
+export async function setSession(db:Database,res:Response,user_id:string){const token=randomBytes(32).toString('hex'),csrfToken=randomBytes(32).toString('hex'),now=Date.now();
+ await db.run('DELETE FROM sessions WHERE expires_at<$1',[new Date(now).toISOString()]);
+ await db.run('INSERT INTO sessions(id_hash,user_id,csrf_token,expires_at,created_at) VALUES($1,$2,$3,$4,$5)',[digest(token),user_id,csrfToken,new Date(now+7*86400000).toISOString(),new Date(now).toISOString()]);
  res.cookie(sessionCookieName(),token,{httpOnly:true,sameSite:'strict',secure:sessionCookieName().startsWith('__Host-'),maxAge:7*86400000,path:'/'});
  if(sessionCookieName().startsWith('__Host-'))res.clearCookie('focus_session',{path:'/',httpOnly:true,sameSite:'strict',secure:true});
  return csrfToken;
 }
-export function authMiddleware(db:DatabaseSync){return(req:AuthRequest,res:Response,next:NextFunction)=>{
- const session=readSession(db,req);if(!session){res.status(401).json({code:'UNAUTHENTICATED',message:'Inicia sesión para continuar'});return;}
- const member=db.prepare('SELECT workspace_id FROM workspace_members WHERE user_id=? AND role=?').get(session.user_id,'owner') as {workspace_id:string}|undefined;
+export function authMiddleware(db:Database){return async(req:AuthRequest,res:Response,next:NextFunction)=>{
+ const session=await readSession(db,req);if(!session){res.status(401).json({code:'UNAUTHENTICATED',message:'Inicia sesión para continuar'});return;}
+ const member=await db.one('SELECT workspace_id FROM workspace_members WHERE user_id=$1 AND role=$2',[session.user_id,'owner']);
  if(!member){res.status(403).json({code:'FORBIDDEN',message:'No tienes acceso a este espacio'});return;}
- req.auth={user_id:session.user_id,workspace_id:member.workspace_id};req.session=session;
+ req.auth={user_id:session.user_id,workspace_id:String(member.workspace_id)};req.session=session;
  if(!['GET','HEAD','OPTIONS'].includes(req.method)&&req.headers['x-csrf-token']!==session.csrf_token){res.status(403).json({code:'CSRF',message:'La sesión ha cambiado. Recarga la página e inténtalo de nuevo'});return;}
  next();
 };}

@@ -1,7 +1,7 @@
 import {closeSync,existsSync,fsyncSync,lstatSync,openSync,readFileSync,renameSync,unlinkSync,writeFileSync} from 'node:fs';
 import {dirname,join,resolve} from 'node:path';
 import {randomUUID} from 'node:crypto';
-import {DatabaseSync} from 'node:sqlite';
+import {openDatabase,transaction,type Database} from './db.ts';
 import {createInterface} from 'node:readline/promises';
 import {stdin,stdout} from 'node:process';
 import {Writable} from 'node:stream';
@@ -11,7 +11,7 @@ class InputError extends Error {}
 function fail(message:string):never{throw new InputError(message);}
 const regularFile=(path:string)=>{if(!existsSync(path)||!lstatSync(path).isFile()||lstatSync(path).isSymbolicLink())fail('Se requiere un archivo local existente, sin enlaces simbólicos.');};
 // Both staged files live on the same filesystem as the access file. Atomic rename
-// plus an outer SQLite transaction supports rollback on ordinary I/O/commit errors.
+// plus an outer database transaction supports rollback on ordinary I/O/commit errors.
 // This is not a distributed transaction: never interrupt the command mid-rotation.
 function stage(path:string,content:string){
  const temporary=join(dirname(path),`.password-${randomUUID()}.tmp`);
@@ -21,12 +21,12 @@ function stage(path:string,content:string){
 }
 
 let cleanup=()=>{};
-let db:DatabaseSync|undefined;
+let db:Database|undefined;
 let staged:string|undefined,backup:string|undefined,accessOriginal:string|undefined;
 try{
  if(process.argv.length>2)fail('No se aceptan argumentos. Introduce los datos mediante la terminal o entrada estándar.');
- const path=resolve(process.env.FOCUS_DB||'.data/focus-hub.sqlite');
- regularFile(path); // DatabaseSync must never create a missing account database.
+ // Connecting never creates a database or applies migrations implicitly.
+ db=await openDatabase();
  let email:string,password:string;
  if(stdin.isTTY){
   let hidden=false;
@@ -50,31 +50,37 @@ try{
  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||email.length>254)fail('Correo no válido.');
  if(password.length<12||password.length>256)fail('La contraseña debe tener entre 12 y 256 caracteres.');
  const accessPath=resolve('.data/demo-access.json');
- if(path===resolve('.data/demo.sqlite')){
+ const demoRequired=process.env.FOCUS_DEMO==='true';
+ if(demoRequired||existsSync(accessPath)){
   if(lstatSync(dirname(accessPath)).isSymbolicLink())fail('La carpeta de la demo no puede ser un enlace simbólico.');
   regularFile(accessPath);
-  const original=readFileSync(accessPath,'utf8');accessOriginal=original;
+  const original=readFileSync(accessPath,'utf8');
   let access:unknown;
   try{access=JSON.parse(original);}catch{fail('Metadatos de acceso de la demo no válidos.');}
-  if(!access||Array.isArray(access)||typeof access!=='object'||!('email' in access)||access.email!==email||!('database' in access)||access.database!=='.data/demo.sqlite'||!('password' in access)||typeof access.password!=='string'||!access.password)fail('Los metadatos no corresponden a esta cuenta demo. No se ha cambiado la cuenta.');
-  staged=stage(accessPath,JSON.stringify({...access,password},null,2)+'\n');
-  backup=stage(accessPath,original);
+  if(!access||Array.isArray(access)||typeof access!=='object'||!('database' in access)||typeof access.database!=='string')fail('Metadatos de acceso de la demo no válidos.');
+  if(demoRequired&&access.database!==db.identity)fail('Los metadatos no corresponden a esta base demo. No se ha cambiado la cuenta.');
+  if(access.database===db.identity){
+   if(!('email' in access)||access.email!==email||!('password' in access)||typeof access.password!=='string'||!access.password)fail('Los metadatos no corresponden a esta cuenta demo. No se ha cambiado la cuenta.');
+   accessOriginal=original;
+   staged=stage(accessPath,JSON.stringify({...access,password},null,2)+'\n');
+   backup=stage(accessPath,original);
+  }
  }
- db=new DatabaseSync(path,{enableForeignKeyConstraints:true});
- db.exec('PRAGMA busy_timeout=5000; BEGIN IMMEDIATE');
  let renamed=false;
  try{
-  // Another rotation may have completed while this process waited for SQLite.
-  // Never restore a stale access file over that newer successful rotation.
-  if(accessOriginal!==undefined){
-   regularFile(accessPath);
-   if(readFileSync(accessPath,'utf8')!==accessOriginal)fail('El archivo de acceso ha cambiado. Vuelve a ejecutar el comando.');
-  }
-  changePassword(db,{email,password});
-  if(staged){renameSync(staged,accessPath);staged=undefined;renamed=true;}
-  db.exec('COMMIT');
+  await transaction(db,async()=>{
+   // Serialize the metadata check with both rotation and login session issuance.
+   // A concurrent CLI must observe metadata only after the previous rotation commits.
+   const user=await db!.one('SELECT id FROM users WHERE focus_ascii_fold(email)=focus_ascii_fold($1) FOR UPDATE',[email]);
+   if(!user)fail('No se encontró la cuenta indicada');
+   if(accessOriginal!==undefined){
+    regularFile(accessPath);
+    if(readFileSync(accessPath,'utf8')!==accessOriginal)fail('El archivo de acceso ha cambiado. Vuelve a ejecutar el comando.');
+   }
+   await changePassword(db!,{email,password});
+   if(staged){renameSync(staged,accessPath);staged=undefined;renamed=true;}
+  });
  }catch(error){
-  try{db.exec('ROLLBACK');}catch{/* SQLite may already have rolled back. */}
   if(renamed&&backup){
    const recovery=backup;
    try{renameSync(recovery,accessPath);backup=undefined;}catch{
@@ -91,6 +97,6 @@ try{
  console.error(error instanceof InputError?error.message:'No se pudo cambiar la contraseña. Comprueba la cuenta y los archivos locales; no se muestran credenciales.');
  process.exitCode=1;
 }finally{
- cleanup();db?.close();
+ cleanup();await db?.close();
  for(const file of [staged,backup])if(file&&existsSync(file))unlinkSync(file);
 }

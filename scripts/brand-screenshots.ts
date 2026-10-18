@@ -1,23 +1,23 @@
-/** Real browser evidence with fictional records in a disposable SQLite database. */
-import {mkdtempSync,mkdirSync,rmSync} from 'node:fs';
-import {tmpdir} from 'node:os';
+/** Real browser evidence with fictional records in a disposable PostgreSQL schema. */
+import {mkdirSync} from 'node:fs';
 import {join,resolve} from 'node:path';
 import {randomBytes,randomUUID} from 'node:crypto';
 import {chromium} from '@playwright/test';
-import {openDatabase} from '../server/db.ts';
+import {createTestDatabase} from '../tests/postgres-fixture.ts';
 import {createOwner} from '../server/auth.ts';
 import {createApp} from '../server/app.ts';
 import {Domain} from '../server/domain.ts';
 import {localDate,periodStart} from '../server/calendar.ts';
-const temporary=mkdtempSync(join(tmpdir(),'focus-brand-screens-')),db=openDatabase(join(temporary,'fictional.sqlite'));
+const fixture=await createTestDatabase(),db=fixture.db;
 const email='brand-screenshots@example.test',password=randomBytes(30).toString('base64url');
-const user=createOwner(db,{email,password,display_name:'Cuenta ficticia'});
-const workspace=db.prepare('SELECT id FROM workspaces WHERE owner_user_id=?').get(user.id)as{id:string};
+const user=await createOwner(db,{email,password,display_name:'Cuenta ficticia'});
+const workspace=await db.one('SELECT id FROM workspaces WHERE owner_user_id=$1',[user.id])as{id:string};
 const domain=new Domain(db,{user_id:user.id,workspace_id:workspace.id});
-const project=domain.createEntity('projects',{name:'Estudio Aurora',description:'Proyecto ficticio de diseño',color:'#39796a'});
-const tasks=['Preparar la propuesta visual','Elegir referencias para el proyecto','Revisar las notas de la semana'].map((text,index)=>domain.capture({text,request_id:randomUUID(),project_id:String(project.id),priority:index===0?'high':'normal'}));
-domain.updateTask(tasks[0].id,{status:'in_progress'});
-const today=localDate(user.timezone);domain.setFocus('weekly',periodStart(today,'weekly',user.week_start_day),tasks.map(task=>task.id));domain.setFocus('daily',today,tasks.slice(0,2).map(task=>task.id));
+const project=await domain.createEntity('projects',{name:'Estudio Aurora',description:'Proyecto ficticio de diseño',color:'#39796a'});
+const tasks=[];
+for(const [index,text] of ['Preparar la propuesta visual','Elegir referencias para el proyecto','Revisar las notas de la semana'].entries())tasks.push(await domain.capture({text,request_id:randomUUID(),project_id:String(project.id),priority:index===0?'high':'normal'}));
+await domain.updateTask(tasks[0].id,{status:'in_progress'});
+const today=localDate(user.timezone);await domain.setFocus('weekly',periodStart(today,'weekly',user.week_start_day),tasks.map(task=>task.id));await domain.setFocus('daily',today,tasks.slice(0,2).map(task=>task.id));
 const server=createApp(db).listen(0,'127.0.0.1');await new Promise<void>(resolve=>server.once('listening',resolve));const address=server.address();if(!address||typeof address==='string')throw Error('Missing isolated fixture port');
 const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',args:['--no-sandbox']});
 const output=resolve(process.argv[2]||'test-results/brand');mkdirSync(output,{recursive:true});
@@ -34,8 +34,8 @@ try{
     const text=luminance(rgb(getComputedStyle(element).color)),surface=luminance(rgb(background));return(Math.max(text,surface)+.05)/(Math.min(text,surface)+.05);
    })`);minimumLabelContrast=Math.min(minimumLabelContrast,...ratios);
    await page.screenshot({path:join(output,`login-${mode}-${theme}.png`),fullPage:true});
-   domain.preferences({theme,language:'es'});await page.getByLabel(/correo/i).fill(email);await page.getByLabel(/contraseña/i).fill(password);await page.getByRole('button',{name:/entrar/i}).click();await page.getByRole('heading',{name:'Tareas',exact:true}).waitFor();await page.goto('/dashboard');await page.getByRole('heading',{name:'Mi espacio',exact:true}).waitFor();await page.evaluate(()=>document.fonts.ready);await page.screenshot({path:join(output,`app-${mode}-${theme}.png`),fullPage:true});
+   await domain.preferences({theme,language:'es'});await page.getByLabel(/correo/i).fill(email);await page.getByLabel(/contraseña/i).fill(password);await page.getByRole('button',{name:/entrar/i}).click();await page.getByRole('heading',{name:'Tareas',exact:true}).waitFor();await page.goto('/dashboard');await page.getByRole('heading',{name:'Mi espacio',exact:true}).waitFor();await page.evaluate(()=>document.fonts.ready);await page.screenshot({path:join(output,`app-${mode}-${theme}.png`),fullPage:true});
   }finally{await context.close();}
  }
  console.log(`8 real Chromium screenshots saved to ${output}; isolated fictional database removed on exit. Minimum login label contrast: ${minimumLabelContrast.toFixed(2)}:1.`);
-}finally{await browser.close();await new Promise<void>((resolve,reject)=>server.close(error=>error?reject(error):resolve()));db.close();rmSync(temporary,{recursive:true,force:true});}
+}finally{await browser.close();await new Promise<void>((resolve,reject)=>server.close(error=>error?reject(error):resolve()));await fixture.close();}

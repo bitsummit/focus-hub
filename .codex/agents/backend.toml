@@ -4,7 +4,7 @@ docs/PRODUCT.md, docs/ARCHITECTURE.md and docs/SECURITY.md. Work only on files a
 and agree on domain/API contracts before making dependent changes.
 
 Own assigned server domain services, prepared SQL queries, persistence boundaries
-and API behavior. Preserve the existing Node/Express/SQLite architecture until a
+and API behavior. Preserve the existing Node/Express/PostgreSQL architecture until a
 migration is explicitly authorized. Scope every operation to the authenticated
 user/workspace; validate cross-workspace relationships on the trusted server.
 Keep task state, event history, journal references and idempotency transactional.

@@ -8,21 +8,24 @@ Referencia técnica del sistema actual. Las reglas funcionales están en
 
 React 19/TypeScript renderiza una SPA, Vite 7 compila y sirve el frontend durante
 el desarrollo. Express 5 sobre Node.js 24 ofrece la API y el frontend desde un
-único servidor HTTP en loopback. SQLite usa `node:sqlite` y un archivo local.
-No hay servicios Sites/D1, proveedor OAuth ni adaptador remoto implementados.
+único servidor HTTP en loopback. PostgreSQL usa `pg` con un pool pequeño y consultas
+asíncronas. Neon es el futuro proveedor previsto; no se ha provisionado ni validado
+un despliegue allí. SQLite/`node:sqlite` permanece solo para importación y recuperación
+heredada. No hay servicios Sites/D1 ni proveedor OAuth implementados.
 No se necesita un segundo puerto para frontend o WebSocket.
 
 ```text
 Navegador (React, preferencias de presentación)
     │ HTTP /api + frontend; WebSocket HMR solo en desarrollo
     │ Codespaces: HTTPS + control de acceso de GitHub → loopback
-Express → autenticación / CSRF / autorización → Domain → SQLite + WAL
+Express → autenticación / CSRF / autorización → Domain → PostgreSQL (pool)
     └─ producción compilada: dist/ | desarrollo: Vite middleware
 ```
 
-El lenguaje, tipos y esquema SQL facilitan una migración futura, pero no existe
-un backend intercambiable ya validado para D1. Una migración exige autorización
-y verificar transacciones, identidad, persistencia y despliegue del nuevo destino.
+El frontend y los contratos HTTP conservan su estructura. `Domain` recibe un
+contexto autorizado y la conexión; no conoce contraseñas ni el proveedor de login.
+Better Auth y Cloud Run son fases posteriores, sin integración ni despliegue actual.
+No hay una capa de emulación SQL ni un backend intercambiable para D1.
 
 ## Módulos y responsabilidades
 
@@ -42,11 +45,13 @@ y verificar transacciones, identidad, persistencia y despliegue del nuevo destin
 | [`server/app.ts`](../server/app.ts) | Rutas Express, headers, validación HTTP, errores y frontend |
 | [`server/auth.ts`](../server/auth.ts), [`server/login-challenge.ts`](../server/login-challenge.ts), [`server/login-limiter.ts`](../server/login-limiter.ts) | Credenciales, sesiones, autorización, CSRF, origen y presupuestos de login |
 | [`server/domain.ts`](../server/domain.ts) | Validación del dominio, SQL preparado, eventos, idempotencia, diario, foco, métricas y exportación |
-| [`server/db.ts`](../server/db.ts), [`migrations/`](../migrations/) | Apertura SQLite, transacciones y migraciones aditivas |
+| [`server/db.ts`](../server/db.ts), [`migrations/postgres/`](../migrations/postgres/) | Pool PostgreSQL, consultas asíncronas, transacciones y migraciones versionadas |
 | [`server/calendar.ts`](../server/calendar.ts) | Fechas locales, zona IANA y límites UTC mediante Temporal |
 | [`server/runtime.ts`](../server/runtime.ts), [`server/index.ts`](../server/index.ts), [`server/development.ts`](../server/development.ts) | Configuración de origen, servidor y frontera de archivos de Vite |
 | [`server/owner.ts`](../server/owner.ts), [`server/password.ts`](../server/password.ts), [`server/demo.ts`](../server/demo.ts) | Administración local y demo ficticia |
-| [`server/recovery.ts`](../server/recovery.ts), [`scripts/database.ts`](../scripts/database.ts) | Snapshot SQLite, verificación y recuperación sin sobrescribir destinos |
+| [`server/postgres-recovery.ts`](../server/postgres-recovery.ts), [`scripts/postgres-database.ts`](../scripts/postgres-database.ts) | Backup completo PostgreSQL en JSON, verificación y restauración a destino vacío |
+| [`server/sqlite-import.ts`](../server/sqlite-import.ts), [`scripts/migrate-sqlite.ts`](../scripts/migrate-sqlite.ts) | Importación explícita SQLite → PostgreSQL sin alterar la fuente |
+| [`server/legacy-sqlite.ts`](../server/legacy-sqlite.ts), [`server/recovery.ts`](../server/recovery.ts), [`scripts/database.ts`](../scripts/database.ts), [`migrations/001_initial.sql`](../migrations/001_initial.sql), [`migrations/002_language.sql`](../migrations/002_language.sql) | Compatibilidad y recuperación SQLite heredadas; no runtime web alternativo |
 | [`.devcontainer/`](../.devcontainer/) | Instalación y ciclo de vida del proceso administrado en Codespaces |
 | [`tests/`](../tests/), [`playwright.config.ts`](../playwright.config.ts) | Fixtures aislados y comprobaciones unitarias, HTTP y Chromium |
 
@@ -104,12 +109,46 @@ foco; sesiones y registros de idempotencia. Las relaciones usan IDs estables y
 `workspace_id`; una referencia del diario apunta a la tarea, no a una copia.
 Las subtareas son tareas con `parent_task_id`, no otra entidad de checklist.
 
-`openDatabase` habilita WAL, claves foráneas y `busy_timeout=5000`. Serializa la
-comprobación de migraciones con `BEGIN IMMEDIATE`: aplica el esquema inicial
-idempotente y añade `users.language` cuando falta. No hay un runner general de
-versiones ni downgrades. Nuevas migraciones deben conservar datos e integrarse
-explícitamente en esta apertura; no editar retroactivamente el esquema publicado
-para simular una migración. Permisos de archivos y recuperación: [Seguridad](SECURITY.md).
+`openDatabase` exige `DATABASE_URL` PostgreSQL y un esquema existente
+(`DATABASE_SCHEMA`, por defecto `public`). El arranque comprueba versiones/checksums;
+no crea bases ni aplica migraciones implícitamente y rechaza `FOCUS_DB` heredado.
+`npm run db:migrate` aplica SQL de `migrations/postgres/` transaccionalmente bajo
+advisory lock por base/esquema. `schema_migrations` conserva versión, nombre,
+SHA-256 y fecha. Repetir no cambia datos; versiones desconocidas o SQL modificado
+fallan. Añadir versiones nuevas; no editar migraciones ya aplicadas. Sin downgrades.
+
+El pool tiene cuatro conexiones por defecto (`PG_POOL_MAX`, 1–20), timeout de
+conexión de 5 s, de consulta de 15 s y de lock de 10 s. `AsyncLocalStorage` asocia
+cada transacción a un único cliente hasta COMMIT/ROLLBACK; las transacciones
+anidadas usan savepoints. No lanzar trabajo sin esperar dentro de una transacción.
+Cada acceso de dominio comprueba membresía y bloquea la fila del workspace:
+mutadores `FOR UPDATE`, lecturas `FOR SHARE`. Esto serializa validación/cambio
+entre procesos del mismo espacio y mantiene snapshots coherentes, permitiendo
+trabajo paralelo en otros espacios. No reemplaza el aislamiento por `workspace_id`.
+
+Los timestamps y JSON permanecen TEXT para conservar el contrato serializado;
+fechas locales no se reinterpretan como timestamps SQL. `DOUBLE PRECISION` conserva
+los órdenes numéricos de JavaScript/SQLite. La collation `C` y `focus_ascii_fold`
+(únicamente A–Z) preservan la comparación binaria y NOCASE ASCII heredadas, incluida
+unicidad del correo. `storage_order` BIGINT/identity reemplaza `rowid` para desempates
+y eventos; se excluye de respuestas/eventos de dominio. Las claves compuestas
+conservan relaciones dentro del workspace; FKs diferibles permiten importar
+referencias sin perder IDs. `storage_order` sí pertenece al backup de recuperación.
+
+La importación admite esquemas SQLite 001/002 verificados, conserva celdas/IDs,
+relaciones, fechas, eventos e idempotencia y aplica español al esquema anterior al
+idioma. Comprueba integridad/FKs/conteos y valores, requiere destino vacío y realiza
+una única transacción PostgreSQL; revoca sesiones. Usar copia consistente y cerrada
+tras detener escritores: no es replicación ni un mecanismo de cambio en caliente.
+Las herramientas SQLite originales siguen disponibles. Procedimiento y custodia:
+[Operaciones](OPERATIONS.md).
+
+El backup PostgreSQL usa una transacción repeatable-read/solo lectura e incluye las
+trece tablas de aplicación, orden interno y ledger de migraciones. El formato JSON
+versionado con checksum no ejecuta SQL del archivo. Restore valida columnas, tipos,
+versión y FKs bajo locks exclusivos, a destino vacío, resecuencia identidades y
+revoca sesiones. No es `pg_dump`, copia de todo el clúster ni PITR. Exportación web
+JSON/CSV y backup son contratos distintos; la primera excluye autenticación.
 
 Captura, eventos y referencia de diario se escriben atómicamente. Los IDs de
 petición deduplican reintentos de creación; las revisiones de diario rechazan
@@ -139,7 +178,7 @@ proxy Codespaces en [Seguridad](SECURITY.md).
 
 | Endpoint | Contrato |
 |---|---|
-| `GET /api/health` | Estado básico; no prueba login ni persistencia |
+| `GET /api/health` | `SELECT 1` real; 503 si falla PostgreSQL. No prueba login ni escritura |
 | `GET /api/session/challenge`, `POST /api/session` | Desafío de login; credenciales JSON y desafío de un uso |
 | `GET /api/session`, `DELETE /api/session` | Sesión + `csrfToken`; revocación y borrado de cookie |
 | `GET /api/state` | `Snapshot` autorizado completo |
@@ -167,7 +206,7 @@ rutas son `/dashboard`, `/journal`, `/journal/YYYY-MM-DD`, `/progress`,
 conserva cuatro destinos y «Más»; el rail intermedio y las listas/grupos móviles
 se adaptan al viewport sin detección por user-agent.
 
-El usuario guarda `es`/`en` en SQLite; la migración usa español por defecto.
+El usuario guarda `es`/`en` en PostgreSQL; la migración usa español por defecto.
 `t()` toma textos fuente españoles y consulta el catálogo inglés, con fallback
 al original. `translateError` localiza errores en presentación. El idioma local
 solo es una pista para el login; ni tareas ni credenciales viven en localStorage.
@@ -193,13 +232,14 @@ internos `Row`/formularios siguen siendo flexibles y no sustituyen la validació
 servidor; mejorar ese tipado es trabajo separado de la organización del frontend.
 
 
-SQLite síncrono y `Snapshot` completo son adecuados para la versión personal,
-pero no garantizan escalado multiinstancia ni grandes historiales. No hay
+El pool asíncrono y los locks de PostgreSQL permiten coordinación entre procesos,
+pero no certifican escalado multiinstancia ni grandes historiales. No hay
 paginación del backend para tareas/eventos ni virtualización general; el diario
 pagina en cliente. Hay aislamiento de workspace comprobado, pero no gestión
 multiusuario, invitaciones, roles colaborativos ni recuperación remota de cuenta.
 La previsualización JSON es de solo lectura y comprueba colecciones, no integridad
-completa. No hay importación JSON/Notion; restaurar requiere la copia SQLite y su procedimiento.
+completa. No hay importación de JSON de dominio/Notion; restaurar requiere el backup completo
+PostgreSQL (o importar conscientemente una copia SQLite compatible).
 Codespaces y la excepción de su proxy son un entorno privado de desarrollo,
 no una arquitectura de producción aprobada. Disponibilidad, almacenamiento externo,
 backups automatizados y despliegue duradero siguen pendientes.
