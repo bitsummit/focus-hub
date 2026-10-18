@@ -262,7 +262,7 @@ Pruebas con fixtures ficticios:
 npm run build
 npm test
 npm run test:e2e
-npm audit
+npm audit --audit-level=high
 ```
 
 Los wrappers preparan/reutilizan PostgreSQL local y pasan solo `TEST_DATABASE_URL` a

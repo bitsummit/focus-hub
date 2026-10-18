@@ -113,9 +113,30 @@ with any identity change in the same change, without unauthorized data migration
 ## Definition of done
 
 Review the complete diff and references; only intended files and no private data
-may change. Preserve product acceptance invariants and run relevant checks, normally
-`npm run build` and `npm test` for implementation work, plus applicable Chromium
-E2E tests. Use fictional temporary databases; restore any test-owned resources.
-Update the appropriate living references. Report what changed, actual checks and
-outcomes, unresolved gaps and material risks; no readiness claim based only on a
-passing local build. Deliver using the authorized Git workflow without merging main.
+may change. For every delivery containing code changes, run:
+
+- `npm run build`
+- `npm test`
+- `npm audit --audit-level=high`
+- `npm run test:e2e` when application behavior, API, authentication, persistence or
+  UI changes (including technical changes that could affect those boundaries).
+
+For documentation-only changes, use proportional checks of the diff, links and
+command accuracy; do not claim unexecuted builds/tests passed. Use fictional
+isolated databases and restore test-owned resources. Never weaken assertions.
+
+Sensitive changes (auth, permissions, sessions, SQL, server configuration or secrets)
+also require a focused review of the modified code: workspace authorization,
+parameterized SQL/trusted identifiers, input validation, cookies, CSRF/origin and
+information exposure. Automated scans do not replace this review. For occasional
+local Semgrep OSS and Gitleaks audits, follow [Security](docs/SECURITY.md#auditorías-locales-puntuales).
+Do not upload code, add paid services or unnecessary permanent dependencies.
+
+Triage findings by severity, practical exploitability and production versus
+development-tool exposure. Do not apply automatic major upgrades or
+`npm audit fix --force`; record unresolved findings and limitations. Any future
+public deployment requires a dedicated security review regardless of these results.
+
+Update affected living references and deliver using the authorized Git workflow,
+without merging main. Report commands actually executed, outcomes, findings and
+pending/blocked checks in every delivery; never label an unexecuted check as passed.

@@ -172,6 +172,67 @@ acordar alojamiento con volumen duradero, copias externas y objetivos de recuper
 no considerar Codespaces preparado para datos reales solo por pruebas locales.
 Procedimientos y riesgos de suspensión/borrado en [OPERATIONS.md](OPERATIONS.md).
 
+## Auditorías locales puntuales
+
+Usa Semgrep OSS y Gitleaks como comprobaciones adicionales, sin GitHub Actions ni
+cuentas/servicios de pago. Instala versiones explícitas fuera del proyecto (por
+ejemplo, en un directorio temporal privado): no añadir dependencias a `package.json`,
+lockfiles ni herramientas globales permanentes. Semgrep puede ejecutarse con `uvx`;
+para Gitleaks usa el binario oficial de tu plataforma y verifica su SHA-256 contra
+los checksums de la misma release. Referencias: [Semgrep](https://github.com/semgrep/semgrep),
+[reglas OSS](https://github.com/semgrep/semgrep-rules),
+[Gitleaks releases](https://github.com/gitleaks/gitleaks/releases).
+
+Ejemplo Bash con herramientas temporales (Semgrep 1.181.0, Gitleaks 8.24.3):
+
+```sh
+audit_root=$(mktemp -d)
+chmod 700 "$audit_root"
+export UV_CACHE_DIR="$audit_root/uv-cache" UV_TOOL_DIR="$audit_root/uv-tools"
+export UV_TOOL_BIN_DIR="$audit_root/bin"
+export SEMGREP_SETTINGS_FILE="$audit_root/semgrep-settings.yml"
+export SEMGREP_LOG_FILE="$audit_root/semgrep.log"
+export SEMGREP_SEND_METRICS=off SEMGREP_ENABLE_VERSION_CHECK=0
+# Descargar solo las reglas públicas; nunca subir el código de Focus.
+git clone --depth 1 https://github.com/semgrep/semgrep-rules.git "$audit_root/rules"
+git -C "$audit_root/rules" rev-parse HEAD
+# Snapshot de archivos versionados; no incluye .data, .env ni secretos locales.
+mkdir "$audit_root/source"
+git archive HEAD | tar -x -C "$audit_root/source"
+uvx --from semgrep==1.181.0 semgrep scan --oss-only --metrics=off --disable-version-check \
+  --config "$audit_root/rules/javascript" --config "$audit_root/rules/typescript" \
+  --config "$audit_root/rules/generic/secrets" --config "$audit_root/rules/generic/dockerfile" \
+  --error --json --output "$audit_root/semgrep.json" "$audit_root/source"
+# Tras descargar y verificar el binario Gitleaks en $audit_root/bin:
+"$audit_root/bin/gitleaks" dir --redact=100 --ignore-gitleaks-allow --no-banner \
+  --report-format=json --report-path="$audit_root/gitleaks-current.json" "$audit_root/source"
+"$audit_root/bin/gitleaks" git --log-opts='--all --full-history' --redact=100 \
+  --ignore-gitleaks-allow --no-banner --report-format=json \
+  --report-path="$audit_root/gitleaks-history.json" .
+```
+
+El snapshot anterior representa HEAD: si hay cambios pendientes, revisa también los
+archivos versionados modificados mediante una copia temporal explícita, sin copiar
+`.data`/`.env`. No uses `semgrep ci`, configuraciones remotas `--config auto`, login,
+motores de pago o upload de resultados/código. Los reportes son privados y temporales,
+fuera de Git; no mostrar secretos aunque el hallazgo sea histórico. Desactiva métricas
+y comprobación de versión; reglas locales y motor OSS no necesitan enviar código.
+
+Registra versiones, SHA de reglas, alcance, exclusiones/errores y códigos de salida.
+Semgrep sin `--error` puede devolver 0 aun con hallazgos. Gitleaks devuelve 1 si detecta
+secretos; otros errores no equivalen a un análisis limpio. Comprueba si el clon es
+shallow y qué refs están disponibles: `--all` cubre el historial local alcanzable, no
+commits borrados/inaccesibles del servidor. Git ignore no limpia secretos históricos.
+
+Triage manual: gravedad, explotabilidad real, controles existentes y alcance
+producción/desarrollo; distinguir vulnerabilidad confirmada, falso positivo y riesgo
+pendiente. Una advertencia de SQL dinámico exige seguir valores e identificadores,
+no asumir inyección por interpolación de tablas allowlisted. No ocultar hallazgos
+con exclusiones generales ni aplicar majors automáticos o `npm audit fix --force`.
+Un secreto real requiere revocación/rotación; borrar la línea no lo invalida.
+Las reglas de entrega, revisión del código sensible y revisión previa a despliegue
+público son autoridad de [AGENTS.md](../AGENTS.md#definition-of-done).
+
 ## Evidencia reproducible y alcance
 
 Los comandos de validación están en [OPERATIONS.md](OPERATIONS.md#desarrollo-reinicio-y-comprobaciones).
