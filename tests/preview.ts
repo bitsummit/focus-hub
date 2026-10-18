@@ -8,6 +8,8 @@ import {createApp} from '../server/app.ts';
 const dir=mkdtempSync(join(tmpdir(),'focus-browser-'));
 const db=openDatabase(join(dir,'browser.sqlite'));
 createOwner(db,{email:'browser@example.test',password:'Browser-QA-fictional-2026!',display_name:'Cuenta ficticia QA'});
+// Independent feature suite: successful logins also consume the security budget.
+createOwner(db,{email:'ux-browser@example.test',password:'UX-QA-fictional-2026!',display_name:'Cuenta ficticia UX'});
 createOwner(db,{email:'language-browser@example.test',password:'Language-QA-fictional-2026!',display_name:'Cuenta ficticia idiomas'});
 createOwner(db,{email:'journal-feed@example.test',password:'Journal-Feed-fictional-2026!',display_name:'Diario ficticio QA'});
 createOwner(db,{email:'brand-browser@example.test',password:'Brand-QA-fictional-2026!',display_name:'Cuenta ficticia de marca'});

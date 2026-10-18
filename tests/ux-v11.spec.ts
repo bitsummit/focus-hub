@@ -4,7 +4,7 @@ import type {Snapshot,Task} from '../shared/contracts.ts';
 import {localDate,addDays} from '../server/calendar.ts';
 const root='http://127.0.0.1:4173';
 async function login(page:Page){
- await page.goto('/');await page.getByLabel(/correo/i).fill('browser@example.test');await page.getByLabel(/contraseña/i).fill('Browser-QA-fictional-2026!');await page.getByRole('button',{name:/entrar|iniciar sesión/i}).click();await expect(page.getByRole('heading',{name:'Tareas',exact:true})).toBeVisible();
+ await page.goto('/');await page.getByLabel(/correo/i).fill('ux-browser@example.test');await page.getByLabel(/contraseña/i).fill('UX-QA-fictional-2026!');await page.getByRole('button',{name:/entrar|iniciar sesión/i}).click();await expect(page.getByRole('heading',{name:'Tareas',exact:true})).toBeVisible();
 }
 async function mutate(request:APIRequestContext,path:string,data:unknown,method='POST'):Promise<Snapshot>{
  const session=await (await request.get('/api/session')).json();
