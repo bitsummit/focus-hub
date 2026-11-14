@@ -1,0 +1,19 @@
+{
+  "name": "Focus Hub · demo privada",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:5.2.3-24-bookworm",
+  "remoteUser": "node",
+  "hostRequirements": {"cpus": 2, "memory": "4gb", "storage": "8gb"},
+  "containerEnv": {"PORT": "3000"},
+  "features": {"ghcr.io/devcontainers/features/docker-in-docker:2": {}},
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": {"label": "Focus Hub · privado", "onAutoForward": "openBrowser", "protocol": "http"}
+  },
+  "otherPortsAttributes": {"onAutoForward": "ignore"},
+  "customizations": {
+    "codespaces": {"openFiles": ["docs/OPERATIONS.md"]},
+    "vscode": {"settings": {"remote.autoForwardPorts": false}}
+  },
+  "postCreateCommand": "bash .devcontainer/setup.sh",
+  "postStartCommand": "bash .devcontainer/start.sh"
+}

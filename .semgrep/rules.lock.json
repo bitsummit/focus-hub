@@ -1,0 +1,128 @@
+{
+  "version": 1,
+  "semgrepVersion": "1.181.0",
+  "upstream": "https://github.com/semgrep/semgrep-rules",
+  "commit": "17e31e11ebac99fb7dfe1cd288f7a32151b6f3f9",
+  "rules": [
+    {
+      "id": "node-postgres-sqli",
+      "category": "SQL",
+      "path": "javascript/lang/security/audit/sqli/node-postgres-sqli.yaml",
+      "sha256": "23709e35b9ce213d8306c793a3174320dcf3141043e31297fcdec48735c1bbd8"
+    },
+    {
+      "id": "tainted-sql-string",
+      "category": "SQL",
+      "path": "javascript/express/security/injection/tainted-sql-string.yaml",
+      "sha256": "22dab9b0182dd25bb5aaf3ae796973dc53ea91ccb0e747055fd15ee1ef9a8592"
+    },
+    {
+      "id": "react-dangerouslysetinnerhtml",
+      "category": "XSS",
+      "path": "typescript/react/security/audit/react-dangerouslysetinnerhtml.yaml",
+      "sha256": "794094512be7f7dcaa49a4b1edf621dbdf1f984b4f29ab09a23538c0e59c2136"
+    },
+    {
+      "id": "insecure-innerhtml",
+      "category": "XSS",
+      "path": "javascript/browser/security/insecure-innerhtml.yaml",
+      "sha256": "3f2854f92c3c8a1ba3a107a140a5b31789650851be57586fd21a409e129193e4"
+    },
+    {
+      "id": "raw-html-format",
+      "category": "XSS",
+      "path": "javascript/express/security/injection/raw-html-format.yaml",
+      "sha256": "d00b6ba1fe8476e9fe29c9e9e9e1b631bd67c466d94087d0e0834f5036fcc6af"
+    },
+    {
+      "id": "spawn-shell-true",
+      "category": "commands",
+      "path": "javascript/lang/security/audit/spawn-shell-true.yaml",
+      "sha256": "452fb593301edca721a151ed3c051f428ca1df1fc1af613380d58b076601b5ba"
+    },
+    {
+      "id": "dangerous-spawn-shell",
+      "category": "commands",
+      "path": "javascript/lang/security/audit/dangerous-spawn-shell.yaml",
+      "sha256": "1a81f91e9ad9ea4c62a9b0bda4dcf3cf2fc1bb6f2d9e2580ea3effa6bfe9ba74"
+    },
+    {
+      "id": "detect-eval-with-expression",
+      "category": "commands",
+      "path": "javascript/lang/security/detect-eval-with-expression.yaml",
+      "sha256": "3b8fe2524b094c72c34aaa6d21b0408ffdac2471a335125cf726993253777951"
+    },
+    {
+      "id": "express-path-join-resolve-traversal",
+      "category": "traversal",
+      "path": "javascript/express/security/audit/express-path-join-resolve-traversal.yaml",
+      "sha256": "eb0c16f2414023ecc43de3a47ccba2f242fc136d1aa8b25bdce3b73276fca6d9"
+    },
+    {
+      "id": "express-res-sendfile",
+      "category": "traversal",
+      "path": "javascript/express/security/audit/express-res-sendfile.yaml",
+      "sha256": "96d3af39aa5066b659e813e8703584ce839f2d74df69b1b243001f82c00bfe26"
+    },
+    {
+      "id": "private-key",
+      "category": "secrets",
+      "path": "generic/secrets/gitleaks/private-key.yaml",
+      "sha256": "e7cf70f97edcc27f8c0c4314a848da07bc46fac6279c7af7ad427327791b9811"
+    },
+    {
+      "id": "detected-username-and-password-in-uri",
+      "category": "secrets",
+      "path": "generic/secrets/security/detected-username-and-password-in-uri.yaml",
+      "sha256": "a39de53be3e1e3c9c9909b693962e09c1b4b5aa208823385d85dc67462c2859a"
+    },
+    {
+      "id": "github-pat",
+      "category": "secrets",
+      "path": "generic/secrets/gitleaks/github-pat.yaml",
+      "sha256": "d5600b47c314968814dd61fbfcbc9d5afbf69d0710af1f28bb3833f34458a6b2"
+    },
+    {
+      "id": "github-fine-grained-pat",
+      "category": "secrets",
+      "path": "generic/secrets/gitleaks/github-fine-grained-pat.yaml",
+      "sha256": "dcbc05bbf6a8e043158ca6c74753978fea07d8d8d7a54840336b22af6f3ab978"
+    },
+    {
+      "id": "detect-pseudoRandomBytes",
+      "category": "crypto",
+      "path": "javascript/lang/security/detect-pseudoRandomBytes.yaml",
+      "sha256": "d3c2b2168e6b1efdfc305a783387634e3ead8e0db6d4bdd3417381e177da4058"
+    },
+    {
+      "id": "create-de-cipher-no-iv",
+      "category": "crypto",
+      "path": "javascript/node-crypto/security/create-de-cipher-no-iv.yaml",
+      "sha256": "4b922a0df84b85469500b92eb4a8023bf64e0aca889c85ba5fdf3d23ffa2f406"
+    },
+    {
+      "id": "hardcoded-hmac-key",
+      "category": "crypto",
+      "path": "javascript/lang/security/audit/hardcoded-hmac-key.yaml",
+      "sha256": "fdca07b8fc42fa0d1e24be2a372e719f21b09c060f09716ee7008a1df1dfd52a"
+    },
+    {
+      "id": "cors-misconfiguration",
+      "category": "auth",
+      "path": "javascript/express/security/cors-misconfiguration.yaml",
+      "sha256": "97453880350c250408af9d7ce0c8ff177acf1f4419ca3f75a9c2583e1748e180"
+    },
+    {
+      "id": "cors-regex-wildcard",
+      "category": "auth",
+      "path": "typescript/lang/security/audit/cors-regex-wildcard.yaml",
+      "sha256": "fc271110d672f2093bf1e949ab413e6117f7483ad6e285ef093096d77fb33821"
+    },
+    {
+      "id": "detect-redos",
+      "category": "ReDoS",
+      "path": "javascript/lang/security/audit/detect-redos.yaml",
+      "sha256": "c649d508a43408dee1339e4f49415cbfb1cacfc7b1cafb7cb22ba81f335665bb"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+# Project roles. Inherit the user's model, permissions and approval settings.
+[agents.frontend]
+description = "Implement Focus. UI, accessibility and responsive interactions within an assigned frontend scope."
+config_file = "agents/frontend.toml"
+
+[agents.backend]
+description = "Implement Focus. domain services, persistence and API behavior within agreed contracts."
+config_file = "agents/backend.toml"
+
+[agents.qa]
+description = "Verify acceptance criteria and security regressions with isolated fictional fixtures and real tests."
+config_file = "agents/qa.toml"
+
+[agents.security]
+description = "Review Focus. security without modifying application files; report evidenced findings and remediation."
+config_file = "agents/security.toml"

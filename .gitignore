@@ -5,3 +5,17 @@ dist/
 *.log
 test-results/
 playwright-report/
+
+# Local configuration, databases and keys must never enter Git.
+.env.*
+!.env.example
+*.sqlite
+*.sqlite-*
+*.db
+*.db-*
+*.pem
+*.key
+
+# Native PostgreSQL backups are private too; JSON snapshots belong in .data/backups.
+*.pgdump
+*.dump

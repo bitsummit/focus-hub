@@ -1,0 +1,185 @@
+/* Reduced-motion policy, legacy theme consumers and shared task metadata. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *:before,
+  *:after {
+    scroll-behavior: auto !important;
+    animation: none !important;
+    transition: none !important;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #17201c;
+  --surface: #202b25;
+  --surface-soft: #253128;
+  --text: #d9e1d4;
+  --muted: #93a18c;
+  --line: #334134;
+  --accent: #80aa87;
+  --accent-soft: #2b3c2e;
+  --sidebar: #1d2821;
+  --shadow: 0 4px 24px #0003;
+  background: var(--bg);
+  color: var(--text);
+}
+html[data-theme="dark"] .goal-card,
+html[data-theme="dark"] .sidebar-note,
+html[data-theme="dark"] .journal-tips,
+html[data-theme="dark"] .privacy-panel {
+  background: #29372a;
+}
+html[data-theme="dark"] .board-column,
+html[data-theme="dark"] th,
+html[data-theme="dark"] .segmented,
+html[data-theme="dark"] .priority-normal,
+html[data-theme="dark"] .empty-orbit {
+  background: #29362b;
+}
+html[data-theme="dark"] .priority-high {
+  background: #413d29;
+}
+html[data-theme="dark"] .priority-critical,
+html[data-theme="dark"] .error-banner {
+  background: #402e27;
+}
+html[data-theme="dark"] .progress-track {
+  background: #3c4b36;
+}
+html[data-theme="dark"] .login-story {
+  background: #253528;
+}
+html[data-theme="dark"] .login-story h1,
+html[data-theme="dark"] .login-form h2 {
+  color: #acc49e;
+}
+html[data-theme="dark"] .status-select {
+  background: #2c3c2f;
+}
+html[data-theme="dark"] .achievement-icon {
+  background: #2e402f;
+}
+html[data-theme="dark"] .button.primary {
+  color: #15221a;
+}
+html[data-theme="dark"] .avatar {
+  background: #34452e;
+  color: #a8bd95;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="system"] {
+    --bg: #17201c;
+    --surface: #202b25;
+    --surface-soft: #253128;
+    --text: #d9e1d4;
+    --muted: #93a18c;
+    --line: #334134;
+    --accent: #80aa87;
+    --accent-soft: #2b3c2e;
+    --sidebar: #1d2821;
+    background: var(--bg);
+    color: var(--text);
+  }
+  html[data-theme="system"] .goal-card,
+  html[data-theme="system"] .sidebar-note,
+  html[data-theme="system"] .journal-tips,
+  html[data-theme="system"] .privacy-panel,
+  html[data-theme="system"] .board-column,
+  html[data-theme="system"] th,
+  html[data-theme="system"] .segmented,
+  html[data-theme="system"] .priority-normal,
+  html[data-theme="system"] .empty-orbit {
+    background: #29362b;
+  }
+  html[data-theme="system"] .progress-track {
+    background: #3c4b36;
+  }
+  html[data-theme="system"] .button.primary {
+    color: #15221a;
+  }
+}
+.project-view-toggle {
+  max-width: max-content;
+  margin: 0 0 20px;
+}
+.project-goal {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #8fa182;
+  font-size: 0.75rem;
+  margin-top: 8px;
+  line-height: 1.6;
+}
+.custom-project-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+.goal-with-milestones .goal-actions + .milestone-list {
+  padding-bottom: 5px;
+}
+.task-line-title > span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+.task-inline-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: #92a185;
+}
+.inline-mobile-priority {
+  display: none;
+}
+.focus-item .task-line {
+  padding: 15px 0;
+}
+.task-inline-status + .project-dot {
+  margin-left: 1px;
+}
+@media (max-width: 650px) {
+  .task-inline-status {
+    font-size: 0.75rem;
+  }
+  .inline-mobile-priority {
+    display: inline-flex;
+  }
+  .inline-mobile-priority .priority {
+    display: inline-flex !important;
+    font-size: 0.75rem !important;
+    padding: 1px 3px;
+  }
+  .task-line-title > span {
+    gap: 5px;
+  }
+  .focus-item .task-line {
+    padding: 16px 0;
+  }
+  .focus-item .task-line-title > span {
+    row-gap: 6px;
+  }
+}
+/* Shared task typography and high-specificity metadata rules. */
+.app-shell :is(.task-line-title strong, .task-card-title, .table-title, .milestone-title) {
+  font-size: 1.0625rem;
+  line-height: 1.6;
+}
+.app-shell .block-text {
+  font-size: 1.0625rem;
+}
+:root .app-shell :is(.weekly-panel, .today-panel, .board-column, .table-wrap, .archive-list, .journal-paper) :is(.task-inline-status, .project-dot, .task-line-title > span, .waiting-note) {
+  color: var(--muted);
+}
+:root .app-shell :is(.weekly-panel, .today-panel, .board-column, .table-wrap, .archive-list, .journal-paper) .status-select {
+  color: #496d55;
+  background: #f1f5ee;
+}
+/* Preserve panel text contrast under inherited theme values. */
+:root .app-shell :is(.panel, .project-card, .metric, .goal-card, .achievement, .status-summary, .period-nav, .task-card, .table-wrap, .archive-list, .journal-paper) :is(h2, h3, .task-line-title strong, .task-card-title, .table-title, .milestone-title) {
+  color: var(--text);
+}
+:root .app-shell :is(.project-card > p, .project-card-counts, .project-card-counts strong, .next-milestone, .project-goal, .metric > span, .metric > small, .panel-title p, .panel-tag, .focus-number, .task-inline-status, .project-dot, .task-line-title > span, .waiting-note, .status-summary span, .goal-card p, .privacy-panel p, .journal-tips p, .journal-tips dt, .journal-tips dd, .achievement small, .achievement-type) {
+  color: #596168;
+}

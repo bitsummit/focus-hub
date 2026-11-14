@@ -1,0 +1,335 @@
+/* Canonical interface rules. Baseline layouts and the component sheets load first. */
+:root { color: var(--ux-text); background: var(--ux-bg); }
+:root .app-shell { background: var(--bg); }
+:root .app-shell :is(.panel, .project-card, .metric, .goal-card, .achievement,
+  .status-summary, .period-nav, .board-column, .task-card, .table-wrap,
+  .archive-list, .journal-paper, .task-dialog, .mobile-more) {
+  background: var(--surface);
+  border-color: var(--line);
+}
+:root .sidebar { background: var(--ux-surface); }
+:root .app-shell :is(th, .segmented, .journal-tips, .privacy-panel) {
+  background: var(--ux-soft);
+  color: var(--ux-muted);
+}
+:root .app-shell :is(.project-card > p, .project-card-counts,
+  .project-card-counts strong, .next-milestone, .project-goal, .metric > span,
+  .metric > small, .panel-title p, .panel-tag, .focus-number,
+  .task-line-title > span, .waiting-note, .status-summary span, .goal-card p,
+  .privacy-panel p, .journal-tips p, .journal-tips dt, .journal-tips dd,
+  .achievement small, .achievement-type, .page-heading p, .breadcrumb,
+  .breadcrumb strong, .nav-link, .workspace-label, .profile span,
+  .event-history small, .event-history time, .chart-legend, .bar-group small,
+  .chart-data, .distribution-row, .distribution-row strong, .journal-prompt p,
+  .journal-prompt span, .block-bullet .block-text, .journal-compose-tools > span,
+  .journal-paper-header > span:last-child, .mobile-more button) {
+  color: var(--ux-muted);
+}
+:root .app-shell .nav-link.active { color: var(--ux-accent); }
+:root .app-shell .mobile-nav button { color: var(--ux-muted); }
+:root .app-shell .mobile-nav .active { color: var(--ux-accent); }
+:root .app-shell :is(.panel-tag, .period-nav small, .metric > small,
+  .project-dot, .task-inline-status, .waiting-note, .event-history time,
+  .chart-legend, .chart-data, .bar-group small) { font-size: .875rem; }
+:root .app-shell :is(.panel-tag, .period-nav small, .eyebrow, .workspace-label) {
+  text-transform: none;
+  letter-spacing: .025em;
+}
+:root .app-shell :is(.task-line-title strong, .task-card-title, .table-title) {
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+:root .app-shell :is(.project-card h3, .goal-card h3, .achievement strong,
+  .distribution-row > span, .panel-title h2) { overflow-wrap: anywhere; }
+:root .app-shell :is(.panel-title > div:not(.panel-icon), .section-heading > div,
+  .project-goal, .project-card-counts, .project-card, .achievement > div) { min-width: 0; }
+:root .app-shell .panel { padding: 20px; }
+:root .app-shell .panel-title {
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+  gap: 10px;
+}
+:root .app-shell .panel-title h2 { font-size: 1.125rem; line-height: 1.4; }
+:root .app-shell .panel-title p { line-height: 1.5; }
+:root .app-shell .panel-title .panel-tag { margin-left: auto; }
+:root .app-shell .panel-icon { width: 32px; height: 32px; }
+:root .app-shell .section-heading {
+  padding-bottom: 10px;
+  margin-top: 24px;
+  border-bottom: 1px solid var(--line);
+  gap: 12px;
+}
+:root .app-shell .page-heading { margin-bottom: 22px; }
+:root .app-shell .page-heading h1 { font-size: clamp(1.65rem, 2.2vw, 2rem); }
+:root .app-shell .page-heading .eyebrow { margin-bottom: 6px; }
+:root .app-shell .focus-list { min-height: 0; }
+:root .app-shell .focus-empty { padding: 16px 0; }
+:root .app-shell .empty-state { padding: 20px 12px; }
+:root .app-shell .empty-state > svg { width: 26px; height: 26px; margin-bottom: 10px; }
+:root .app-shell .weekly-panel::before { display: none; }
+:root .app-shell .task-line, :root .app-shell .focus-item .task-line { padding: 11px 0; }
+:root .app-shell .task-card { padding: 11px; }
+:root .app-shell .task-card-title { margin-bottom: 7px; }
+:root .app-shell .card-meta { margin-top: 8px; }
+:root .app-shell .board { overflow-x: auto; overflow-y: visible; min-height: 0; }
+:root .app-shell .board-column { min-height: 140px; }
+:root .app-shell :is(.button, .text-button, .icon-button, .check-task,
+  .segmented button, .filter-chip, .reorder button) { min-height: 36px; }
+:root .app-shell :is(.icon-button, .check-task, .reorder button) {
+  min-width: 36px;
+  justify-content: center;
+}
+:root .app-shell .check-task { color: var(--ux-muted); }
+:root .app-shell .is-completed .check-task { color: var(--status-completed-fg); }
+:root .app-shell :is(button, a, input, select, textarea, summary):focus-visible {
+  outline: 2px solid var(--ux-focus);
+  outline-offset: 3px;
+}
+:root .app-shell :is(input, select, textarea) { border-color: var(--line); }
+:root .app-shell :is(input, textarea)::placeholder { color: var(--ux-muted); opacity: 1; }
+:root .app-shell :is(.task-dialog label, .entity-form label, .settings-grid label) {
+  color: var(--ux-muted);
+  line-height: 1.5;
+}
+:root .app-shell .quick-capture {
+  border: 1.5px solid #687a72;
+  background: var(--ux-surface);
+  color: var(--ux-muted);
+  min-height: 44px;
+}
+:root .app-shell .quick-capture:focus-within {
+  border-color: var(--ux-focus);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ux-focus) 20%, transparent);
+}
+:root .app-shell .quick-capture input { font-size: 1rem; outline: 0; box-shadow: none; }
+:root .app-shell .action-feedback {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  max-width: min(440px, calc(100vw - 32px));
+  z-index: 110;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--ux-surface);
+  color: var(--ux-text);
+  border: 1px solid var(--ux-line);
+  border-radius: 9px;
+  box-shadow: 0 3px 16px #0002;
+  font-size: .9375rem;
+}
+:root .app-shell .action-feedback button { color: var(--ux-accent); text-decoration: underline; }
+:root .app-shell .quick-filters {
+  display: flex;
+  gap: 7px;
+  overflow-x: auto;
+  max-width: 100%;
+  padding: 4px 2px 10px;
+  scrollbar-width: thin;
+  margin-bottom: 6px;
+}
+:root .app-shell .filter-chip {
+  flex-shrink: 0;
+  padding: 7px 12px;
+  border: 1px solid var(--ux-line);
+  border-radius: 20px;
+  font-size: .875rem;
+  color: var(--ux-muted);
+  background: var(--ux-surface);
+}
+:root .app-shell .filter-chip:is(.active, [aria-pressed="true"]) {
+  color: var(--ux-accent);
+  background: var(--ux-accent-soft);
+  border-color: var(--ux-accent);
+  font-weight: 600;
+}
+:root .app-shell .advanced-filters { margin-bottom: 16px; font-size: .875rem; }
+:root .app-shell .advanced-filters summary {
+  width: fit-content;
+  cursor: pointer;
+  color: var(--ux-muted);
+  padding: 8px 0;
+}
+:root .app-shell .advanced-filters[open] summary { margin-bottom: 6px; }
+:root .app-shell .journal-paper { min-height: 360px; padding: 26px; }
+:root .app-shell .block-text { line-height: 1.7; }
+:root .app-shell .block-heading .block-text { font-size: 1.25rem; }
+:root .app-shell .block-delete { color: var(--ux-muted); }
+:root .app-shell .journal-compose textarea { border-color: var(--ux-line); }
+:root .app-shell .chart-legend { flex-wrap: wrap; row-gap: 8px; }
+:root .app-shell .bar.completed,
+:root .app-shell .chart-legend .dot.teal { background: var(--status-completed-indicator); }
+:root .app-shell .bar.created,
+:root .app-shell .chart-legend .dot.slate { background: var(--status-in_progress-indicator); }
+:root .app-shell .metric { border-top: 3px solid var(--ux-line); padding: 17px; }
+:root .app-shell .metric[data-tone="completed"],
+:root .app-shell .metric[data-tone="positive"] { border-top-color: var(--status-completed-indicator); }
+:root .app-shell .metric[data-tone="created"] { border-top-color: var(--status-in_progress-indicator); }
+:root .app-shell .metric[data-tone="negative"] { border-top-color: var(--status-waiting_external-indicator); }
+:root .app-shell .metric[data-tone="completed"] > strong,
+:root .app-shell .metric[data-tone="positive"] > strong { color: var(--status-completed-fg); }
+:root .app-shell .metric[data-tone="created"] > strong { color: var(--status-in_progress-fg); }
+:root .app-shell .metric[data-tone="negative"] > strong { color: var(--status-waiting_external-fg); }
+:root .app-shell .metric[data-tone="neutral"] > strong { color: var(--ux-text); }
+:root .app-shell .status-pending {
+  --status-fg: var(--status-pending-fg);
+  --status-bg: var(--status-pending-bg);
+  --status-border: var(--status-pending-border);
+  --status-indicator: var(--status-pending-indicator);
+}
+:root .app-shell .state-dot.pending { background: var(--status-pending-indicator); }
+:root .app-shell .status-in_progress {
+  --status-fg: var(--status-in_progress-fg);
+  --status-bg: var(--status-in_progress-bg);
+  --status-border: var(--status-in_progress-border);
+  --status-indicator: var(--status-in_progress-indicator);
+}
+:root .app-shell .state-dot.in_progress { background: var(--status-in_progress-indicator); }
+:root .app-shell .status-pending_review {
+  --status-fg: var(--status-pending_review-fg);
+  --status-bg: var(--status-pending_review-bg);
+  --status-border: var(--status-pending_review-border);
+  --status-indicator: var(--status-pending_review-indicator);
+}
+:root .app-shell .state-dot.pending_review { background: var(--status-pending_review-indicator); }
+:root .app-shell .status-waiting_external {
+  --status-fg: var(--status-waiting_external-fg);
+  --status-bg: var(--status-waiting_external-bg);
+  --status-border: var(--status-waiting_external-border);
+  --status-indicator: var(--status-waiting_external-indicator);
+}
+:root .app-shell .state-dot.waiting_external { background: var(--status-waiting_external-indicator); }
+:root .app-shell .status-blocked {
+  --status-fg: var(--status-blocked-fg);
+  --status-bg: var(--status-blocked-bg);
+  --status-border: var(--status-blocked-border);
+  --status-indicator: var(--status-blocked-indicator);
+}
+:root .app-shell .state-dot.blocked { background: var(--status-blocked-indicator); }
+:root .app-shell .status-completed {
+  --status-fg: var(--status-completed-fg);
+  --status-bg: var(--status-completed-bg);
+  --status-border: var(--status-completed-border);
+  --status-indicator: var(--status-completed-indicator);
+}
+:root .app-shell .state-dot.completed { background: var(--status-completed-indicator); }
+:root .app-shell .status-cancelled {
+  --status-fg: var(--status-cancelled-fg);
+  --status-bg: var(--status-cancelled-bg);
+  --status-border: var(--status-cancelled-border);
+  --status-indicator: var(--status-cancelled-indicator);
+}
+:root .app-shell .state-dot.cancelled { background: var(--status-cancelled-indicator); }
+:root .app-shell :is(.status-select, .task-inline-status, .status-label)[class*="status-"] {
+  color: var(--status-fg, var(--ux-muted));
+  background: var(--status-bg, var(--ux-soft));
+  border: 1px solid var(--status-border, var(--ux-line));
+  border-radius: 5px;
+}
+:root .app-shell .task-inline-status[class*="status-"] { padding: 2px 5px; }
+:root .app-shell .status-select { font-size: .875rem; }
+:root .app-shell .column-heading { border-bottom: 2px solid var(--status-border, var(--ux-line)); margin-bottom: 10px; padding-bottom: 10px; }
+:root .app-shell .column-heading > span:last-child {
+  color: var(--status-fg, var(--ux-muted));
+  background: var(--status-bg, var(--ux-soft));
+}
+:root .app-shell :is(.weekly-panel, .today-panel, .board-column, .table-wrap,
+  .archive-list, .journal-paper) .priority-normal,
+:root .app-shell .priority-normal { color: var(--status-pending-fg); background: var(--status-pending-bg); }
+:root .app-shell :is(.weekly-panel, .today-panel, .board-column, .table-wrap,
+  .archive-list, .journal-paper) .priority-low,
+:root .app-shell .priority-low { color: var(--status-cancelled-fg); background: var(--status-cancelled-bg); }
+:root .app-shell :is(.weekly-panel, .today-panel, .board-column, .table-wrap,
+  .archive-list, .journal-paper) .priority-high,
+:root .app-shell .priority-high { color: var(--status-waiting_external-fg); background: var(--status-waiting_external-bg); }
+:root .app-shell :is(.weekly-panel, .today-panel, .board-column, .table-wrap,
+  .archive-list, .journal-paper) .priority-critical,
+:root .app-shell .priority-critical { color: var(--status-blocked-fg); background: var(--status-blocked-bg); }
+:root .app-shell .error-text { color: var(--status-blocked-fg); }
+:root .app-shell .error-banner { color: var(--status-blocked-fg); background: var(--status-blocked-bg); border-color: var(--status-blocked-border); }
+@media (min-width: 651px) and (max-width: 1100px) {
+  :root .app-shell .sidebar { width: 76px; padding: 24px 10px 0; }
+  :root .app-shell .main-shell { margin-left: 76px; }
+  :root .app-shell .sidebar > .brand { display: flex; justify-content: center; }
+  :root .app-shell .sidebar > .brand .brand-logo { gap: 0; }
+  :root .app-shell .sidebar > .brand .brand-word { display: none; }
+  :root .app-shell .workspace-label,
+  :root .app-shell .sidebar-note,
+  :root .app-shell .nav-count,
+  :root .app-shell .profile > div:nth-child(2) { display: none; }
+  :root .app-shell .sidebar nav { margin-top: 28px; gap: 8px; }
+  :root .app-shell .nav-link { font-size: 0; justify-content: center; padding: 0; gap: 0; height: 46px; }
+  :root .app-shell .nav-link svg { width: 23px; height: 23px; flex-shrink: 0; }
+  :root .app-shell .profile { margin: auto -10px 0; padding: 16px 4px; flex-wrap: wrap; justify-content: center; gap: 7px; }
+  :root .app-shell .topbar { padding: 0 22px; gap: 15px; }
+  :root .app-shell .breadcrumb { max-width: 32%; overflow: hidden; text-overflow: ellipsis; }
+  :root .app-shell main { padding: 26px 22px; }
+  :root .app-shell .quick-capture { width: min(470px, 65%); }
+}
+@media (max-width: 767px) {
+  :root .app-shell .dashboard-grid { grid-template-columns: minmax(0, 1fr); }
+  :root .app-shell .journal-layout { grid-template-columns: minmax(0, 1fr); }
+  :root .app-shell .journal-aside { display: none; }
+  :root .app-shell .section-heading { flex-wrap: wrap; align-items: center; }
+  :root .app-shell .section-heading h2 { font-size: 1.2rem; }
+  :root .app-shell .project-grid { grid-template-columns: minmax(0, 1fr); }
+  :root .app-shell .project-card-counts { flex-wrap: wrap; }
+  :root .app-shell .panel { padding: 16px; }
+  :root .app-shell .panel-tag { font-size: .8125rem; padding: 4px 6px; }
+  :root .app-shell .journal-paper { padding: 18px; }
+}
+@media (max-width: 650px) {
+  :root .app-shell main { padding: 20px 14px; }
+  :root .app-shell .topbar { height: auto; min-height: 58px; padding: 10px 14px; }
+  :root .app-shell .page-heading > div:first-child { min-width: 0; }
+  :root .app-shell .page-heading { gap: 12px; }
+  :root .app-shell .panel-title { gap: 8px; }
+  :root .app-shell .panel-title h2 { font-size: 1.0625rem; }
+  :root .app-shell .panel-title .panel-icon { width: 28px; height: 28px; }
+  :root .app-shell .metric { padding: 14px; }
+  :root .app-shell .metric > strong { font-size: 1.875rem; margin-top: 10px; }
+  :root .app-shell .metric > small { font-size: .8125rem; line-height: 1.45; }
+  :root .app-shell .action-feedback { bottom: calc(86px + env(safe-area-inset-bottom)); right: 14px; }
+  :root .app-shell .saving { bottom: calc(86px + env(safe-area-inset-bottom)); }
+  :root .app-shell .mobile-nav button { min-height: 46px; padding: 5px 3px; font-size: .75rem; }
+  :root .app-shell .task-dialog { padding: 20px 16px; }
+  :root .app-shell .analytics-period { flex-wrap: wrap; }
+  :root .app-shell .analytics-period > span { width: 100%; text-align: center; font-size: .8125rem; }
+  :root .app-shell .chart-data { overflow-x: auto; }
+  :root .app-shell .bar-chart { gap: 3px; }
+  :root .app-shell .bar-group small { font-size: .75rem; }
+  :root .app-shell .chart-panel { min-height: 0; }
+  :root .app-shell .reorder { gap: 0; }
+}
+@media (pointer: coarse) {
+  :root .app-shell :is(.button, .text-button, .icon-button, .check-task, .reorder button,
+    .filter-chip, .segmented button, .status-select, .block-delete) { min-height: 44px; }
+  :root .app-shell :is(.icon-button, .check-task, .reorder button, .block-delete) { min-width: 44px; }
+  :root .app-shell .block-delete { opacity: 1; }
+  :root .app-shell .reorder { position: static; opacity: 1; background: transparent; flex-direction: column; }
+  :root .app-shell :is(input, select, textarea) { min-height: 44px; font-size: 1rem; }
+}
+/* Legacy supporting-copy selectors include a span type selector in :is().
+   Match that specificity so canonical status foregrounds win in every view. */
+html:root .app-shell .task-inline-status[class*="status-"] {
+  color: var(--status-fg, var(--ux-muted));
+}
+/* Supporting copy and actions must not retain the legacy pale sage foreground. */
+:root .app-shell :is(.analytics-notes, .analytics-notes strong, .analytics-period,
+  .goal-bottom, .goal-bottom strong, .main-footer, .private-badge,
+  .focus-empty p, .focus-empty small, .completion-note) { color: var(--ux-muted); }
+:root .app-shell :is(.text-button, .add-subtle, .goal-label, .eyebrow) {
+  color: var(--ux-accent);
+}
+:root .app-shell .goal-label { text-transform: none; letter-spacing: .025em; }
+/* Keep translated settings help readable in both themes. */
+:root .app-shell :is(.settings-copy, .settings-grid label small, .import-preview p,
+  .file-button) { color: var(--ux-muted); }
+:root .app-shell .page-title-line { display: flex; align-items: center; gap: 8px; min-width: 0; }
+:root .app-shell .task-count { margin-left: 0; min-width: 26px; height: 26px; padding: 0 8px; flex: 0 0 auto; color: var(--ux-accent); background: var(--ux-accent-soft); font-weight: 600; line-height: 1; }
+/* Compact filters stay on one line; only this row scrolls when space is tight. */
+:root .app-shell .task-visible-filters { flex-wrap: nowrap; gap: 8px; margin-bottom: 16px; max-width: 100%; overflow-x: auto; overscroll-behavior-x: contain; padding: 3px 2px 5px; scrollbar-width: thin; }
+:root .app-shell .task-visible-filters > select { flex: 0 0 112px; width: 112px; min-width: 0; max-width: 112px; min-height: 44px; text-overflow: ellipsis; }
+:root .app-shell .task-visible-filters > button { flex: 0 0 auto; min-height: 44px; white-space: nowrap; }

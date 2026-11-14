@@ -1,0 +1,7 @@
+/* Explicit cascade boundary: load after baseline, brand and standalone components.
+ * Keep token/theme semantics separate from layout; do not reorder these imports. */
+@import "./tokens.css";
+@import "./interface.css";
+@import "./journal-feed.css";
+@import "./capture.css";
+@import "./login.css";

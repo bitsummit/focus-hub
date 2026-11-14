@@ -1,7 +1,13 @@
-import {resolve} from 'node:path';
+import {configureRuntime} from './runtime.ts';
 import {openDatabase} from './db.ts';
 import {createApp} from './app.ts';
-const db=openDatabase(resolve(process.env.FOCUS_DB||'.data/focus-hub.sqlite'));
+import {createServer} from 'node:http';
+configureRuntime();
+const db=await openDatabase().catch(()=>{console.error('No se pudo abrir PostgreSQL. Comprueba DATABASE_URL y las migraciones; no se muestran credenciales.');process.exit(1);});
 const port=Number(process.env.PORT||3000);
-const server=createApp(db).listen(port,'127.0.0.1',()=>{console.log(`Focus Hub: servidor privado en puerto ${port}.`);if(!db.prepare('SELECT id FROM users LIMIT 1').get())console.log('Crea el propietario con npm run owner antes de iniciar sesión.');});
-for(const signal of ['SIGINT','SIGTERM'] as const)process.on(signal,()=>server.close(()=>{db.close();process.exit(0);}));
+const server=createServer();
+const development=process.env.FOCUS_DEV==='true'?await (await import('./development.ts')).developmentFrontend(server):null;
+server.on('request',createApp(db,development?{frontend:development.frontend,developmentSocketOrigin:development.socketOrigin}:{}));
+const hasOwner=await db.one('SELECT id FROM users LIMIT 1');
+server.listen(port,'127.0.0.1',()=>{console.log(`Focus Hub: servidor privado en puerto ${port}${development?' · Vite con recarga automática':''}.`);if(!hasOwner)console.log('Crea el propietario con npm run owner antes de iniciar sesión.');});
+for(const signal of ['SIGINT','SIGTERM'] as const)process.on(signal,()=>{void (async()=>{await development?.close();server.close(()=>{void db.close().then(()=>process.exit(0));});})();});

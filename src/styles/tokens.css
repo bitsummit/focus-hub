@@ -1,0 +1,137 @@
+/* Canonical neutral interface and semantic status tokens; brand values live in ../brand.css. */
+/* v1.1 shared visual contract. Component layout lives with its component. */
+:root {
+  --ux-bg: #f5f6f6;
+  --ux-surface: #ffffff;
+  --ux-soft: #f6f7f7;
+  --ux-text: #252a2e;
+  --ux-muted: #596168;
+  --ux-line: #dfe3e6;
+  --ux-accent: #356f61;
+  --ux-accent-soft: #edf4f0;
+  --ux-focus: #356f61;
+  --status-pending-fg: #505964;
+  --status-pending-bg: #f1f3f5;
+  --status-pending-border: #c5cbd1;
+  --status-pending-indicator: #757e88;
+  --status-in_progress-fg: #245da0;
+  --status-in_progress-bg: #edf4ff;
+  --status-in_progress-border: #b6cce9;
+  --status-in_progress-indicator: #3978bc;
+  --status-pending_review-fg: #7244a1;
+  --status-pending_review-bg: #f5effb;
+  --status-pending_review-border: #d7c3e9;
+  --status-pending_review-indicator: #8b5fb6;
+  --status-waiting_external-fg: #805919;
+  --status-waiting_external-bg: #fff5e5;
+  --status-waiting_external-border: #e7ce9c;
+  --status-waiting_external-indicator: #af7a25;
+  --status-blocked-fg: #a1403c;
+  --status-blocked-bg: #fff0ee;
+  --status-blocked-border: #e9bdb7;
+  --status-blocked-indicator: #c25f56;
+  --status-completed-fg: #286d4c;
+  --status-completed-bg: #edf7f0;
+  --status-completed-border: #b5d7c1;
+  --status-completed-indicator: #438960;
+  --status-cancelled-fg: #60676d;
+  --status-cancelled-bg: #f0f1f2;
+  --status-cancelled-border: #cbd0d4;
+  --status-cancelled-indicator: #858c92;
+}
+:root[data-theme="dark"] {
+  --ux-bg: #181c20;
+  --ux-surface: #22272c;
+  --ux-soft: #2a3036;
+  --ux-text: #edf0f2;
+  --ux-muted: #bbc3cb;
+  --ux-line: #48515a;
+  --ux-accent: #a1cebd;
+  --ux-accent-soft: #2c4039;
+  --ux-focus: #a1cebd;
+  color-scheme: dark;
+  --status-pending-fg: #d0d5da;
+  --status-pending-bg: #2c3138;
+  --status-pending-border: #515b67;
+  --status-pending-indicator: #a2acb7;
+  --status-in_progress-fg: #9fc9ff;
+  --status-in_progress-bg: #20334c;
+  --status-in_progress-border: #3d5b7d;
+  --status-in_progress-indicator: #75a9ea;
+  --status-pending_review-fg: #d6b5f5;
+  --status-pending_review-bg: #352843;
+  --status-pending_review-border: #66517b;
+  --status-pending_review-indicator: #ba8de1;
+  --status-waiting_external-fg: #f0ca87;
+  --status-waiting_external-bg: #3d3220;
+  --status-waiting_external-border: #78603b;
+  --status-waiting_external-indicator: #d7aa60;
+  --status-blocked-fg: #ffb7af;
+  --status-blocked-bg: #432a2a;
+  --status-blocked-border: #80504c;
+  --status-blocked-indicator: #e79185;
+  --status-completed-fg: #a4dbb9;
+  --status-completed-bg: #223b2d;
+  --status-completed-border: #426a50;
+  --status-completed-indicator: #7cb990;
+  --status-cancelled-fg: #bdc4ca;
+  --status-cancelled-bg: #2d3135;
+  --status-cancelled-border: #515a62;
+  --status-cancelled-indicator: #929ca5;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="system"] {
+  --ux-bg: #181c20;
+  --ux-surface: #22272c;
+  --ux-soft: #2a3036;
+  --ux-text: #edf0f2;
+  --ux-muted: #bbc3cb;
+  --ux-line: #48515a;
+  --ux-accent: #a1cebd;
+  --ux-accent-soft: #2c4039;
+  --ux-focus: #a1cebd;
+  color-scheme: dark;
+  --status-pending-fg: #d0d5da;
+  --status-pending-bg: #2c3138;
+  --status-pending-border: #515b67;
+  --status-pending-indicator: #a2acb7;
+  --status-in_progress-fg: #9fc9ff;
+  --status-in_progress-bg: #20334c;
+  --status-in_progress-border: #3d5b7d;
+  --status-in_progress-indicator: #75a9ea;
+  --status-pending_review-fg: #d6b5f5;
+  --status-pending_review-bg: #352843;
+  --status-pending_review-border: #66517b;
+  --status-pending_review-indicator: #ba8de1;
+  --status-waiting_external-fg: #f0ca87;
+  --status-waiting_external-bg: #3d3220;
+  --status-waiting_external-border: #78603b;
+  --status-waiting_external-indicator: #d7aa60;
+  --status-blocked-fg: #ffb7af;
+  --status-blocked-bg: #432a2a;
+  --status-blocked-border: #80504c;
+  --status-blocked-indicator: #e79185;
+  --status-completed-fg: #a4dbb9;
+  --status-completed-bg: #223b2d;
+  --status-completed-border: #426a50;
+  --status-completed-indicator: #7cb990;
+  --status-cancelled-fg: #bdc4ca;
+  --status-cancelled-bg: #2d3135;
+  --status-cancelled-border: #515a62;
+  --status-cancelled-indicator: #929ca5;
+  }
+}
+:root, :root .app-shell,
+:root .app-shell :is(.panel, .project-card, .metric, .goal-card, .achievement,
+  .status-summary, .period-nav, .board-column, .task-card, .table-wrap,
+  .archive-list, .journal-paper, .task-dialog, .mobile-more) {
+  --bg: var(--ux-bg);
+  --surface: var(--ux-surface);
+  --surface-soft: var(--ux-soft);
+  --text: var(--ux-text);
+  --muted: var(--ux-muted);
+  --line: var(--ux-line);
+  --accent: var(--ux-accent);
+  --accent-soft: var(--ux-accent-soft);
+  color: var(--text);
+}

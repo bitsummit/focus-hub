@@ -1,37 +1,54 @@
 {
   "name": "focus-hub",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
   "engines": {
     "node": ">=24.0.0"
   },
   "scripts": {
-    "dev": "tsx server/index.ts",
+    "dev": "tsx server/dev.ts",
     "build": "tsc --noEmit && vite build",
     "start": "tsx server/index.ts",
     "owner": "tsx server/owner.ts",
-    "test": "tsx --test tests/*.test.ts",
-    "test:e2e": "playwright test",
+    "password": "tsx server/password.ts",
+    "test": "node scripts/test-postgres.mjs unit",
+    "test:e2e": "node scripts/test-postgres.mjs e2e",
     "demo": "tsx server/demo.ts",
-    "smoke:demo": "tsx scripts/smoke-demo.ts"
+    "smoke:demo": "tsx scripts/smoke-demo.ts",
+    "backup": "tsx scripts/postgres-database.ts backup",
+    "backup:verify": "tsx scripts/postgres-database.ts verify",
+    "restore": "tsx scripts/postgres-database.ts restore",
+    "screenshots:v11": "node scripts/test-postgres.mjs screenshots",
+    "db:migrate": "tsx scripts/migrate-postgres.ts",
+    "db:import:sqlite": "tsx scripts/migrate-sqlite.ts",
+    "pg:setup": "node scripts/dev-postgres.mjs setup",
+    "backup:sqlite": "tsx scripts/database.ts backup",
+    "backup:sqlite:verify": "tsx scripts/database.ts verify",
+    "restore:sqlite": "tsx scripts/database.ts restore",
+    "screenshots:brand": "node scripts/test-postgres.mjs brand",
+    "test:visual": "node scripts/test-postgres.mjs visual",
+    "audit:semgrep": "node scripts/security-audit.mjs",
+    "backup:rehearse": "tsx scripts/rehearse-recovery.ts",
+    "local:adopt": "tsx scripts/adopt-local-postgres.ts"
   },
   "dependencies": {
     "@js-temporal/polyfill": "0.5.1",
     "express": "5.1.0",
-    "react": "19.1.1",
-    "react-dom": "19.1.1",
     "lucide-react": "0.468.0",
-    "zod": "4.1.12"
+    "pg": "8.23.1",
+    "react": "19.1.1",
+    "react-dom": "19.1.1"
   },
   "devDependencies": {
     "@playwright/test": "1.56.1",
     "@types/express": "5.0.3",
     "@types/node": "24.7.2",
+    "@types/pg": "8.20.0",
     "@types/react": "19.1.16",
     "@types/react-dom": "19.1.9",
     "tsx": "4.20.6",
     "typescript": "5.9.3",
-    "vite": "7.1.9"
+    "vite": "7.3.7"
   }
 }

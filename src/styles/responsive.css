@@ -1,0 +1,1187 @@
+/* Viewport adaptations for the baseline layouts, ordered broad to narrow. */
+@media (min-width: 1600px) {
+  main {
+    padding-top: 52px;
+  }
+  .sidebar {
+    width: 250px;
+    padding-left: 25px;
+    padding-right: 25px;
+  }
+  .main-shell {
+    margin-left: 250px;
+  }
+  .topbar {
+    padding-left: 50px;
+    padding-right: 50px;
+  }
+  .profile {
+    margin-left: -25px;
+    margin-right: -25px;
+    padding-left: 25px;
+    padding-right: 25px;
+  }
+  .project-card {
+    padding: 25px;
+  }
+  .page-heading {
+    margin-bottom: 38px;
+  }
+  .dashboard-grid {
+    gap: 25px;
+  }
+  .panel {
+    padding: 27px;
+  }
+  .focus-list {
+    min-height: 160px;
+  }
+  .focus-empty {
+    padding: 28px 0;
+  }
+  .task-line-title strong {
+    font-size: 1rem;
+  }
+  .panel-title h2 {
+    font-size: 1.3125rem;
+  }
+  .panel-title p {
+    font-size: 0.9375rem;
+  }
+  .goal-card h3 {
+    font-size: 1.1875rem;
+  }
+  .project-card h3 {
+    font-size: 1.1875rem;
+  }
+  .project-card > p {
+    font-size: 0.9375rem;
+  }
+  .project-card-counts {
+    font-size: 0.8125rem;
+  }
+  .metric > span {
+    font-size: 0.9375rem;
+  }
+  .metric > strong {
+    font-size: 33px;
+  }
+  .metric > small {
+    font-size: 0.8125rem;
+  }
+}
+@media (max-width: 1150px) {
+  .sidebar {
+    width: 205px;
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+  .main-shell {
+    margin-left: 205px;
+  }
+  .profile {
+    margin-left: -14px;
+    margin-right: -14px;
+    padding: 17px 14px;
+  }
+  .topbar {
+    padding: 0 25px;
+    gap: 16px;
+  }
+  main {
+    padding: 32px 26px 20px;
+  }
+  .main-footer {
+    padding: 20px 26px;
+  }
+  .quick-capture {
+    width: 50%;
+  }
+  .project-grid {
+    gap: 12px;
+  }
+  .project-card {
+    padding: 17px;
+  }
+  .dashboard-grid {
+    gap: 16px;
+  }
+  .panel {
+    padding: 20px;
+  }
+  .focus-number {
+    display: none;
+  }
+  .task-line {
+    gap: 7px;
+  }
+  .task-line .priority {
+    font-size: 0.75rem;
+  }
+  .focus-item {
+    gap: 0;
+  }
+  .panel-title {
+    gap: 9px;
+  }
+  .panel-title h2 {
+    font-size: 1.125rem;
+  }
+  .panel-title p {
+    font-size: 0.8125rem;
+  }
+  .panel-icon {
+    width: 30px;
+    height: 30px;
+  }
+  .panel-tag {
+    padding: 4px;
+    font-size: 0.75rem;
+  }
+  .journal-layout {
+    grid-template-columns: minmax(0, 1fr) 210px;
+    gap: 18px;
+  }
+  .journal-paper {
+    padding: 25px 23px;
+  }
+  .journal-date .period-nav > span {
+    min-width: 110px;
+    font-size: 0.8125rem;
+  }
+  .journal-compose-tools > span {
+    display: none;
+  }
+  .page-heading {
+    gap: 16px;
+  }
+  .page-heading h1 {
+    font-size: 29px;
+  }
+  .project-card-counts {
+    gap: 7px;
+  }
+  .goal-card {
+    padding: 20px;
+  }
+  .settings-grid {
+    gap: 18px;
+  }
+  .bar-chart {
+    gap: 4px;
+  }
+  .login-story {
+    padding: 40px;
+  }
+  .login-story h1 {
+    font-size: 58px;
+  }
+}
+@media (max-width: 900px) {
+  .sidebar {
+    width: 185px;
+  }
+  .main-shell {
+    margin-left: 185px;
+  }
+  .nav-link {
+    font-size: 1rem;
+    gap: 10px;
+    padding-left: 10px;
+  }
+  .workspace-label {
+    font-size: 0.75rem;
+    margin-left: 10px;
+  }
+  .topbar {
+    height: 70px;
+    padding: 0 20px;
+    gap: 13px;
+  }
+  .breadcrumb {
+    font-size: 0.8125rem;
+    gap: 5px;
+  }
+  .quick-capture {
+    width: 57%;
+    gap: 6px;
+  }
+  .quick-capture input {
+    font-size: 0.875rem;
+  }
+  .quick-capture kbd,
+  .private-badge {
+    display: none;
+  }
+  main {
+    padding: 28px 22px 20px;
+  }
+  .page-heading {
+    align-items: flex-start;
+  }
+  .page-heading h1 {
+    font-size: 28px;
+  }
+  .page-heading p {
+    font-size: 0.9375rem;
+  }
+  .period-nav > span {
+    min-width: 105px;
+    font-size: 0.8125rem;
+    padding: 0 4px;
+  }
+  .period-nav .icon-button {
+    padding: 4px;
+  }
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    gap: 17px;
+  }
+  .focus-list {
+    min-height: 0;
+  }
+  .focus-empty {
+    padding: 20px 0;
+  }
+  .goal-grid {
+    gap: 13px;
+  }
+  .goal-card h3 {
+    font-size: 1rem;
+  }
+  .project-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .metrics-grid {
+    gap: 10px;
+  }
+  .metric {
+    padding: 15px;
+  }
+  .metric > span {
+    font-size: 0.8125rem;
+  }
+  .metric > strong {
+    font-size: 26px;
+  }
+  .metric > small {
+    font-size: 0.75rem;
+  }
+  .section-heading h2 {
+    font-size: 1.25rem;
+  }
+  .journal-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .journal-aside {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .journal-tips dl {
+    margin-top: 13px;
+  }
+  .journal-date {
+    gap: 5px;
+  }
+  .journal-date > input {
+    width: 28px;
+  }
+  .journal-paper {
+    padding: 26px;
+  }
+  .journal-date .period-nav > span {
+    min-width: 105px;
+  }
+  .settings-grid {
+    grid-template-columns: 1fr;
+  }
+  .status-summary {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 20px 0;
+  }
+  .status-summary > div:nth-child(4) {
+    border: 0;
+  }
+  .status-summary span {
+    font-size: 0.75rem;
+  }
+  .status-summary strong {
+    font-size: 21px;
+  }
+  .project-detail-meta {
+    font-size: 0.875rem;
+  }
+  .analytics-period > span {
+    display: none;
+  }
+  .analytics-notes {
+    gap: 15px;
+  }
+  .analytics-notes span:last-child {
+    margin-left: 0;
+  }
+  .achievement-type {
+    font-size: 0.75rem;
+  }
+  .login-story h1 {
+    font-size: 48px;
+  }
+  .login-story {
+    padding: 35px;
+  }
+  .login-form {
+    padding: 40px 30px;
+  }
+  .login-form h2 {
+    font-size: 26px;
+  }
+  .login-story p {
+    font-size: 0.9375rem;
+  }
+  .login-story .eyebrow {
+    font-size: 0.75rem;
+  }
+  .archive-tools {
+    gap: 10px;
+  }
+  .archive-tools .segmented {
+    width: 100%;
+    margin-bottom: 7px;
+    max-width: max-content;
+  }
+  .archive-tools > label {
+    font-size: 0.8125rem;
+  }
+  .button {
+    font-size: 0.875rem;
+    padding: 8px 11px;
+  }
+  .button-row {
+    gap: 6px;
+  }
+  .goal-grid .milestone-list {
+    padding: 0 12px;
+  }
+}
+@media (max-width: 650px) {
+  .sidebar {
+    display: none;
+  }
+  .main-shell {
+    margin-left: 0;
+  }
+  .topbar {
+    height: 67px;
+    padding: 12px 18px;
+    position: relative;
+  }
+  .breadcrumb {
+    display: none;
+  }
+  .quick-capture {
+    width: 100%;
+    margin: 0;
+    min-height: 39px;
+  }
+  .quick-capture input {
+    font-size: 0.9375rem;
+  }
+  .quick-capture > svg {
+    width: 16px;
+  }
+  .quick-capture .icon-button {
+    min-height: 30px;
+    min-width: 30px;
+  }
+  .main-shell {
+    padding-bottom: 75px;
+  }
+  main {
+    padding: 28px 20px 20px;
+  }
+  .page-heading {
+    gap: 16px;
+    margin-bottom: 26px;
+    flex-wrap: wrap;
+  }
+  .page-heading > div:first-child {
+    flex: 1;
+    min-width: 210px;
+  }
+  .page-heading h1 {
+    font-size: 29px;
+    letter-spacing: -1px;
+  }
+  .eyebrow {
+    font-size: 0.75rem;
+    letter-spacing: 1.3px;
+    margin-bottom: 10px;
+  }
+  .page-heading p {
+    font-size: 0.9375rem;
+    margin-top: 9px;
+  }
+  .page-heading > .period-nav {
+    margin-top: 3px;
+    min-width: 100%;
+    justify-content: space-between;
+    padding: 6px 8px;
+  }
+  .period-nav > span {
+    font-size: 0.875rem;
+    gap: 2px;
+  }
+  .period-nav small {
+    font-size: 0.75rem;
+  }
+  .dashboard-grid {
+    gap: 18px;
+    margin-bottom: 25px;
+  }
+  .panel {
+    padding: 21px;
+    border-radius: 10px;
+  }
+  .panel-title h2 {
+    font-size: 1.1875rem;
+  }
+  .panel-title p {
+    font-size: 0.875rem;
+    line-height: 1.6;
+  }
+  .panel-icon {
+    width: 33px;
+    height: 33px;
+  }
+  .panel-tag {
+    font-size: 0.75rem;
+    padding: 5px;
+  }
+  .task-line {
+    gap: 9px;
+    padding: 14px 0;
+    min-height: 52px;
+  }
+  .task-line-title strong {
+    font-size: 1rem;
+  }
+  .task-line-title > span {
+    font-size: 0.8125rem;
+  }
+  .task-line .priority {
+    font-size: 0.75rem;
+  }
+  .focus-item {
+    padding-right: 0;
+  }
+  .focus-number {
+    display: none;
+  }
+  .focus-empty {
+    padding: 24px 0 22px;
+  }
+  .focus-empty p {
+    font-size: 1rem;
+  }
+  .focus-empty small {
+    font-size: 0.875rem;
+    display: block;
+    margin-top: 5px;
+  }
+  .reorder {
+    position: static;
+    flex-direction: column;
+    opacity: 1;
+    gap: 1px;
+    background: none;
+  }
+  .reorder button {
+    min-width: 24px;
+    min-height: 24px;
+    padding: 5px;
+  }
+  .focus-item .task-line .priority {
+    display: none;
+  }
+  .add-subtle {
+    font-size: 0.9375rem;
+    min-height: 42px;
+    padding-top: 13px;
+  }
+  .focus-picker select {
+    min-height: 44px;
+  }
+  .section-heading {
+    margin: 29px 0 16px;
+    gap: 12px;
+    align-items: flex-end;
+  }
+  .section-heading h2 {
+    font-size: 1.3125rem;
+  }
+  .section-heading .eyebrow {
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+  }
+  .section-heading .text-button {
+    font-size: 0.8125rem;
+    gap: 3px;
+    white-space: nowrap;
+    min-height: 30px;
+  }
+  .goal-grid {
+    grid-template-columns: 1fr;
+    gap: 13px;
+  }
+  .goal-card {
+    padding: 22px;
+  }
+  .goal-card h3 {
+    font-size: 1.125rem;
+  }
+  .goal-label {
+    font-size: 0.75rem;
+  }
+  .goal-bottom {
+    font-size: 0.8125rem;
+  }
+  .goal-card p {
+    font-size: 0.9375rem;
+  }
+  .project-grid {
+    grid-template-columns: 1fr;
+    gap: 13px;
+  }
+  .project-card {
+    padding: 21px;
+  }
+  .project-card-top {
+    margin-bottom: 12px;
+  }
+  .project-card h3 {
+    font-size: 1.125rem;
+  }
+  .project-card > p {
+    font-size: 0.9375rem;
+    min-height: 0;
+  }
+  .project-card-counts {
+    font-size: 0.8125rem;
+    gap: 15px;
+    margin-top: 16px;
+  }
+  .next-milestone {
+    font-size: 0.8125rem;
+  }
+  .metrics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .metric {
+    padding: 19px 17px;
+  }
+  .metric > span {
+    font-size: 0.875rem;
+  }
+  .metric > strong {
+    font-size: 30px;
+    margin-top: 15px;
+  }
+  .metric > small {
+    font-size: 0.75rem;
+  }
+  .gentle-note {
+    font-size: 0.8125rem;
+    padding: 25px 0 5px;
+    gap: 7px;
+  }
+  .main-footer {
+    padding: 18px 20px;
+    font-size: 0.75rem;
+    margin-bottom: 5px;
+  }
+  .main-footer > span {
+    display: none;
+  }
+  .mobile-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    background: var(--surface);
+    border-top: 1px solid var(--line);
+    padding: 9px 8px calc(10px + env(safe-area-inset-bottom));
+    justify-content: space-around;
+    box-shadow: 0 -5px 25px #27392305;
+  }
+  .mobile-nav button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    font-size: 0.75rem;
+    color: #a2af98;
+    padding: 4px 6px;
+    min-width: 53px;
+    min-height: 42px;
+    border-radius: 7px;
+  }
+  .mobile-nav button svg {
+    stroke-width: 1.6;
+  }
+  .mobile-nav .active {
+    color: var(--accent);
+    background: var(--accent-soft);
+  }
+  .mobile-add {
+    display: grid;
+    position: fixed;
+    bottom: 90px;
+    right: 20px;
+    background: var(--accent);
+    color: white;
+    width: 47px;
+    height: 47px;
+    place-items: center;
+    border-radius: 50%;
+    box-shadow: 0 5px 15px #39796a40;
+    z-index: 40;
+  }
+  .mobile-more {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    right: 13px;
+    bottom: 79px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    padding: 8px;
+    z-index: 60;
+    min-width: 170px;
+  }
+  .mobile-more button {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    text-align: left;
+    padding: 13px 10px;
+    font-size: 1rem;
+    color: #7d936e;
+    min-height: 44px;
+  }
+  .button {
+    min-height: 41px;
+    font-size: 0.875rem;
+    padding: 9px 12px;
+  }
+  .icon-button {
+    min-width: 35px;
+    min-height: 35px;
+  }
+  .text-button {
+    min-height: 30px;
+  }
+  .section-heading .button-row {
+    flex-wrap: wrap;
+  }
+  .button-row .button {
+    font-size: 0.8125rem;
+    padding: 8px 10px;
+    gap: 4px;
+  }
+  .section-heading:has(.button-row) {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .section-heading .button-row {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  .segmented {
+    min-height: 43px;
+  }
+  .segmented button {
+    min-height: 34px;
+    font-size: 0.875rem;
+    padding: 9px 12px;
+  }
+  .filters {
+    gap: 9px;
+    margin-bottom: 20px;
+  }
+  .search-field {
+    flex-basis: 100%;
+    min-height: 43px;
+  }
+  .search-field input {
+    font-size: 1rem;
+  }
+  .filters > select {
+    flex: 1;
+    max-width: none;
+    min-width: 90px;
+    font-size: 0.8125rem;
+    min-height: 42px;
+    padding: 8px 18px 8px 8px;
+  }
+  .board {
+    margin-right: -20px;
+    width: calc(100% + 20px);
+    max-width: calc(100% + 20px);
+    padding-right: 20px;
+    gap: 13px;
+  }
+  .board-column {
+    flex-basis: 266px;
+    padding: 15px 11px;
+  }
+  .column-heading h2 {
+    font-size: 0.9375rem;
+  }
+  .column-heading {
+    padding-bottom: 16px;
+  }
+  .task-card {
+    padding: 16px 13px;
+  }
+  .task-card-title {
+    font-size: 1rem;
+    line-height: 1.7;
+    min-height: 30px;
+  }
+  .task-card .project-dot {
+    font-size: 0.8125rem;
+  }
+  .task-card .priority {
+    font-size: 0.8125rem;
+  }
+  .task-card .status-select {
+    font-size: 0.9375rem;
+    min-height: 40px;
+    padding: 8px 10px;
+  }
+  .card-meta small {
+    font-size: 0.8125rem;
+  }
+  .column-empty {
+    font-size: 0.875rem;
+    padding: 30px 5px;
+  }
+  td,
+  th {
+    padding: 12px 10px;
+  }
+  td select,
+  td input {
+    min-height: 40px;
+    font-size: 0.875rem;
+  }
+  .table-title {
+    font-size: 0.9375rem;
+    min-height: 40px;
+  }
+  .check-task {
+    min-width: 25px;
+    min-height: 30px;
+  }
+  .table-task {
+    gap: 7px;
+  }
+  .error-banner {
+    font-size: 0.9375rem;
+    padding: 13px 20px;
+  }
+  .saving {
+    bottom: 82px;
+    right: 18px;
+    font-size: 0.8125rem;
+  }
+  .modal-backdrop {
+    padding: 0;
+    background: #223b2d88;
+  }
+  .task-dialog {
+    width: 100%;
+    border-radius: 0;
+    padding: 24px 21px 35px;
+    border: 0;
+  }
+  .task-dialog .dialog-top {
+    margin-bottom: 20px;
+  }
+  .task-dialog #task-title {
+    font-size: 21px;
+  }
+  .task-dialog label {
+    font-size: 0.9375rem;
+    margin-bottom: 18px;
+  }
+  .task-dialog label input,
+  .task-dialog label select {
+    font-size: 1.0625rem;
+    min-height: 44px;
+  }
+  .task-dialog label textarea {
+    font-size: 1.0625rem;
+  }
+  .task-dialog .button {
+    min-height: 44px;
+  }
+  .dialog-section h3 {
+    font-size: 1.0625rem;
+  }
+  .task-dialog .task-line-title strong {
+    font-size: 0.9375rem;
+  }
+  .event-history strong {
+    font-size: 0.9375rem;
+  }
+  .event-history time {
+    font-size: 0.8125rem;
+  }
+  .journal-date {
+    width: 100%;
+    gap: 8px;
+  }
+  .journal-date .period-nav {
+    flex: 1;
+    justify-content: space-between;
+    min-height: 43px;
+  }
+  .journal-date .period-nav > span {
+    font-size: 0.9375rem;
+  }
+  .journal-date > input {
+    width: 43px;
+    height: 43px;
+    padding: 8px;
+  }
+  .journal-paper {
+    padding: 24px 21px;
+    min-height: 500px;
+  }
+  .journal-paper-header {
+    padding-bottom: 21px;
+    margin-bottom: 18px;
+  }
+  .journal-paper-header h2 {
+    font-size: 20px;
+  }
+  .journal-paper-header > span:last-child {
+    font-size: 0.8125rem;
+  }
+  .journal-block .task-line-title strong {
+    font-size: 1rem;
+  }
+  .journal-block .priority {
+    display: none;
+  }
+  .block-text {
+    font-size: 1.0625rem;
+    line-height: 1.9;
+  }
+  .block-heading .block-text {
+    font-size: 1.3125rem;
+  }
+  .block-delete {
+    opacity: 0.6;
+    min-height: 32px;
+    min-width: 24px;
+    padding: 4px;
+  }
+  .journal-compose textarea {
+    font-size: 1rem;
+    min-height: 112px;
+  }
+  .journal-compose-tools {
+    gap: 9px;
+  }
+  .journal-compose-tools select {
+    font-size: 0.875rem;
+    min-height: 40px;
+    flex: 1;
+  }
+  .journal-compose-tools .button {
+    font-size: 0.875rem;
+    min-height: 40px;
+  }
+  .journal-aside {
+    display: flex;
+    flex-direction: column;
+  }
+  .journal-tips {
+    order: 2;
+  }
+  .journal-tips dl {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 13px;
+  }
+  .journal-tips dt {
+    font-size: 0.875rem;
+  }
+  .journal-tips dd {
+    font-size: 0.875rem;
+    grid-column: 2;
+    align-self: end;
+  }
+  .journal-tips dd span {
+    font-size: 0.8125rem;
+  }
+  .journal-days button {
+    font-size: 0.9375rem;
+    min-height: 45px;
+  }
+  .journal-aside input {
+    font-size: 1rem;
+    min-height: 42px;
+  }
+  .journal-prompt span {
+    font-size: 0.9375rem;
+    line-height: 1.8;
+  }
+  .entity-form {
+    padding: 22px;
+  }
+  .entity-form label {
+    font-size: 0.9375rem;
+  }
+  .entity-form label input,
+  .entity-form label select {
+    min-height: 43px;
+    font-size: 1rem;
+  }
+  .checkbox-label {
+    font-size: 0.8125rem;
+    min-height: 35px;
+  }
+  .goal-actions {
+    padding: 12px 20px;
+  }
+  .milestone-line {
+    padding: 14px 0;
+    gap: 10px;
+  }
+  .milestone-title {
+    font-size: 1rem;
+    min-height: 30px;
+  }
+  .milestone-title small {
+    font-size: 0.8125rem;
+  }
+  .milestone-list .entity-form {
+    padding: 13px;
+  }
+  .status-summary {
+    padding: 17px 2px;
+    gap: 17px 0;
+  }
+  .status-summary strong {
+    font-size: 23px;
+  }
+  .status-summary span {
+    font-size: 0.75rem;
+  }
+  .project-detail-meta {
+    font-size: 0.9375rem;
+    margin-top: -7px;
+    gap: 12px;
+    line-height: 1.6;
+  }
+  .project-capture input {
+    font-size: 0.9375rem;
+    min-height: 43px;
+  }
+  .project-capture .button {
+    padding: 9px;
+    font-size: 0.8125rem;
+  }
+  .project-detail-meta + .status-summary {
+    margin-top: 24px;
+  }
+  .analytics-period {
+    gap: 8px;
+    justify-content: space-between;
+  }
+  .analytics-period strong {
+    font-size: 0.875rem;
+  }
+  .analytics-notes {
+    gap: 9px 20px;
+    font-size: 0.875rem;
+  }
+  .analytics-notes span:last-child {
+    font-size: 0.8125rem;
+    flex-basis: 100%;
+  }
+  .chart-panel {
+    min-height: 300px;
+  }
+  .chart-legend {
+    font-size: 0.8125rem;
+  }
+  .bar-chart {
+    gap: 5px;
+    height: 170px;
+  }
+  .achievement {
+    gap: 10px;
+    padding: 17px 0;
+  }
+  .achievement strong {
+    font-size: 0.9375rem;
+  }
+  .achievement small {
+    font-size: 0.8125rem;
+  }
+  .achievement-type {
+    display: none;
+  }
+  .distribution-row {
+    font-size: 0.9375rem;
+    min-height: 43px;
+  }
+  .distribution-row strong {
+    font-size: 1rem;
+  }
+  .archive-tools {
+    gap: 10px;
+  }
+  .archive-tools .segmented {
+    width: auto;
+  }
+  .archive-tools > label {
+    flex: 1;
+    flex-direction: column;
+    align-items: flex-start;
+    font-size: 0.8125rem;
+    gap: 6px;
+    min-width: 120px;
+  }
+  .archive-tools input {
+    width: 100%;
+    min-height: 41px;
+    font-size: 0.9375rem;
+  }
+  .archive-list {
+    padding: 7px 16px;
+  }
+  .archive-state {
+    display: none;
+  }
+  .archive-timestamp {
+    font-size: 0.8125rem;
+    padding-left: 33px;
+    line-height: 1.8;
+  }
+  .archive-timestamp .text-button {
+    font-size: 0.8125rem;
+  }
+  .settings-grid .panel {
+    padding: 22px;
+  }
+  .settings-grid label {
+    font-size: 0.9375rem;
+  }
+  .settings-grid label input,
+  .settings-grid label select {
+    font-size: 1rem;
+    min-height: 44px;
+  }
+  .settings-copy {
+    font-size: 0.9375rem;
+  }
+  .privacy-panel p {
+    font-size: 0.9375rem;
+  }
+  .file-button {
+    min-height: 44px;
+    font-size: 0.9375rem !important;
+  }
+  .import-preview p {
+    font-size: 0.9375rem;
+  }
+  .login-layout {
+    grid-template-columns: 1fr;
+  }
+  .login-story {
+    padding: 26px;
+    min-height: 290px;
+  }
+  .login-story > div:nth-child(2) {
+    padding: 27px 0 10px;
+  }
+  .login-story .eyebrow {
+    font-size: 0.75rem;
+    margin-bottom: 14px;
+    letter-spacing: 1.4px;
+  }
+  .login-story h1 {
+    font-size: 39px;
+    letter-spacing: -1.6px;
+    line-height: 1.12;
+  }
+  .login-story h1 br:nth-of-type(2) {
+    display: none;
+  }
+  .login-story h1 em:before {
+    content: " ";
+  }
+  .login-story p {
+    font-size: 0.9375rem;
+    margin-top: 15px;
+    line-height: 1.7;
+  }
+  .story-footer {
+    display: none;
+  }
+  .login-story:after {
+    width: 280px;
+    height: 280px;
+    right: -190px;
+    bottom: -130px;
+  }
+  .login-form {
+    padding: 35px 26px 50px;
+    align-items: flex-start;
+  }
+  .login-form > div {
+    width: 100%;
+    max-width: 380px;
+  }
+  .login-form .eyebrow {
+    font-size: 0.75rem;
+  }
+  .login-form h2 {
+    font-size: 26px;
+    margin-top: 6px;
+  }
+  .login-form > div > p {
+    font-size: 1rem;
+  }
+  .login-form form {
+    margin-top: 26px;
+  }
+  .login-form form > label {
+    font-size: 0.9375rem;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .login-form input {
+    font-size: 1.125rem;
+    min-height: 46px;
+  }
+  .login-form .button {
+    min-height: 45px;
+    font-size: 1rem;
+  }
+  .login-help {
+    font-size: 0.875rem !important;
+    margin-top: 20px;
+  }
+}
