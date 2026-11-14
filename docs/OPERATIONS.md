@@ -96,8 +96,8 @@ para preparar recursos. En demos PostgreSQL preexistentes se conserva la URL ges
 antigua y su identidad para no romper sesiones/metadatos: **esa demo legacy todavía
 utiliza sus credenciales administrativas anteriores**. `run --database demo` permite
 seleccionar conscientemente el rol limitado, pero no modifica el archivo de acceso ni
-lo adopta como demo gestionada. Su adopción definitiva sigue pendiente de una operación
-explícita y revisión de ownership/permisos; no borrar archivos para forzarla.
+lo adopta como demo gestionada. La sección siguiente permite adoptar el destino de
+forma explícita sin modificar ownership, registros ni archivos anteriores.
 
 `npm run dev` y `npm start` no eligen una base por sí mismos: usan `DATABASE_URL`.
 Vite/compilado describen cómo se sirve la UI, no qué entorno de datos se selecciona.
@@ -128,6 +128,51 @@ no lo uses para seleccionar una nueva base. Las conexiones remotas requieren TLS
 certificado verificado; el pool admite `PG_POOL_MAX` entre 1 y 20 (predeterminado 4).
 La conexión real con Neon no está verificada aquí ni hay producción configurada. No utilices una URL personal
 como destino de pruebas.
+
+## Adoptar PostgreSQL local y recuperar el autoarranque
+
+Después de importar y comprobar los datos, no elimines SQLite ni `demo-access.json`.
+La adopción es local y explícita: elige `demo` o `dev`; no admite conexiones externas,
+producción ni un destino vacío. No cambia tu correo/contraseña ni las sesiones de la
+aplicación: cambia el rol PostgreSQL utilizado por el proceso gestionado.
+
+1. Descarga un backup PostgreSQL completo y guárdalo cifrado fuera del Codespace.
+   Detén el servidor manual con Ctrl+C y el gestionado con
+   `node .devcontainer/service.mjs stop`. Nadie debe seguir escribiendo. Si modificaste
+   datos después del backup, crea y descarga una copia nueva antes de adoptar.
+2. Define la ruta real de esa copia y ejecuta el comando, desde la raíz del checkout:
+
+   ```sh
+   backup_path=".data/backups/postgresql-TU-COPIA.json"
+   (
+     set -euo pipefail
+     unset DATABASE_URL DATABASE_SCHEMA FOCUS_DB
+     npm run local:adopt -- --database demo --backup "$backup_path"
+     bash .devcontainer/start.sh
+   )
+   ```
+
+   Sustituye `postgresql-TU-COPIA.json` por el archivo existente. El bloque se detiene
+   ante cualquier error; no importa datos otra vez ni prepara una demo sustituta.
+3. El comando ensaya restore en un esquema privado temporal, compara todas las celdas
+   con la copia (excepto sesiones, revocadas solo en el clon), limpia ese esquema y
+   compara además el backup con el destino actual bajo locks de lectura. Rechaza copias
+   obsoletas, roles administrativos/membresías adicionales y cuentas/workspaces ausentes.
+4. Publica `.data/active-postgres.json` (0600) con tipo de destino, identidad y checksum;
+   no contiene URL ni contraseñas. No sobrescribe otro destino y repetir la adopción
+   del mismo conserva la selección original. Conserva originales y backups intactos.
+5. El arranque y setup gestionados comprueban la identidad y el rol dedicado antes de
+   usarlo, con `FOCUS_DEMO=false`: no siembran, no usan el antiguo archivo de acceso y
+   no abren SQLite. Si faltan configuración, cuenta o destino, fallan sin fallback.
+   Reabre el puerto 3000 **Private** y comprueba tareas y diario. Después de reiniciar
+   el Codespace, `bash .devcontainer/start.sh` vuelve a usar la selección adoptada.
+
+El CLI detecta un PID gestionado activo pero no todos los escritores manuales; no
+mata procesos. No edites ni borres el binding para cambiar de base: utiliza un plan
+explícito de recuperación. La cuenta administrativa local sigue siendo necesaria para
+mantenimiento; no se ha configurado la separación runtime/migraciones de producción.
+El archivo de acceso antiguo se conserva como histórico y no es un gestor de claves
+para el destino adoptado; guarda la contraseña vigente de la aplicación por separado.
 
 ## Validación real de Neon `focus-db-dev`
 
@@ -357,8 +402,9 @@ reales, ensaya con datos ficticios y acuerda el destino. No ejecutes semillas tr
 5. No se adopta la importación como demo ni se reescriben credenciales. Para probar el
    destino local importado, usa `node scripts/dev-postgres.mjs run npm run dev`; inicia
    sesión con las credenciales anteriores y comprueba tareas, diario, foco, proyectos,
-   historial y estadísticas. El autoarranque seguirá rechazando metadatos demo SQLite;
-   no los borres para saltar esa protección. Otro destino se inicia con su `DATABASE_URL`.
+   historial y estadísticas. Para habilitar autoarranque, sigue
+   [la adopción explícita](#adoptar-postgresql-local-y-recuperar-el-autoarranque); no borres
+   metadatos para saltar la protección. Otro destino se inicia con su `DATABASE_URL`.
 
 Mantén el original y el respaldo externo hasta verificar funcionalidad y recuperación
 PostgreSQL. No vuelvas a escribir en SQLite esperando sincronización bidireccional.
@@ -392,6 +438,22 @@ a un instante (PITR); tampoco hay cifrado, programador o envío externo automát
 o copias a Git. Conserva varias versiones y el commit compatible. Antes de datos reales,
 ensaya una recuperación desde una copia externa; para un piloto, copia diaria y antes
 de importaciones/actualizaciones, con ensayos periódicos.
+
+Puedes ensayar la restauración sin sustituir el origen, con su conexión seleccionada:
+
+```sh
+node scripts/dev-postgres.mjs run --database demo npm run backup:rehearse -- --source .data/backups/TU-COPIA.json
+```
+
+El ensayo requiere `CREATE SCHEMA` y usa un esquema UUID privado en la misma base
+local. No modifica los registros del origen; solo elimina el esquema que acaba de
+crear. Compara IDs, relaciones, fechas, histórico y cada celda no perteneciente a
+sesiones. Las sesiones del clon quedan vacías; las del origen no se revocan. Una
+terminación abrupta o fallo de conexión durante cleanup puede dejar un esquema
+`focus_recovery_<UUID>`: revisa su propietario y propósito antes de limpiarlo, nunca
+borres esquemas de aplicación. Esto demuestra restaurabilidad del backup, no que
+contenga el estado más reciente ni que la copia externa se haya descargado correctamente.
+No sustituye recuperación desde una copia externa ni pruebas del proveedor real.
 
 Para recuperar, detén todos los escritores del destino y crea/selecciona conscientemente
 otra base PostgreSQL **vacía**, sin reemplazar el origen. Después de configurar su

@@ -28,7 +28,9 @@
     "restore:sqlite": "tsx scripts/database.ts restore",
     "screenshots:brand": "node scripts/test-postgres.mjs brand",
     "test:visual": "node scripts/test-postgres.mjs visual",
-    "audit:semgrep": "node scripts/security-audit.mjs"
+    "audit:semgrep": "node scripts/security-audit.mjs",
+    "backup:rehearse": "tsx scripts/rehearse-recovery.ts",
+    "local:adopt": "tsx scripts/adopt-local-postgres.ts"
   },
   "dependencies": {
     "@js-temporal/polyfill": "0.5.1",
@@ -36,8 +38,7 @@
     "lucide-react": "0.468.0",
     "pg": "8.23.1",
     "react": "19.1.1",
-    "react-dom": "19.1.1",
-    "zod": "4.1.12"
+    "react-dom": "19.1.1"
   },
   "devDependencies": {
     "@playwright/test": "1.56.1",

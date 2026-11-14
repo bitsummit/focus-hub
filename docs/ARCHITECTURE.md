@@ -54,6 +54,8 @@ No hay una capa de emulación SQL ni un backend intercambiable para D1.
 | [`server/postgres-recovery.ts`](../server/postgres-recovery.ts), [`scripts/postgres-database.ts`](../scripts/postgres-database.ts) | Backup completo PostgreSQL en JSON, verificación y restauración a destino vacío |
 | [`server/sqlite-import.ts`](../server/sqlite-import.ts), [`scripts/migrate-sqlite.ts`](../scripts/migrate-sqlite.ts) | Importación explícita SQLite → PostgreSQL sin alterar la fuente |
 | [`server/legacy-sqlite.ts`](../server/legacy-sqlite.ts), [`server/recovery.ts`](../server/recovery.ts), [`scripts/database.ts`](../scripts/database.ts), [`migrations/001_initial.sql`](../migrations/001_initial.sql), [`migrations/002_language.sql`](../migrations/002_language.sql) | Compatibilidad y recuperación SQLite heredadas; no runtime web alternativo |
+| [`server/recovery-rehearsal.ts`](../server/recovery-rehearsal.ts) | Ensayo explícito de restore y comparación completa en un esquema privado temporal; no cambia registros del origen |
+| [`server/local-adoption.ts`](../server/local-adoption.ts) | Adopción local con backup coincidente, rol dedicado y binding privado sin credenciales |
 | [`.devcontainer/`](../.devcontainer/) | Instalación y ciclo de vida del proceso administrado en Codespaces |
 | [`tests/`](../tests/), [`playwright.config.ts`](../playwright.config.ts) | Fixtures aislados y comprobaciones unitarias, HTTP y Chromium |
 

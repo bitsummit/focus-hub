@@ -57,11 +57,15 @@ ficticios en loopback. Nuevas configuraciones usan roles/contraseñas diferentes
 bypassrls. Se revoca CONNECT público en esas bases; cada rol conecta únicamente a su
 base entre las tres. Docker y el administrador conservan acceso privilegiado.
 
-Una demo preexistente conserva deliberadamente su antigua identidad administrativa
-y `demo-access.json`: no se adopta ni se rota silenciosamente. Su aislamiento de
-credenciales queda pendiente de adopción explícita y revisión de permisos. Los roles
-nuevos reciben CRUD sobre tablas existentes sin transferir ownership; futuras
-migraciones que alteren esos objetos pueden necesitar administración explícita.
+Una demo preexistente conserva su identidad administrativa y `demo-access.json`
+hasta una adopción explícita. `local:adopt` ensaya la recuperación y compara cada celda
+del backup con el destino (salvo sesiones), verifica rol dedicado sin privilegios ni
+membresías adicionales y guarda una selección local privada sin credenciales. El
+arranque adoptado usa ese rol, sin semillas ni fallback. Un binding o destino inválido
+bloquea el arranque; no se reescriben SQLite ni credenciales anteriores.
+
+Los roles nuevos reciben CRUD sobre tablas existentes sin transferir ownership;
+futuras migraciones que alteren esos objetos pueden necesitar administración explícita.
 Una instalación duradera requiere separación runtime/migraciones, red restringida,
 secretos administrados y backups externos. Producción exige URL explícita y rechaza
 modo demo. No hay producción Neon ni Cloud Run verificados; el pool pequeño no
@@ -163,17 +167,14 @@ el fallback HTML. No ampliar esta superficie para arreglar un 403.
    externa con más usuarios o información especialmente sensible. No se certifican
    dispositivos/Windows reales por pasar Chromium Linux.
 
-Las dependencias de producción requieren además resolver/revisar
-[GHSA-27r3-jxmh-p828](https://github.com/advisories/GHSA-27r3-jxmh-p828)
-(`body-parser` 2.3.0, vía Express 5.1.0): JSON comprimido se procesa antes de auth,
-por lo que el DoS reportado puede alcanzar esa frontera si se expone el puerto.
-El límite de cuerpo y el forwarding privado no equivalen a corregir el parser.
-[GHSA-mrhx-c7xc-m3w5](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5)
-afecta a Zod 4.1.12, declarado como dependencia de producción pero sin importadores
-actuales en la aplicación: no se identifica una ruta activa hacia su validación.
-Evaluar actualización compatible/mitigación del parser y retirada o actualización
-de Zod antes de exposición pública; no interpretar la falta de arreglo automático
-en `npm audit` como prueba de que no exista una solución upstream.
+El parser de JSON comprimido usa `body-parser` 2.4.0, fijado en el lockfile dentro
+del rango compatible de Express 5.1.0, que corrige
+[GHSA-27r3-jxmh-p828](https://github.com/advisories/GHSA-27r3-jxmh-p828).
+Las pruebas comprueban compresión válida, bytes finales malformados y disponibilidad
+posterior del servidor. Zod, sin importadores de aplicación, no se mantiene como
+dependencia innecesaria; no queda esa superficie de
+[GHSA-mrhx-c7xc-m3w5](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5).
+Esto no sustituye las auditorías futuras sobre el lockfile y el entorno desplegado.
 
 Antes de pasar del piloto ficticio: actualizar el servidor, proteger GitHub con MFA,
 rotar credenciales, separar base personal y desarrollo, configurar proceso compilado
@@ -283,6 +284,9 @@ se comunican en la revisión de ese cambio, sin conservar diarios de pruebas.
 
 | Referencia | Qué comprueba |
 |---|---|
+| [tests/local-adoption.test.ts](../tests/local-adoption.test.ts) | Comparación de backup/destino, permisos del binding, rechazo de cambios de identidad y arranque adoptado sin bootstrap. |
+| [tests/recovery-rehearsal.test.ts](../tests/recovery-rehearsal.test.ts) | Restauración aislada, fidelidad completa, sesiones solo del clon revocadas y limpieza del esquema propio. |
+| [tests/compressed-request.test.ts](../tests/compressed-request.test.ts) | JSON comprimido válido y malformado no derriba el parser previo a autenticación. |
 | [tests/postgres-only.test.ts](../tests/postgres-only.test.ts) | Arranque sin URL/servidor disponible falla; desarrollo, compilado, demo y backup/restore funcionan con `node:sqlite` deshabilitado; guardas de producción. |
 | [tests/api.test.ts](../tests/api.test.ts) | Autenticación/logout, CSRF/origen, IDs/relaciones entre espacios, eventos y exportaciones. |
 | [tests/security-hardening.test.ts](../tests/security-hardening.test.ts) | Cookies, Secure, origen/Host/proxy negativo, caducidad, límites, hashes y carreras de rotación, errores sin datos privados. |

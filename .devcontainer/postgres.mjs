@@ -1,6 +1,6 @@
 import {spawn} from 'node:child_process';
 import {existsSync,readFileSync} from 'node:fs';
-import {getLocalPostgres} from '../scripts/dev-postgres.mjs';
+import {getLocalPostgres,readLocalPostgres} from '../scripts/dev-postgres.mjs';
 
 // Child environments carry secrets in memory, never shell arguments or logs.
 export async function environment(){
@@ -8,6 +8,24 @@ export async function environment(){
  if(process.env.NODE_ENV==='production'&&process.env.FOCUS_DEMO==='true')throw Error('Producción no admite FOCUS_DEMO=true.');
  if(process.env.DATABASE_URL)return {...process.env,FOCUS_DEMO:'false'};
  if(process.env.NODE_ENV==='production')throw Error('Producción requiere DATABASE_URL explícita; no se selecciona demo local.');
+ const {readActivePostgresBinding,validateAdoptedTarget}=await import('../server/local-adoption.ts');
+ const binding=readActivePostgresBinding();
+ if(binding){
+  // An adopted target must never bootstrap a fresh private configuration.
+  const saved=readLocalPostgres();
+  const savedUrl=binding.kind==='demo'?saved.demoDatabaseUrl:saved.developmentUrl;
+  if(saved.ready!==true||saved.accountsReady!==true||!savedUrl||decodeURIComponent(new URL(savedUrl).username)!==`focus_${binding.kind}_runtime`)throw Error('Falta la configuración dedicada del destino adoptado. Recupera el archivo original; no se generan cuentas nuevas.');
+  const local=await getLocalPostgres();
+  const url=binding.kind==='demo'?local.demoDatabaseUrl:local.developmentUrl;
+  if(!url)throw Error('Falta el destino PostgreSQL adoptado. No se crea ni selecciona otro.');
+  const {openDatabase}=await import('../server/db.ts');
+  const db=await openDatabase(url,{schema:'public'});
+  try{
+   if(db.identity!==binding.identity)throw Error('La identidad del destino adoptado no coincide. Se conserva sin reemplazar.');
+   await validateAdoptedTarget(db,`focus_${binding.kind}_runtime`);
+  }finally{await db.close();}
+  return {...process.env,DATABASE_URL:url,DATABASE_SCHEMA:'public',FOCUS_DEMO:'false'};
+ }
  const accessPath='.data/demo-access.json';
  if(existsSync(accessPath)){
   let access;try{access=JSON.parse(readFileSync(accessPath,'utf8'));}catch{throw Error('Archivo de acceso ilegible. Se conserva sin sobrescribir.');}
@@ -24,7 +42,7 @@ export function run(command,args,env){return new Promise((done,reject)=>{
 try{
  if(process.argv[2]==='setup'){
   const env=await environment();
-  if(env.FOCUS_DEMO!=='true')console.log('DATABASE_URL explícita: no se migra ni se siembra automáticamente. Prepara conscientemente el destino con npm run db:migrate.');
+  if(env.FOCUS_DEMO!=='true')console.log('Destino PostgreSQL seleccionado: no se migra ni se siembra automáticamente. Prepara conscientemente el destino con npm run db:migrate.');
   else{
    await run('npm',['run','db:migrate'],env);
    if(!existsSync('.data/demo-access.json'))await run('npm',['run','demo'],env);

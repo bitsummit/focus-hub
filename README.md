@@ -26,7 +26,8 @@ separada (`focus_demo`); desarrollo independiente usa `focus_dev` y los tests
 diferentes; demos anteriores conservan su identidad hasta una adopción explícita.
 PostgreSQL local escucha solo en loopback, con contraseña aleatoria guardada en
 `.data/postgres-local.json`. No hay credenciales compartidas ni servicios de pago.
-Si hay datos SQLite anteriores, la preparación se detiene sin sustituirlos: sigue
+Sin un destino PostgreSQL adoptado, si hay datos SQLite anteriores, la preparación
+se detiene sin sustituirlos: sigue
 la [migración explícita](docs/OPERATIONS.md#migrar-una-copia-sqlite-sin-reemplazar-datos).
 Vite y API comparten el puerto 3000 con recarga del frontend. `npm start` sirve el compilado y necesita antes
 `npm run build`. No ejecutes dos servidores en el mismo puerto.
