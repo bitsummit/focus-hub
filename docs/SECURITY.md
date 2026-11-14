@@ -163,6 +163,18 @@ el fallback HTML. No ampliar esta superficie para arreglar un 403.
    externa con más usuarios o información especialmente sensible. No se certifican
    dispositivos/Windows reales por pasar Chromium Linux.
 
+Las dependencias de producción requieren además resolver/revisar
+[GHSA-27r3-jxmh-p828](https://github.com/advisories/GHSA-27r3-jxmh-p828)
+(`body-parser` 2.3.0, vía Express 5.1.0): JSON comprimido se procesa antes de auth,
+por lo que el DoS reportado puede alcanzar esa frontera si se expone el puerto.
+El límite de cuerpo y el forwarding privado no equivalen a corregir el parser.
+[GHSA-mrhx-c7xc-m3w5](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5)
+afecta a Zod 4.1.12, declarado como dependencia de producción pero sin importadores
+actuales en la aplicación: no se identifica una ruta activa hacia su validación.
+Evaluar actualización compatible/mitigación del parser y retirada o actualización
+de Zod antes de exposición pública; no interpretar la falta de arreglo automático
+en `npm audit` como prueba de que no exista una solución upstream.
+
 Antes de pasar del piloto ficticio: actualizar el servidor, proteger GitHub con MFA,
 rotar credenciales, separar base personal y desarrollo, configurar proceso compilado
 privado/HTTPS, descargar copia cifrada fuera del Codespace y ensayar su recuperación
@@ -174,64 +186,94 @@ Procedimientos y riesgos de suspensión/borrado en [OPERATIONS.md](OPERATIONS.md
 
 ## Auditorías locales puntuales
 
-Usa Semgrep OSS y Gitleaks como comprobaciones adicionales, sin GitHub Actions ni
-cuentas/servicios de pago. Instala versiones explícitas fuera del proyecto (por
-ejemplo, en un directorio temporal privado): no añadir dependencias a `package.json`,
-lockfiles ni herramientas globales permanentes. Semgrep puede ejecutarse con `uvx`;
-para Gitleaks usa el binario oficial de tu plataforma y verifica su SHA-256 contra
-los checksums de la misma release. Referencias: [Semgrep](https://github.com/semgrep/semgrep),
-[reglas OSS](https://github.com/semgrep/semgrep-rules),
-[Gitleaks releases](https://github.com/gitleaks/gitleaks/releases).
+### Semgrep OSS reproducible
 
-Ejemplo Bash con herramientas temporales (Semgrep 1.181.0, Gitleaks 8.24.3):
+Entorno POSIX (Linux/Codespaces o WSL), Node 24, Git, curl y [uv/uvx](https://docs.astral.sh/uv/).
+Desde la raíz del checkout:
 
 ```sh
-audit_root=$(mktemp -d)
-chmod 700 "$audit_root"
-export UV_CACHE_DIR="$audit_root/uv-cache" UV_TOOL_DIR="$audit_root/uv-tools"
-export UV_TOOL_BIN_DIR="$audit_root/bin"
-export SEMGREP_SETTINGS_FILE="$audit_root/semgrep-settings.yml"
-export SEMGREP_LOG_FILE="$audit_root/semgrep.log"
-export SEMGREP_SEND_METRICS=off SEMGREP_ENABLE_VERSION_CHECK=0
-# Descargar solo las reglas públicas; nunca subir el código de Focus.
-git clone --depth 1 https://github.com/semgrep/semgrep-rules.git "$audit_root/rules"
-git -C "$audit_root/rules" rev-parse HEAD
-# Snapshot de archivos versionados; no incluye .data, .env ni secretos locales.
-mkdir "$audit_root/source"
-git archive HEAD | tar -x -C "$audit_root/source"
-uvx --from semgrep==1.181.0 semgrep scan --oss-only --metrics=off --disable-version-check \
-  --config "$audit_root/rules/javascript" --config "$audit_root/rules/typescript" \
-  --config "$audit_root/rules/generic/secrets" --config "$audit_root/rules/generic/dockerfile" \
-  --error --json --output "$audit_root/semgrep.json" "$audit_root/source"
-# Tras descargar y verificar el binario Gitleaks en $audit_root/bin:
-"$audit_root/bin/gitleaks" dir --redact=100 --ignore-gitleaks-allow --no-banner \
-  --report-format=json --report-path="$audit_root/gitleaks-current.json" "$audit_root/source"
-"$audit_root/bin/gitleaks" git --log-opts='--all --full-history' --redact=100 \
-  --ignore-gitleaks-allow --no-banner --report-format=json \
-  --report-path="$audit_root/gitleaks-history.json" .
+npm run audit:semgrep
 ```
 
-El snapshot anterior representa HEAD: si hay cambios pendientes, revisa también los
-archivos versionados modificados mediante una copia temporal explícita, sin copiar
-`.data`/`.env`. No uses `semgrep ci`, configuraciones remotas `--config auto`, login,
-motores de pago o upload de resultados/código. Los reportes son privados y temporales,
-fuera de Git; no mostrar secretos aunque el hallazgo sea histórico. Desactiva métricas
-y comprobación de versión; reglas locales y motor OSS no necesitan enviar código.
+[`scripts/security-audit.mjs`](../scripts/security-audit.mjs) instala Semgrep **1.181.0**
+en caché temporal fuera del proyecto y descarga únicamente veinte reglas públicas de
+[semgrep/semgrep-rules](https://github.com/semgrep/semgrep-rules). La autoridad de selección
+es [`.semgrep/rules.lock.json`](../.semgrep/rules.lock.json): commit
+`17e31e11ebac99fb7dfe1cd288f7a32151b6f3f9`, IDs, rutas y SHA-256 de cada YAML.
+No hay actualizaciones silenciosas: revisar contenido, compatibilidad OSS, licencia,
+hashes y resultados al cambiar esa selección. No se añaden paquetes npm ni servicios.
 
-Registra versiones, SHA de reglas, alcance, exclusiones/errores y códigos de salida.
-Semgrep sin `--error` puede devolver 0 aun con hallazgos. Gitleaks devuelve 1 si detecta
-secretos; otros errores no equivalen a un análisis limpio. Comprueba si el clon es
-shallow y qué refs están disponibles: `--all` cubre el historial local alcanzable, no
-commits borrados/inaccesibles del servidor. Git ignore no limpia secretos históricos.
+| Riesgo | Reglas seleccionadas |
+|---|---|
+| SQL/PostgreSQL | `node-postgres-sqli`, `tainted-sql-string` |
+| XSS/React/HTML | `react-dangerouslysetinnerhtml`, `insecure-innerhtml`, `raw-html-format` |
+| Comandos/código | `spawn-shell-true`, `dangerous-spawn-shell`, `detect-eval-with-expression` |
+| Traversal | `express-path-join-resolve-traversal`, `express-res-sendfile` |
+| Secretos | `private-key`, `detected-username-and-password-in-uri`, `github-pat`, `github-fine-grained-pat` |
+| Criptografía | `detect-pseudoRandomBytes`, `create-de-cipher-no-iv`, `hardcoded-hmac-key` |
+| Origen/CORS | `cors-misconfiguration`, `cors-regex-wildcard` |
+| Disponibilidad | `detect-redos` |
 
-Triage manual: gravedad, explotabilidad real, controles existentes y alcance
-producción/desarrollo; distinguir vulnerabilidad confirmada, falso positivo y riesgo
-pendiente. Una advertencia de SQL dinámico exige seguir valores e identificadores,
-no asumir inyección por interpolación de tablas allowlisted. No ocultar hallazgos
+Se excluyen de la **selección de reglas** estilo, nombres de traducción, compatibilidad
+con navegadores antiguos y frameworks no utilizados. No se excluyen archivos de
+producción para silenciar resultados. Reglas de `express-session`, JWT o `csurf` no
+verifican nuestras sesiones/CSRF propios y no se usan para exigir esos paquetes.
+
+El ejecutor copia el estado de trabajo de archivos versionados y nuevos no ignorados
+por Git a un snapshot privado: incluye modificaciones pendientes, pruebas, scripts y
+configuración. No abre bases ni archivos ignorados como `.data`/`.env`; un secreto
+accidentalmente **versionado** sí entra en el análisis. Excluye únicamente binarios
+con bytes NUL, identificados en el resumen; NUL en código/configuración provoca error
+en vez de omitirlo. Rechaza symlinks y rutas fuera del checkout.
+Pasa los archivos de texto explícitamente al motor: los ignores predeterminados de
+Semgrep no ocultan tests. Desactiva `nosemgrep`, métricas, comprobación de versión y
+carga de configuraciones remotas; no hereda credenciales de aplicación ni utiliza
+motores de pago o sube código. Las peticiones externas descargan herramientas/reglas
+públicas; el análisis es local.
+
+Salida: resumen de alcance y directorio privado temporal con `report.json`, `engine.log`
+y `scope.json` (commit, hashes de fuentes y manifiesto). El snapshot se elimina al terminar; los informes pueden contener código
+o secretos y **no se comparten ni se añaden a Git**. Caché: directorio privado
+`focus-semgrep-<uid>` bajo el directorio temporal del sistema. Código de salida: 0 sin
+hallazgos ni errores; 1 con hallazgos que requieren triage; 2 si el análisis está
+incompleto, falla un hash/versión, falta una herramienta o se omiten archivos de texto.
+
+**Límites:** OSS no demuestra ausencia de vulnerabilidades. La regla PostgreSQL tiene
+patrones orientados a CommonJS; imports ESM/`node:`, wrappers y flujos entre archivos
+pueden escapar a las reglas. Revisar manualmente los SQL de `Database`/`Domain` y sus
+identificadores allowlisted. Ninguna de estas reglas demuestra aislamiento por usuario
+o workspace, revocación de sesiones, cookies correctas ni CSRF válido: siguen siendo
+necesarias revisión de código y pruebas específicas de API, auth y relaciones entre
+espacios. CORS no sustituye autorización. Requisitos de ejecución y revisión pública:
+[AGENTS.md](../AGENTS.md#definition-of-done).
+
+Clasificar cada aviso por gravedad, explotabilidad y alcance producción/desarrollo,
+separando vulnerabilidad confirmada, falso positivo y endurecimiento. No esconderlos
 con exclusiones generales ni aplicar majors automáticos o `npm audit fix --force`.
-Un secreto real requiere revocación/rotación; borrar la línea no lo invalida.
-Las reglas de entrega, revisión del código sensible y revisión previa a despliegue
-público son autoridad de [AGENTS.md](../AGENTS.md#definition-of-done).
+El aviso `detect-redos` sobre el dominio de forwarding en `server/runtime.ts` exige
+revisar la fuente: es configuración confiable de arranque, no entrada HTTP. No es por
+sí solo una prueba de DoS remoto; limitar longitudes es endurecimiento pendiente.
+
+### Secretos e historial con Gitleaks
+
+Complementa Semgrep con [Gitleaks OSS](https://github.com/gitleaks/gitleaks/releases)
+(versionar la herramienta; referencia reproducible 8.24.3), instalado fuera del
+proyecto desde la release oficial y verificando su SHA-256. Sobre un snapshot privado
+de archivos versionados y sus cambios, y sobre el historial local:
+
+```sh
+# SOURCE es el snapshot privado revisado; REPORT_DIR es un directorio privado fuera de Git.
+gitleaks dir --redact=100 --ignore-gitleaks-allow --no-banner \
+  --report-format=json --report-path="$REPORT_DIR/current.json" "$SOURCE"
+gitleaks git --log-opts='--all --full-history' --redact=100 --ignore-gitleaks-allow \
+  --no-banner --report-format=json --report-path="$REPORT_DIR/history.json" .
+```
+
+Gitleaks devuelve 1 con secretos detectados; otros errores no son un análisis limpio.
+Comprobar si el clon es shallow y qué refs están disponibles: `--all` cubre historial
+local alcanzable, no commits borrados/inaccesibles del servidor. No imprimir valores
+ni compartir reportes sin revisarlos. Un secreto real exige revocación/rotación; borrar
+la línea o ignorar el archivo no lo invalida ni limpia el historial.
 
 ## Evidencia reproducible y alcance
 

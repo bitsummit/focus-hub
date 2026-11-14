@@ -128,8 +128,11 @@ isolated databases and restore test-owned resources. Never weaken assertions.
 Sensitive changes (auth, permissions, sessions, SQL, server configuration or secrets)
 also require a focused review of the modified code: workspace authorization,
 parameterized SQL/trusted identifiers, input validation, cookies, CSRF/origin and
-information exposure. Automated scans do not replace this review. For occasional
-local Semgrep OSS and Gitleaks audits, follow [Security](docs/SECURITY.md#auditorías-locales-puntuales).
+information exposure. Automated scans do not replace this review. Run
+`npm run audit:semgrep` for changes to auth/authorization, SQL, HTTP routes, file
+handling or security configuration, and before any public deployment; small visual
+or documentation changes do not require it. Pinned rules, scope, limitations and
+local Gitleaks usage: [Security](docs/SECURITY.md#auditorías-locales-puntuales).
 Do not upload code, add paid services or unnecessary permanent dependencies.
 
 Triage findings by severity, practical exploitability and production versus

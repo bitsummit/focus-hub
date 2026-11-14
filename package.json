@@ -27,7 +27,8 @@
     "backup:sqlite:verify": "tsx scripts/database.ts verify",
     "restore:sqlite": "tsx scripts/database.ts restore",
     "screenshots:brand": "node scripts/test-postgres.mjs brand",
-    "test:visual": "node scripts/test-postgres.mjs visual"
+    "test:visual": "node scripts/test-postgres.mjs visual",
+    "audit:semgrep": "node scripts/security-audit.mjs"
   },
   "dependencies": {
     "@js-temporal/polyfill": "0.5.1",
