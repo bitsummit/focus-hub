@@ -185,7 +185,9 @@ por sí sola el nombre del proyecto/branch Neon: comprobarlo en la consola.
    proyecto, branch, base y rol. Configura `DATABASE_URL` como secreto privado del entorno que ejecuta
    Focus., sin pegarla en chats, comandos, capturas o Git. No reutilices el rol/base de
    producción ni apuntes las pruebas automatizadas a este destino. TLS requiere
-   certificado válido; compatibilidad y límites de parámetros en [Seguridad](SECURITY.md).
+   certificado válido; conserva `sslmode` y `channel_binding=require` si Neon lo
+   proporciona. La app negocia PLUS sin desactivar validación de certificados; límites
+   de parámetros en [Seguridad](SECURITY.md).
 2. Con ese destino confirmado, `npm run db:migrate` aplica las migraciones explícitas.
    Si hay datos/tablas incompatibles, detente; no borres ni resetees. En una base nueva
    `npm run owner` crea una cuenta ficticia con entrada oculta; si existe una cuenta,

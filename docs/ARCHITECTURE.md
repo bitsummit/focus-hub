@@ -48,6 +48,7 @@ No hay una capa de emulación SQL ni un backend intercambiable para D1.
 | [`server/auth.ts`](../server/auth.ts), [`server/login-challenge.ts`](../server/login-challenge.ts), [`server/login-limiter.ts`](../server/login-limiter.ts) | Credenciales, sesiones, autorización, CSRF, origen y presupuestos de login |
 | [`server/domain.ts`](../server/domain.ts) | Validación del dominio, SQL preparado, eventos, idempotencia, diario, foco, métricas y exportación |
 | [`server/db.ts`](../server/db.ts), [`migrations/postgres/`](../migrations/postgres/) | Pool PostgreSQL, consultas asíncronas, transacciones y migraciones versionadas |
+| [`server/postgres-channel-binding.ts`](../server/postgres-channel-binding.ts) | Transporte SCRAM-SHA-256-PLUS obligatorio cuando la URL lo exige; usa la implementación SCRAM de pg |
 | [`server/calendar.ts`](../server/calendar.ts) | Fechas locales, zona IANA y límites UTC mediante Temporal |
 | [`server/runtime.ts`](../server/runtime.ts), [`server/index.ts`](../server/index.ts), [`server/development.ts`](../server/development.ts) | Configuración de origen, servidor y frontera de archivos de Vite |
 | [`server/owner.ts`](../server/owner.ts), [`server/password.ts`](../server/password.ts), [`server/demo.ts`](../server/demo.ts) | Administración local y demo ficticia |

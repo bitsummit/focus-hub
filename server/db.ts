@@ -2,6 +2,7 @@ import {Pool,type PoolClient,type QueryResult,type QueryResultRow} from 'pg';
 import {AsyncLocalStorage} from 'node:async_hooks';
 import {createHash,randomUUID} from 'node:crypto';
 import {readFileSync,readdirSync} from 'node:fs';
+import {RequiredChannelBindingClient} from './postgres-channel-binding.ts';
 
 export type Row = Record<string,any>;
 export type DatabaseOptions = {schema?:string;migrate?:boolean;max?:number};
@@ -25,18 +26,25 @@ export function databaseIdentity(value?:string,schema=schemaName()){
 }
 function poolConfig(value:string|undefined,options:DatabaseOptions){
  const url=connectionURL(value),local=['localhost','127.0.0.1','[::1]'].includes(url.hostname);
+ const keys=[...url.searchParams.keys()];
+ if(new Set(keys).size!==keys.length)throw Error('Parámetros DATABASE_URL duplicados; no se continúa.');
+ const binding=url.searchParams.get('channel_binding');
+ if(binding&&!['disable','prefer','require'].includes(binding))throw Error('channel_binding debe ser disable, prefer o require.');
+ if(url.searchParams.has('channel_binding')&&!binding)throw Error('channel_binding no puede estar vacío.');
  const mode=url.searchParams.get('sslmode');
  if(mode&&!['disable','require','verify-ca','verify-full'].includes(mode))throw Error('sslmode no admitido; usa verify-full para conexiones remotas.');
  if(!local&&mode==='disable')throw Error('PostgreSQL remoto requiere TLS con certificado verificado.');
  // Never let sslmode=require from a URL silently disable certificate verification.
- for(const key of ['sslmode','sslcert','sslkey','sslrootcert','uselibpqcompat'])url.searchParams.delete(key);
+ for(const key of ['sslmode','sslcert','sslkey','sslrootcert','uselibpqcompat','channel_binding'])url.searchParams.delete(key);
  if([...url.searchParams.keys()].some(key=>!['application_name'].includes(key)))throw Error('Parámetro DATABASE_URL no admitido.');
+ const ssl=local&&(!mode||mode==='disable')?false:{rejectUnauthorized:true};
+ if(binding==='require'&&!ssl)throw Error('channel_binding=require necesita TLS con certificado verificado.');
  const maximum=options.max??Number(process.env.PG_POOL_MAX||4);
  if(!Number.isInteger(maximum)||maximum<1||maximum>20)throw Error('PG_POOL_MAX debe estar entre 1 y 20.');
  return {connectionString:url.toString(),max:maximum,connectionTimeoutMillis:5000,idleTimeoutMillis:10000,
   statement_timeout:15000,lock_timeout:10000,application_name:'focus-hub',
   options:`-c search_path=${schemaName(options.schema)},pg_catalog`,
-  ssl:local&&(!mode||mode==='disable')?false:{rejectUnauthorized:true},
+  ssl,enableChannelBinding:!!ssl&&binding==='prefer',...(binding==='require'?{Client:RequiredChannelBindingClient}:{}),
  };
 }
 

@@ -44,12 +44,22 @@ Parámetros scrypt: [OWASP Password Storage](https://cheatsheetseries.owasp.org/
 `DATABASE_URL` se configura fuera de Git. No registrar URLs, passwords ni errores
 crudos del driver. El servidor remoto exige TLS con `rejectUnauthorized:true`,
 incluso cuando la URL usa `sslmode=require`; no acepta `sslmode=disable` remoto.
-El almacén de confianza es el del runtime. Se admiten `sslmode` y
-`application_name`; parámetros adicionales se rechazan, incluido
-`channel_binding=require` de algunas URLs Neon. No eliminar esa garantía de una
-URL de producción sin evaluar el proveedor: la conexión Neon real y channel binding
-estricto están pendientes de validación. Los parámetros de certificados de cliente
-no se utilizan; no se ha implementado autenticación mTLS personalizada.
+El almacén de confianza es el del runtime. Se admiten `sslmode`, `application_name`
+y `channel_binding=disable|prefer|require`; parámetros desconocidos, duplicados o
+valores de binding inválidos se rechazan. `require` exige TLS verificado y
+SCRAM-SHA-256-PLUS: rechaza SCRAM sin binding, MD5, contraseña en claro y trust antes
+de entregar credenciales o permitir consultas. Un server proof inválido tampoco
+habilita el cliente. `prefer` negocia PLUS cuando está disponible sobre TLS; `disable`
+no exige binding, pero conserva la validación TLS remota. Ausencia del parámetro
+conserva el comportamiento anterior. No quitar `require` de una URL para eludir un fallo.
+
+`server/postgres-channel-binding.ts` limita los eventos de autenticación de la
+Connection exportada por **pg 8.23.1**; el driver sigue calculando SCRAM y verificando
+la prueba del servidor. Este adaptador depende del orden de eventos y la verificación
+síncrona de SASLFinal: cualquier actualización de pg exige revisión y repetición de
+las pruebas TLS/protocolo. No sustituye una validación real de Neon, que sigue pendiente
+hasta conectar allí. Los parámetros de certificados de cliente no se utilizan; no se
+ha implementado autenticación mTLS personalizada.
 
 El rol administrativo `focus` de la imagen PostgreSQL local solo prepara recursos
 ficticios en loopback. Nuevas configuraciones usan roles/contraseñas diferentes para
@@ -284,6 +294,7 @@ se comunican en la revisión de ese cambio, sin conservar diarios de pruebas.
 
 | Referencia | Qué comprueba |
 |---|---|
+| [tests/channel-binding.test.ts](../tests/channel-binding.test.ts) | PostgreSQL TLS real con PLUS, certificado no confiable y rechazo de degradaciones/ReadyForQuery o prueba SCRAM inválida. |
 | [tests/local-adoption.test.ts](../tests/local-adoption.test.ts) | Comparación de backup/destino, permisos del binding, rechazo de cambios de identidad y arranque adoptado sin bootstrap. |
 | [tests/recovery-rehearsal.test.ts](../tests/recovery-rehearsal.test.ts) | Restauración aislada, fidelidad completa, sesiones solo del clon revocadas y limpieza del esquema propio. |
 | [tests/compressed-request.test.ts](../tests/compressed-request.test.ts) | JSON comprimido válido y malformado no derriba el parser previo a autenticación. |
